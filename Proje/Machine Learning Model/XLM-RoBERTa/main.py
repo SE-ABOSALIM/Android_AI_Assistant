@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 
 import pandas as pd
 import numpy as np
@@ -31,9 +32,14 @@ def fit_temperature(logits, labels):
 
     return best_temp, best_loss
 
+
+BASE_DIR = Path(__file__).resolve().parent
+os.chdir(BASE_DIR)
+DATASET_PATH = "../Dataset/Optimized-Expanded-Dataset.xlsx"
+MODEL_OUTPUT_DIR = "./xlmr-intent-model-best"
+
 # 1) Read Excel
-file_path = "Dataset/Optimized-Expanded-Dataset.xlsx"
-df = pd.read_excel(file_path, sheet_name="Core_Train_Ready")
+df = pd.read_excel(DATASET_PATH, sheet_name="Core_Train_Ready")
 
 # 2) Basic cleaning
 df = df.dropna(subset=["text", "intent", "lang", "split"]).copy()
@@ -142,11 +148,10 @@ best_temperature, calibration_loss = fit_temperature(
 )
 
 # 13) Save
-model_output_dir = "./xlmr-intent-model-best"
-trainer.save_model(model_output_dir)
-tokenizer.save_pretrained(model_output_dir)
+trainer.save_model(MODEL_OUTPUT_DIR)
+tokenizer.save_pretrained(MODEL_OUTPUT_DIR)
 
-with open(os.path.join(model_output_dir, "calibration.json"), "w", encoding="utf-8") as calibration_file:
+with open(os.path.join(MODEL_OUTPUT_DIR, "calibration.json"), "w", encoding="utf-8") as calibration_file:
     json.dump(
         {
             "temperature": best_temperature,

@@ -1,10 +1,13 @@
 import json
 import os
 import sys
+from pathlib import Path
 
 import torch
 from transformers import XLMRobertaTokenizer, XLMRobertaForSequenceClassification
 
+BASE_DIR = Path(__file__).resolve().parent
+os.chdir(BASE_DIR)
 model_path = "./xlmr-intent-model-best"
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -16,10 +19,10 @@ model = XLMRobertaForSequenceClassification.from_pretrained(model_path)
 model.eval()
 
 id2label = model.config.id2label
-calibration_path = os.path.join(model_path, "calibration.json")
+calibration_path = Path(model_path) / "calibration.json"
 
 temperature = 1.0
-if os.path.exists(calibration_path):
+if calibration_path.exists():
     with open(calibration_path, "r", encoding="utf-8") as calibration_file:
         temperature = float(json.load(calibration_file).get("temperature", 1.0))
 
@@ -44,6 +47,7 @@ def predict_intent(text, language):
         "predicted_label": id2label[pred_id],
         "confidence": round(confidence, 4),
         "temperature": temperature,
+        "model_path": str((BASE_DIR / "xlmr-intent-model-best").resolve()),
     }
 
 # Örnek testler
@@ -60,8 +64,8 @@ tests = [
     ("افتح تطبيق انستغرام", "AR"),
 
     # ===== GO_HOME =====
-    ("ana sayfaya dön", "TR"),
-    ("ana ekrana git", "TR"),
+    ("ana sayfaya git", "TR"),
+    ("ana ekrana dön", "TR"),
     ("başlangıç ekranına dön", "TR"),
     ("go home", "EN"),
     ("go to home screen", "EN"),
