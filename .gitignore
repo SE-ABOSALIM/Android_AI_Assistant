@@ -1,1 +1,6 @@
-/Important_Documents/
+*.idea
+*.venv
+*venv
+Backup
+Important_Documents
+xlmr-intent-model-best
