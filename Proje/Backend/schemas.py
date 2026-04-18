@@ -1,3 +1,4 @@
+from typing import Any, Dict, List
 from pydantic import BaseModel, Field
 
 class PredictRequest(BaseModel):
@@ -6,7 +7,8 @@ class PredictRequest(BaseModel):
 
 class PredictResponse(BaseModel):
     input: str
-    predicted_label: str
-    confidence: float
+    intent: str
+    parameters: Dict[str, Any]
     accepted: bool
-    temperature: float
+    missing_slots: List[str]
+    raw_output: str
