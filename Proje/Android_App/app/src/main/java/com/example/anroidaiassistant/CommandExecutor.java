@@ -12,8 +12,8 @@ import android.provider.AlarmClock;
 import android.provider.MediaStore;
 import android.widget.Toast;
 
-import java.util.Calendar;
 import java.util.List;
+import java.util.Map;
 
 public class CommandExecutor {
 
@@ -29,29 +29,34 @@ public class CommandExecutor {
             return;
         }
 
-        String label = response.getPredicted_label();
-        String input = response.getInput().toLowerCase();
+        String intentLabel = response.getIntent();
         MyAccessibilityService service = MyAccessibilityService.getInstance();
 
-        switch (label) {
+        switch (intentLabel) {
             case "OPEN_APP":
-                handleOpenApp(input);
+                handleOpenApp(response.getParameterAsString("app_name"));
                 break;
             case "CLOSE_APP":
                 if (service != null) service.performBack();
                 break;
-            case "HOME_PAGE":
             case "GO_HOME":
+            case "HOME_PAGE":
                 if (service != null) service.performHome();
                 break;
             case "CLICK_ITEM":
-                if (service != null) handleButtonClick(input, service);
+                if (service != null) service.clickNodeByText(response.getParameterAsString("button_text"));
                 break;
             case "SCROLL_SCREEN":
-                if (service != null) service.scroll(input.contains("down") || input.contains("aşağı"));
+                if (service != null) {
+                    String direction = response.getParameterAsString("direction");
+                    service.scroll("down".equalsIgnoreCase(direction));
+                }
                 break;
             case "SWIPE_GESTURE":
-                if (service != null) handleSwipe(input, service);
+                if (service != null) {
+                    String direction = response.getParameterAsString("direction");
+                    handleSwipe(direction, service);
+                }
                 break;
             case "SHOW_RECENTS":
                 if (service != null) service.performRecents();
@@ -60,112 +65,99 @@ public class CommandExecutor {
                 if (service != null) service.performNotifications();
                 break;
             case "ADJUST_VOLUME":
-                handleVolume(input);
+                handleVolume(response.getParameterAsString("volume_action"));
                 break;
             case "SET_ALARM":
-                handleSetAlarm(input);
+                handleSetAlarm(response.getParameterAsString("time_text"));
+                break;
+            case "SET_TIMER":
+                handleSetTimer(response.getParameterAsInt("duration_seconds", 0));
                 break;
             case "TAKE_PHOTO":
                 handleTakePhoto();
                 break;
             case "CALL_CONTACT":
-                handleCall(input);
+                handleCall(response.getParameterAsString("contact_name"));
                 break;
             default:
-                Toast.makeText(context, "Unknown command: " + label, Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "Unknown command: " + intentLabel, Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void handleOpenApp(String input) {
+    private void handleOpenApp(String targetAppName) {
+        if (targetAppName == null || targetAppName.isEmpty()) return;
+
         PackageManager pm = context.getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
         List<ResolveInfo> pkgAppsList = pm.queryIntentActivities(mainIntent, 0);
 
-        // Remove trigger words from input to isolate the app name
-        String targetApp = input.toLowerCase()
-                .replace("aç", "")
-                .replace("open", "")
-                .replace("launch", "")
-                .replace("başlat", "")
-                .replace("uygulamasını", "")
-                .replace("uygulamayı", "")
-                .trim();
-
-        if (targetApp.isEmpty()) {
-            Toast.makeText(context, "Hangi uygulamayı açmamı istersiniz?", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         String bestMatchPackage = null;
-        int maxSimilarity = 0;
-
         for (ResolveInfo app : pkgAppsList) {
             String appLabel = app.loadLabel(pm).toString().toLowerCase();
-            
-            // Fuzzy match: if the label is part of input or input is part of label
-            if (appLabel.contains(targetApp) || targetApp.contains(appLabel)) {
-                if (appLabel.length() > maxSimilarity) {
-                    bestMatchPackage = app.activityInfo.packageName;
-                    maxSimilarity = appLabel.length();
-                }
+            if (appLabel.contains(targetAppName.toLowerCase()) || targetAppName.toLowerCase().contains(appLabel)) {
+                bestMatchPackage = app.activityInfo.packageName;
+                break;
             }
         }
 
         if (bestMatchPackage != null) {
-            openAppByPackageName(bestMatchPackage);
+            Intent intent = pm.getLaunchIntentForPackage(bestMatchPackage);
+            if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
+            }
         } else {
-            Toast.makeText(context, "Uygulama bulunamadı: " + targetApp, Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "App not found: " + targetAppName, Toast.LENGTH_SHORT).show();
         }
     }
 
-    private void handleButtonClick(String input, MyAccessibilityService service) {
-        String buttonName = input.replace("click", "").replace("bas", "").trim();
-        service.clickNodeByText(buttonName);
+    private void handleSwipe(String direction, MyAccessibilityService service) {
+        if ("left".equalsIgnoreCase(direction)) service.swipe(800, 1000, 200, 1000);
+        else if ("right".equalsIgnoreCase(direction)) service.swipe(200, 1000, 800, 1000);
+        else if ("up".equalsIgnoreCase(direction)) service.swipe(500, 1500, 500, 500);
+        else if ("down".equalsIgnoreCase(direction)) service.swipe(500, 500, 500, 1500);
     }
 
-    private void handleSwipe(String input, MyAccessibilityService service) {
-        if (input.contains("left") || input.contains("sol")) {
-            service.swipe(800, 1000, 200, 1000);
-        } else if (input.contains("right") || input.contains("sağ")) {
-            service.swipe(200, 1000, 800, 1000);
-        }
-    }
-
-    private void handleVolume(String input) {
+    private void handleVolume(String action) {
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        if (input.contains("up") || input.contains("arttır")) {
+        if ("increase".equalsIgnoreCase(action)) {
             audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
-        } else {
+        } else if ("decrease".equalsIgnoreCase(action)) {
             audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
         }
     }
 
-    private void handleSetAlarm(String input) {
-        Intent intent = new Intent(AlarmClock.ACTION_SET_ALARM)
-                .putExtra(AlarmClock.EXTRA_MESSAGE, "AI Assistant Alarm")
-                .putExtra(AlarmClock.EXTRA_HOUR, 8)
-                .putExtra(AlarmClock.EXTRA_MINUTES, 0);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+    private void handleSetAlarm(String time) {
+        if (time == null || !time.contains(":")) return;
+        try {
+            String[] parts = time.split(":");
+            Intent intent = new Intent(AlarmClock.ACTION_SET_ALARM)
+                    .putExtra(AlarmClock.EXTRA_HOUR, Integer.parseInt(parts[0]))
+                    .putExtra(AlarmClock.EXTRA_MINUTES, Integer.parseInt(parts[1]))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+        } catch (Exception e) {
+            Toast.makeText(context, "Error setting alarm", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void handleSetTimer(int seconds) {
+        if (seconds <= 0) return;
+        Intent intent = new Intent(AlarmClock.ACTION_SET_TIMER)
+                .putExtra(AlarmClock.EXTRA_LENGTH, seconds)
+                .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
 
     private void handleTakePhoto() {
-        Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
     }
 
-    private void handleCall(String input) {
-        Toast.makeText(context, "Arama özelliği henüz aktif değil.", Toast.LENGTH_SHORT).show();
-    }
-
-    private void openAppByPackageName(String packageName) {
-        PackageManager pm = context.getPackageManager();
-        Intent intent = pm.getLaunchIntentForPackage(packageName);
-        if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-        }
+    private void handleCall(String contactName) {
+        Toast.makeText(context, "Calling " + contactName, Toast.LENGTH_SHORT).show();
     }
 }

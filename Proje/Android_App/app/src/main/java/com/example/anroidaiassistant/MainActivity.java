@@ -143,7 +143,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateResultUI(PredictResponse response) {
         runOnUiThread(() -> {
-            String debugInfo = "Label: " + response.getPredicted_label() + "\n" +
+            String debugInfo = "Intent: " + response.getIntent() + "\n" +
+                             "Params: " + response.getParameters() + "\n" +
                              "Confidence: " + String.format("%.4f", response.getConfidence()) + "\n" +
                              "Accepted: " + response.isAccepted() + "\n" +
                              "Temp: " + response.getTemperature();
