@@ -19,7 +19,7 @@ if CALIBRATION_PATH.exists():
     with open(CALIBRATION_PATH, "r", encoding="utf-8") as f:
         temperature = float(json.load(f).get("temperature", 1.0))
 
-THRESHOLD = 0.70
+THRESHOLD = 0.50
 
 def predict_intent(text: str, language: str):
     model_input = f"[{language}] {text}"
