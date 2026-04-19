@@ -9,8 +9,7 @@ public class PredictResponse {
     
     @SerializedName("intent")
     private String intent;
-    
-    private double confidence;
+
     private boolean accepted;
     private double temperature;
     private Map<String, Object> parameters;
@@ -24,10 +23,6 @@ public class PredictResponse {
 
     public String getIntent() {
         return intent;
-    }
-
-    public double getConfidence() {
-        return confidence;
     }
 
     public boolean isAccepted() {

@@ -145,9 +145,7 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(() -> {
             String debugInfo = "Intent: " + response.getIntent() + "\n" +
                              "Params: " + response.getParameters() + "\n" +
-                             "Confidence: " + String.format("%.4f", response.getConfidence()) + "\n" +
-                             "Accepted: " + response.isAccepted() + "\n" +
-                             "Temp: " + response.getTemperature();
+                             "Accepted: " + response.isAccepted() + "\n";
             tvResult.setText(debugInfo);
         });
     }
