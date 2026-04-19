@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.text.TextUtils;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -58,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
                     service.updateLanguage(languages[position]);
                 }
             }
+
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
@@ -70,10 +70,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         checkOverlayPermission();
-        
         if (!isAccessibilityServiceEnabled()) {
             checkAccessibilityPermission();
         }
+        refreshListeningUiState();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshListeningUiState();
     }
 
     @Override
@@ -84,21 +90,33 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkOverlayPermission() {
         if (!Settings.canDrawOverlays(this)) {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName()));
+            Intent intent = new Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())
+            );
             startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
         }
     }
 
     private boolean isAccessibilityServiceEnabled() {
-        String enabledServices = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-        if (enabledServices == null) return false;
+        String enabledServices = Settings.Secure.getString(
+                getContentResolver(),
+                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+        );
+        if (enabledServices == null) {
+            return false;
+        }
 
-        return enabledServices.contains(getPackageName()) && enabledServices.contains(MyAccessibilityService.class.getSimpleName());
+        return enabledServices.contains(getPackageName())
+                && enabledServices.contains(MyAccessibilityService.class.getSimpleName());
     }
 
     private void checkAccessibilityPermission() {
-        Toast.makeText(this, "Lütfen Erişilebilirlik Servisini kapatıp tekrar açın.", Toast.LENGTH_LONG).show();
+        Toast.makeText(
+                this,
+                "Lutfen erisilebilirlik servisini kapatip tekrar acin.",
+                Toast.LENGTH_LONG
+        ).show();
         Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
         startActivity(intent);
     }
@@ -106,7 +124,10 @@ public class MainActivity extends AppCompatActivity {
     private void toggleListening() {
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, REQUEST_CODE_RECORD_AUDIO_PERMISSION);
+            requestPermissions(
+                    new String[]{android.Manifest.permission.RECORD_AUDIO},
+                    REQUEST_CODE_RECORD_AUDIO_PERMISSION
+            );
             return;
         }
 
@@ -121,31 +142,53 @@ public class MainActivity extends AppCompatActivity {
         }
 
         MyAccessibilityService service = MyAccessibilityService.getInstance();
-        if (service != null) {
-            if (!isServiceListening) {
-                service.startContinuousListening();
-                btnSpeak.setText("Durdur");
-                btnSpeak.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.RED));
-                tvResult.setText("Arka planda dinleniyor...");
-                isServiceListening = true;
-            } else {
-                service.stopContinuousListening();
-                btnSpeak.setText("Konuş (Başlat)");
-                btnSpeak.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#6200EE")));
-                tvResult.setText("Dinleme durduruldu.");
-                isServiceListening = false;
-            }
-        } else {
-            Toast.makeText(this, "Servis bağlı değil! Lütfen ayarlardan servisi KAPATIP tekrar AÇIN.", Toast.LENGTH_LONG).show();
+        if (service == null) {
+            Toast.makeText(
+                    this,
+                    "Servis bagli degil. Ayarlardan servisi kapatip tekrar acin.",
+                    Toast.LENGTH_LONG
+            ).show();
             checkAccessibilityPermission();
+            return;
+        }
+
+        if (!isServiceListening) {
+            service.startContinuousListening();
+            isServiceListening = true;
+        } else {
+            service.stopContinuousListening();
+            isServiceListening = false;
+        }
+
+        refreshListeningUiState();
+    }
+
+    private void refreshListeningUiState() {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        isServiceListening = service != null && service.isContinuousListeningActive();
+
+        if (isServiceListening) {
+            btnSpeak.setText("Durdur");
+            btnSpeak.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(android.graphics.Color.RED)
+            );
+            tvResult.setText("Arka planda dinleniyor...");
+        } else {
+            btnSpeak.setText("Konus (Baslat)");
+            btnSpeak.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(
+                            android.graphics.Color.parseColor("#6200EE")
+                    )
+            );
+            tvResult.setText("Dinleme durduruldu.");
         }
     }
 
     public void updateResultUI(PredictResponse response) {
         runOnUiThread(() -> {
-            String debugInfo = "Intent: " + response.getIntent() + "\n" +
-                             "Params: " + response.getParameters() + "\n" +
-                             "Accepted: " + response.isAccepted() + "\n";
+            String debugInfo = "Intent: " + response.getIntent() + "\n"
+                    + "Params: " + response.getParameters() + "\n"
+                    + "Accepted: " + response.isAccepted() + "\n";
             tvResult.setText(debugInfo);
         });
     }
@@ -154,7 +197,8 @@ public class MainActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == REQUEST_CODE_RECORD_AUDIO_PERMISSION) {
-            if (grantResults.length > 0 && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (grantResults.length > 0
+                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
                 toggleListening();
             } else {
                 Toast.makeText(this, "Mikrofon izni gerekli", Toast.LENGTH_SHORT).show();

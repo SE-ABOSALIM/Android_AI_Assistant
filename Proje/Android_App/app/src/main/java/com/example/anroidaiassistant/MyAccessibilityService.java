@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
+import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +14,7 @@ import android.os.Looper;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -30,18 +33,31 @@ import retrofit2.Response;
 public class MyAccessibilityService extends AccessibilityService {
 
     private static MyAccessibilityService instance;
+    private static final int RESTART_DELAY_FAST_MS = 200;
+    private static final int RESTART_DELAY_SLOW_MS = 800;
+    private static final long DEFAULT_GESTURE_DURATION_MS = 350L;
+    private static final int[] STREAMS_TO_MUTE = {
+            AudioManager.STREAM_SYSTEM,
+            AudioManager.STREAM_NOTIFICATION,
+            AudioManager.STREAM_MUSIC
+    };
+
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
     private boolean isListening = false;
+    private boolean isRecognitionSessionActive = false;
+    private boolean areRecognizerSoundsMuted = false;
     private String selectedLanguage = "TR";
     
     private ApiService apiService;
     private CommandExecutor commandExecutor;
+    private AudioManager audioManager;
 
     private WindowManager windowManager;
     private View overlayView;
     private TextView tvOverlayText;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Runnable restartListeningRunnable = this::startListeningSession;
 
     public static MyAccessibilityService getInstance() {
         return instance;
@@ -55,19 +71,31 @@ public class MyAccessibilityService extends AccessibilityService {
         apiService = RetrofitClient.getClient().create(ApiService.class);
         commandExecutor = new CommandExecutor(this);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         
         setupSpeechRecognizer();
         Toast.makeText(this, "Accessibility Service Connected", Toast.LENGTH_SHORT).show();
     }
 
     private void setupSpeechRecognizer() {
-        if (speechRecognizer != null) {
-            speechRecognizer.destroy();
+        destroySpeechRecognizer();
+
+        if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+            Toast.makeText(this, "Speech recognizer mevcut değil.", Toast.LENGTH_LONG).show();
+            return;
         }
-        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                && SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
+            speechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(this);
+        } else {
+            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
+        }
+
         speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
+        speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
         updateLanguage(selectedLanguage);
 
         speechRecognizer.setRecognitionListener(new RecognitionListener() {
@@ -86,17 +114,34 @@ public class MyAccessibilityService extends AccessibilityService {
 
             @Override
             public void onError(int error) {
-                if (isListening) {
-                    if (error == SpeechRecognizer.ERROR_RECOGNIZER_BUSY) {
-                        restartListening(500);
-                    } else {
-                        restartListening(1000);
-                    }
+                isRecognitionSessionActive = false;
+                if (!isListening) {
+                    return;
+                }
+
+                switch (error) {
+                    case SpeechRecognizer.ERROR_NO_MATCH:
+                    case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                    case SpeechRecognizer.ERROR_CLIENT:
+                        updateOverlayText("Listening...");
+                        scheduleListeningRestart(RESTART_DELAY_FAST_MS);
+                        break;
+                    case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                    case SpeechRecognizer.ERROR_SERVER:
+                    case SpeechRecognizer.ERROR_NETWORK:
+                    case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                        setupSpeechRecognizer();
+                        scheduleListeningRestart(RESTART_DELAY_SLOW_MS);
+                        break;
+                    default:
+                        scheduleListeningRestart(RESTART_DELAY_SLOW_MS);
+                        break;
                 }
             }
 
             @Override
             public void onResults(Bundle results) {
+                isRecognitionSessionActive = false;
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null && !matches.isEmpty()) {
                     String spokenText = matches.get(0);
@@ -104,7 +149,7 @@ public class MyAccessibilityService extends AccessibilityService {
                     sendPredictionRequest(spokenText);
                 }
                 if (isListening) {
-                    restartListening(500);
+                    scheduleListeningRestart(RESTART_DELAY_FAST_MS);
                 }
             }
 
@@ -120,17 +165,71 @@ public class MyAccessibilityService extends AccessibilityService {
         });
     }
 
-    private void restartListening(int delayMillis) {
-        mainHandler.postDelayed(() -> {
-            if (isListening && speechRecognizer != null) {
-                speechRecognizer.cancel();
-                speechRecognizer.startListening(speechRecognizerIntent);
-            }
-        }, delayMillis);
+    private void destroySpeechRecognizer() {
+        mainHandler.removeCallbacks(restartListeningRunnable);
+        isRecognitionSessionActive = false;
+
+        if (speechRecognizer == null) {
+            return;
+        }
+
+        try {
+            speechRecognizer.cancel();
+        } catch (Exception ignored) {}
+
+        speechRecognizer.destroy();
+        speechRecognizer = null;
+    }
+
+    private void startListeningSession() {
+        mainHandler.removeCallbacks(restartListeningRunnable);
+        if (!isListening || speechRecognizer == null || isRecognitionSessionActive) {
+            return;
+        }
+
+        try {
+            isRecognitionSessionActive = true;
+            speechRecognizer.startListening(speechRecognizerIntent);
+        } catch (Exception ignored) {
+            isRecognitionSessionActive = false;
+            setupSpeechRecognizer();
+            scheduleListeningRestart(RESTART_DELAY_SLOW_MS);
+        }
+    }
+
+    private void scheduleListeningRestart(int delayMillis) {
+        if (!isListening) {
+            return;
+        }
+
+        mainHandler.removeCallbacks(restartListeningRunnable);
+        mainHandler.postDelayed(restartListeningRunnable, delayMillis);
+    }
+
+    private void setRecognizerSoundsMuted(boolean muted) {
+        if (audioManager == null || areRecognizerSoundsMuted == muted) {
+            return;
+        }
+
+        for (int stream : STREAMS_TO_MUTE) {
+            try {
+                audioManager.adjustStreamVolume(
+                        stream,
+                        muted ? AudioManager.ADJUST_MUTE : AudioManager.ADJUST_UNMUTE,
+                        0
+                );
+            } catch (Exception ignored) {}
+        }
+
+        areRecognizerSoundsMuted = muted;
     }
 
     public void updateLanguage(String lang) {
         this.selectedLanguage = lang;
+        if (speechRecognizerIntent == null) {
+            return;
+        }
+
         if (lang.equals("TR")) {
             speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "tr-TR");
         } else if (lang.equals("EN")) {
@@ -141,19 +240,28 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public void startContinuousListening() {
+        mainHandler.removeCallbacks(restartListeningRunnable);
         isListening = true;
+        setRecognizerSoundsMuted(true);
         showOverlay();
-        if (speechRecognizer != null) {
-            speechRecognizer.cancel();
-            speechRecognizer.startListening(speechRecognizerIntent);
+        if (speechRecognizer == null) {
+            setupSpeechRecognizer();
         }
+        startListeningSession();
     }
 
     public void stopContinuousListening() {
         isListening = false;
+        mainHandler.removeCallbacks(restartListeningRunnable);
+        setRecognizerSoundsMuted(false);
+        isRecognitionSessionActive = false;
         if (speechRecognizer != null) {
-            speechRecognizer.stopListening();
-            speechRecognizer.cancel();
+            try {
+                speechRecognizer.stopListening();
+            } catch (Exception ignored) {}
+            try {
+                speechRecognizer.cancel();
+            } catch (Exception ignored) {}
         }
         hideOverlay();
     }
@@ -224,10 +332,13 @@ public class MyAccessibilityService extends AccessibilityService {
     public void onDestroy() {
         super.onDestroy();
         hideOverlay();
-        if (speechRecognizer != null) {
-            speechRecognizer.destroy();
-        }
+        setRecognizerSoundsMuted(false);
+        destroySpeechRecognizer();
         instance = null;
+    }
+
+    public boolean isContinuousListeningActive() {
+        return isListening;
     }
 
     public void performHome() { performGlobalAction(GLOBAL_ACTION_HOME); }
@@ -247,15 +358,42 @@ public class MyAccessibilityService extends AccessibilityService {
         }
     }
 
-    public void scroll(boolean forward) {
+    public boolean scroll(String direction) {
+        String normalizedDirection = normalizeDirection(direction);
+        if ("down".equals(normalizedDirection)) {
+            return scroll(true);
+        }
+        if ("up".equals(normalizedDirection)) {
+            return scroll(false);
+        }
+        return false;
+    }
+
+    public boolean scroll(boolean forward) {
         AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        if (rootNode == null) return;
-        findAndScroll(rootNode, forward);
+        boolean didScroll = rootNode != null && findAndScroll(rootNode, forward);
+        if (didScroll) {
+            return true;
+        }
+
+        // Some apps do not expose scrollable nodes correctly, so fall back to a real gesture.
+        return swipe(forward ? "up" : "down");
     }
 
     private boolean findAndScroll(AccessibilityNodeInfo node, boolean forward) {
+        if (node == null) {
+            return false;
+        }
+
         if (node.isScrollable()) {
-            return node.performAction(forward ? AccessibilityNodeInfo.ACTION_SCROLL_FORWARD : AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+            boolean didScroll = node.performAction(
+                    forward
+                            ? AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+                            : AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
+            );
+            if (didScroll) {
+                return true;
+            }
         }
         for (int i = 0; i < node.getChildCount(); i++) {
             AccessibilityNodeInfo child = node.getChild(i);
@@ -264,12 +402,61 @@ public class MyAccessibilityService extends AccessibilityService {
         return false;
     }
 
-    public void swipe(int startX, int startY, int endX, int endY) {
+    public boolean swipe(String direction) {
+        switch (normalizeDirection(direction)) {
+            case "left":
+                return swipeByRatio(0.85f, 0.5f, 0.15f, 0.5f, DEFAULT_GESTURE_DURATION_MS);
+            case "right":
+                return swipeByRatio(0.15f, 0.5f, 0.85f, 0.5f, DEFAULT_GESTURE_DURATION_MS);
+            case "up":
+                return swipeByRatio(0.5f, 0.8f, 0.5f, 0.2f, DEFAULT_GESTURE_DURATION_MS);
+            case "down":
+                return swipeByRatio(0.5f, 0.2f, 0.5f, 0.8f, DEFAULT_GESTURE_DURATION_MS);
+            default:
+                return false;
+        }
+    }
+
+    private String normalizeDirection(String direction) {
+        if (direction == null) {
+            return "";
+        }
+        return direction.trim().toLowerCase(Locale.US);
+    }
+
+    private boolean swipeByRatio(
+            float startXRatio,
+            float startYRatio,
+            float endXRatio,
+            float endYRatio,
+            long durationMillis
+    ) {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+
+        if (width <= 0 || height <= 0) {
+            return false;
+        }
+
+        int startX = clamp(Math.round(width * startXRatio), 1, width - 1);
+        int startY = clamp(Math.round(height * startYRatio), 1, height - 1);
+        int endX = clamp(Math.round(width * endXRatio), 1, width - 1);
+        int endY = clamp(Math.round(height * endYRatio), 1, height - 1);
+
+        return swipe(startX, startY, endX, endY, durationMillis);
+    }
+
+    private int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    private boolean swipe(int startX, int startY, int endX, int endY, long durationMillis) {
         Path swipePath = new Path();
         swipePath.moveTo(startX, startY);
         swipePath.lineTo(endX, endY);
         GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
-        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(swipePath, 0, 500));
-        dispatchGesture(gestureBuilder.build(), null, null);
+        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(swipePath, 0, durationMillis));
+        return dispatchGesture(gestureBuilder.build(), null, null);
     }
 }

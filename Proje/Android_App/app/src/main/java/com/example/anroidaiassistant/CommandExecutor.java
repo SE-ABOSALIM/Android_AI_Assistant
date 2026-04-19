@@ -13,6 +13,7 @@ import android.provider.MediaStore;
 import android.widget.Toast;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CommandExecutor {
@@ -48,14 +49,18 @@ public class CommandExecutor {
                 break;
             case "SCROLL_SCREEN":
                 if (service != null) {
-                    String direction = response.getParameterAsString("direction");
-                    service.scroll("down".equalsIgnoreCase(direction));
+                    String direction = normalizeDirection(response.getParameterAsString("direction"));
+                    if (!service.scroll(direction)) {
+                        Toast.makeText(context, "Scroll direction not supported", Toast.LENGTH_SHORT).show();
+                    }
                 }
                 break;
             case "SWIPE_GESTURE":
                 if (service != null) {
-                    String direction = response.getParameterAsString("direction");
-                    handleSwipe(direction, service);
+                    String direction = normalizeDirection(response.getParameterAsString("direction"));
+                    if (!service.swipe(direction)) {
+                        Toast.makeText(context, "Swipe direction not supported", Toast.LENGTH_SHORT).show();
+                    }
                 }
                 break;
             case "SHOW_RECENTS":
@@ -112,11 +117,11 @@ public class CommandExecutor {
         }
     }
 
-    private void handleSwipe(String direction, MyAccessibilityService service) {
-        if ("left".equalsIgnoreCase(direction)) service.swipe(800, 1000, 200, 1000);
-        else if ("right".equalsIgnoreCase(direction)) service.swipe(200, 1000, 800, 1000);
-        else if ("up".equalsIgnoreCase(direction)) service.swipe(500, 1500, 500, 500);
-        else if ("down".equalsIgnoreCase(direction)) service.swipe(500, 500, 500, 1500);
+    private String normalizeDirection(String direction) {
+        if (direction == null) {
+            return "";
+        }
+        return direction.trim().toLowerCase(Locale.US);
     }
 
     private void handleVolume(String action) {
