@@ -1,0 +1,201 @@
+{"text": "WhatsApp aç", "language": "TR"}
+
+{"text": "YouTube aç", "language": "TR"}
+
+{"text": "uygulamayı aç", "language": "TR"}
+
+{"text": "bir uygulama aç", "language": "TR"}
+
+{"text": "Ahmet'e mesaj gönder", "language": "TR"}
+
+{"text": "Ayşe'ye selam yaz", "language": "TR"}
+
+{"text": "mesaj gönder", "language": "TR"}
+
+{"text": "birine mesaj at", "language": "TR"}
+
+{"text": "merhaba diye mesaj gönder", "language": "TR"}
+
+{"text": "nasılsın yaz ve gönder", "language": "TR"}
+
+{"text": "alarm kur", "language": "TR"}
+
+{"text": "alarm ayarla", "language": "TR"}
+
+{"text": "yarın sabah 7 için alarm kur", "language": "TR"}
+
+{"text": "akşam 10 için alarm ayarla", "language": "TR"}
+
+{"text": "ara", "language": "TR"}
+
+{"text": "birini ara", "language": "TR"}
+
+{"text": "Ahmet'i ara", "language": "TR"}
+
+{"text": "Mehmet'i ara", "language": "TR"}
+
+{"text": "yaz", "language": "TR"}
+
+{"text": "metin yaz", "language": "TR"}
+
+{"text": "merhaba yaz", "language": "TR"}
+
+{"text": "selam yaz", "language": "TR"}
+
+{"text": "arama yap", "language": "TR"}
+
+{"text": "internette ara", "language": "TR"}
+
+{"text": "yakındaki restoranları ara", "language": "TR"}
+
+{"text": "hava durumunu ara", "language": "TR"}
+
+{"text": "sesi aç", "language": "TR"}
+
+{"text": "sesi kapat", "language": "TR"}
+
+{"text": "sesi biraz artır", "language": "TR"}
+
+{"text": "sesi biraz azalt", "language": "TR"}
+
+{"text": "geri git", "language": "TR"}
+
+{"text": "ana ekrana dön", "language": "TR"}
+
+{"text": "aşağı kaydır", "language": "TR"}
+
+{"text": "yukarı kaydır", "language": "TR"}
+
+{"text": "sağa kaydır", "language": "TR"}
+
+{"text": "sola kaydır", "language": "TR"}
+
+{"text": "open YouTube", "language": "EN"}
+
+{"text": "open WhatsApp", "language": "EN"}
+
+{"text": "open the app", "language": "EN"}
+
+{"text": "open an application", "language": "EN"}
+
+{"text": "send message", "language": "EN"}
+
+{"text": "send a message", "language": "EN"}
+
+{"text": "send a message to John", "language": "EN"}
+
+{"text": "send a message to Sarah", "language": "EN"}
+
+{"text": "send a message saying hello", "language": "EN"}
+
+{"text": "text hello to John", "language": "EN"}
+
+{"text": "set alarm", "language": "EN"}
+
+{"text": "set an alarm", "language": "EN"}
+
+{"text": "set alarm for 7 am", "language": "EN"}
+
+{"text": "set alarm for tomorrow morning", "language": "EN"}
+
+{"text": "call", "language": "EN"}
+
+{"text": "make a call", "language": "EN"}
+
+{"text": "call Sarah", "language": "EN"}
+
+{"text": "call John", "language": "EN"}
+
+{"text": "write", "language": "EN"}
+
+{"text": "type text", "language": "EN"}
+
+{"text": "write hello", "language": "EN"}
+
+{"text": "type good morning", "language": "EN"}
+
+{"text": "search", "language": "EN"}
+
+{"text": "do a search", "language": "EN"}
+
+{"text": "search for restaurants", "language": "EN"}
+
+{"text": "search weather today", "language": "EN"}
+
+{"text": "increase volume", "language": "EN"}
+
+{"text": "decrease volume", "language": "EN"}
+
+{"text": "mute volume", "language": "EN"}
+
+{"text": "unmute volume", "language": "EN"}
+
+{"text": "go back", "language": "EN"}
+
+{"text": "go home", "language": "EN"}
+
+{"text": "scroll down", "language": "EN"}
+
+{"text": "scroll up", "language": "EN"}
+
+{"text": "swipe right", "language": "EN"}
+
+{"text": "swipe left", "language": "EN"}
+
+{"text": "افتح واتساب", "language": "AR"}
+
+{"text": "افتح يوتيوب", "language": "AR"}
+
+{"text": "افتح التطبيق", "language": "AR"}
+
+{"text": "افتح تطبيق", "language": "AR"}
+
+{"text": "أرسل رسالة", "language": "AR"}
+
+{"text": "أرسل رسالة إلى أحمد", "language": "AR"}
+
+{"text": "أرسل رسالة إلى محمد", "language": "AR"}
+
+{"text": "أرسل رسالة قل فيها مرحبا", "language": "AR"}
+
+{"text": "اكتب مرحبا", "language": "AR"}
+
+{"text": "اكتب رسالة", "language": "AR"}
+
+{"text": "اضبط منبه", "language": "AR"}
+
+{"text": "اضبط منبه للساعة 7 صباحا", "language": "AR"}
+
+{"text": "اضبط منبه غدا صباحا", "language": "AR"}
+
+{"text": "اتصل", "language": "AR"}
+
+{"text": "اتصل بأحمد", "language": "AR"}
+
+{"text": "اتصل بمحمد", "language": "AR"}
+
+{"text": "ابحث", "language": "AR"}
+
+{"text": "ابحث عن مطاعم قريبة", "language": "AR"}
+
+{"text": "ابحث عن الطقس اليوم", "language": "AR"}
+
+{"text": "ارفع الصوت", "language": "AR"}
+
+{"text": "اخفض الصوت", "language": "AR"}
+
+{"text": "اكتم الصوت", "language": "AR"}
+
+{"text": "الغاء كتم الصوت", "language": "AR"}
+
+{"text": "ارجع", "language": "AR"}
+
+{"text": "اذهب إلى الصفحة الرئيسية", "language": "AR"}
+
+{"text": "مرر للأسفل", "language": "AR"}
+
+{"text": "مرر للأعلى", "language": "AR"}
+
+{"text": "اسحب لليمين", "language": "AR"}
+
+{"text": "اسحب لليسار", "language": "AR"}
