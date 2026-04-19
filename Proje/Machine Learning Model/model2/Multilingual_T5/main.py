@@ -17,7 +17,7 @@ from transformers import (
 BASE_DIR = Path(__file__).resolve().parent
 os.chdir(BASE_DIR)
 
-DATASET_PATH = "../Optimized-Expanded-Dataset-joint-nlu.xlsx"
+DATASET_PATH = "../Optimized-Expanded-Dataset-joint-nlu2.xlsx"
 SHEET_NAME = "Joint_NLU_Ready"
 
 MODEL_NAME = "google/mt5-small"
