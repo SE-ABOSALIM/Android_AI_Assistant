@@ -90,11 +90,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkOverlayPermission() {
         if (!Settings.canDrawOverlays(this)) {
-            Intent intent = new Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName())
-            );
-            startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
+            // Intent intent = new Intent(
+            //         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            //         Uri.parse("package:" + getPackageName())
+            // );
+            // startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
         }
     }
 
@@ -117,8 +117,8 @@ public class MainActivity extends AppCompatActivity {
                 "Lutfen erisilebilirlik servisini kapatip tekrar acin.",
                 Toast.LENGTH_LONG
         ).show();
-        Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-        startActivity(intent);
+        // Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
+        // startActivity(intent);
     }
 
     private void toggleListening() {

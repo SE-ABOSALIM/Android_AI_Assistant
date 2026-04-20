@@ -12,6 +12,7 @@ public class PredictResponse {
 
     private boolean accepted;
     private double temperature;
+    @SerializedName(value = "parameters", alternate = {"params", "Params"})
     private Map<String, Object> parameters;
     
     @SerializedName("missing_slots")

@@ -11,6 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -36,6 +37,10 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final int RESTART_DELAY_FAST_MS = 200;
     private static final int RESTART_DELAY_SLOW_MS = 800;
     private static final long DEFAULT_GESTURE_DURATION_MS = 350L;
+    private static final long DEFAULT_SCROLL_DURATION_MS = 450L;
+    private static final long PHOTO_CAPTURE_START_DELAY_MS = 1000L;
+    private static final long PHOTO_CAPTURE_RETRY_DELAY_MS = 450L;
+    private static final int MAX_PHOTO_CAPTURE_ATTEMPTS = 4;
     private static final int[] STREAMS_TO_MUTE = {
             AudioManager.STREAM_SYSTEM,
             AudioManager.STREAM_NOTIFICATION,
@@ -358,48 +363,122 @@ public class MyAccessibilityService extends AccessibilityService {
         }
     }
 
-    public boolean scroll(String direction) {
-        String normalizedDirection = normalizeDirection(direction);
-        if ("down".equals(normalizedDirection)) {
-            return scroll(true);
-        }
-        if ("up".equals(normalizedDirection)) {
-            return scroll(false);
-        }
-        return false;
-    }
-
-    public boolean scroll(boolean forward) {
-        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        boolean didScroll = rootNode != null && findAndScroll(rootNode, forward);
-        if (didScroll) {
+    public boolean capturePhoto() {
+        try {
+            Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            schedulePhotoCaptureAttempt(1, PHOTO_CAPTURE_START_DELAY_MS);
             return true;
+        } catch (Exception e) {
+            return false;
         }
-
-        // Some apps do not expose scrollable nodes correctly, so fall back to a real gesture.
-        return swipe(forward ? "up" : "down");
     }
 
-    private boolean findAndScroll(AccessibilityNodeInfo node, boolean forward) {
+    private void schedulePhotoCaptureAttempt(int attempt, long delayMillis) {
+        mainHandler.postDelayed(() -> tryCapturePhoto(attempt), delayMillis);
+    }
+
+    private void tryCapturePhoto(int attempt) {
+        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+        if (rootNode != null && clickCameraShutter(rootNode)) {
+            return;
+        }
+
+        if (attempt < MAX_PHOTO_CAPTURE_ATTEMPTS) {
+            schedulePhotoCaptureAttempt(attempt + 1, PHOTO_CAPTURE_RETRY_DELAY_MS);
+            return;
+        }
+
+        tapByRatio(0.50f, 0.87f);
+    }
+
+    private boolean clickCameraShutter(AccessibilityNodeInfo node) {
         if (node == null) {
             return false;
         }
 
-        if (node.isScrollable()) {
-            boolean didScroll = node.performAction(
-                    forward
-                            ? AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
-                            : AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD
-            );
-            if (didScroll) {
+        if (isCameraShutterNode(node)) {
+            AccessibilityNodeInfo clickableNode = findClickableNode(node);
+            if (clickableNode != null && clickableNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
                 return true;
             }
         }
+
         for (int i = 0; i < node.getChildCount(); i++) {
             AccessibilityNodeInfo child = node.getChild(i);
-            if (child != null && findAndScroll(child, forward)) return true;
+            if (child != null && clickCameraShutter(child)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isCameraShutterNode(AccessibilityNodeInfo node) {
+        return containsCameraKeyword(node.getViewIdResourceName())
+                || containsCameraKeyword(node.getText())
+                || containsCameraKeyword(node.getContentDescription());
+    }
+
+    private boolean containsCameraKeyword(CharSequence value) {
+        if (value == null) {
+            return false;
+        }
+
+        String normalizedValue = value.toString().trim().toLowerCase(Locale.US);
+        return normalizedValue.contains("shutter")
+                || normalizedValue.contains("capture")
+                || normalizedValue.contains("take picture")
+                || normalizedValue.contains("take photo")
+                || normalizedValue.contains("camera_button")
+                || normalizedValue.contains("foto")
+                || normalizedValue.contains("cek");
+    }
+
+    private AccessibilityNodeInfo findClickableNode(AccessibilityNodeInfo node) {
+        AccessibilityNodeInfo current = node;
+        while (current != null) {
+            if (current.isClickable()) {
+                return current;
+            }
+            current = current.getParent();
+        }
+        return null;
+    }
+
+    public boolean scroll(String direction) {
+        String normalizedDirection = normalizeDirection(direction);
+        if ("down".equals(normalizedDirection)) {
+            return scrollDown();
+        }
+        if ("up".equals(normalizedDirection)) {
+            return scrollUp();
         }
         return false;
+    }
+
+    private boolean scrollDown() {
+        return scrollByRatio(0.50f, 0.78f, 0.50f, 0.24f);
+    }
+
+    private boolean scrollUp() {
+        return scrollByRatio(0.50f, 0.24f, 0.50f, 0.78f);
+    }
+
+    private boolean scrollByRatio(
+            float startXRatio,
+            float startYRatio,
+            float endXRatio,
+            float endYRatio
+    ) {
+        return swipeByRatio(
+                startXRatio,
+                startYRatio,
+                endXRatio,
+                endYRatio,
+                DEFAULT_SCROLL_DURATION_MS
+        );
     }
 
     public boolean swipe(String direction) {
@@ -408,10 +487,6 @@ public class MyAccessibilityService extends AccessibilityService {
                 return swipeByRatio(0.85f, 0.5f, 0.15f, 0.5f, DEFAULT_GESTURE_DURATION_MS);
             case "right":
                 return swipeByRatio(0.15f, 0.5f, 0.85f, 0.5f, DEFAULT_GESTURE_DURATION_MS);
-            case "up":
-                return swipeByRatio(0.5f, 0.8f, 0.5f, 0.2f, DEFAULT_GESTURE_DURATION_MS);
-            case "down":
-                return swipeByRatio(0.5f, 0.2f, 0.5f, 0.8f, DEFAULT_GESTURE_DURATION_MS);
             default:
                 return false;
         }
@@ -447,8 +522,30 @@ public class MyAccessibilityService extends AccessibilityService {
         return swipe(startX, startY, endX, endY, durationMillis);
     }
 
+    private boolean tapByRatio(float xRatio, float yRatio) {
+        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+
+        if (width <= 0 || height <= 0) {
+            return false;
+        }
+
+        int x = clamp(Math.round(width * xRatio), 1, width - 1);
+        int y = clamp(Math.round(height * yRatio), 1, height - 1);
+        return tap(x, y);
+    }
+
     private int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private boolean tap(int x, int y) {
+        Path tapPath = new Path();
+        tapPath.moveTo(x, y);
+        GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
+        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(tapPath, 0, 60L));
+        return dispatchGesture(gestureBuilder.build(), null, null);
     }
 
     private boolean swipe(int startX, int startY, int endX, int endY, long durationMillis) {

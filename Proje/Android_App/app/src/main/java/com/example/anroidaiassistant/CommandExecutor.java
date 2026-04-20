@@ -157,6 +157,11 @@ public class CommandExecutor {
     }
 
     private void handleTakePhoto() {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service != null && service.capturePhoto()) {
+            return;
+        }
+
         Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
