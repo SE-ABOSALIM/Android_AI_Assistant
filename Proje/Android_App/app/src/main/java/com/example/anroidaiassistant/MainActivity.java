@@ -12,6 +12,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
@@ -20,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvResult;
     private Button btnSpeak;
     private boolean isServiceListening = false;
+    private AlertDialog spellingSuggestionDialog;
 
     private static MainActivity instance;
 
@@ -186,6 +188,37 @@ public class MainActivity extends AppCompatActivity {
 
     public void syncListeningUiState() {
         runOnUiThread(this::refreshListeningUiState);
+    }
+
+    public void showSpellingSuggestionDialog() {
+        runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+            if (spellingSuggestionDialog != null && spellingSuggestionDialog.isShowing()) {
+                return;
+            }
+
+            spellingSuggestionDialog = new AlertDialog.Builder(this)
+                    .setTitle("Uygulamayi acamiyor musun?")
+                    .setMessage(
+                            "Uygulama adini harf harf soylemeyi dene.\n\n"
+                                    + "Can't open the app?\n"
+                                    + "Try spelling the app name letter by letter."
+                    )
+                    .setPositiveButton("Try spelling", (dialog, which) -> {
+                        MyAccessibilityService service = MyAccessibilityService.getInstance();
+                        if (service != null) {
+                            service.enableSpellAppMode();
+                            tvResult.setText("Spell mode aktif. Uygulama adini harf harf soyle.");
+                        }
+                    })
+                    .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                    .create();
+
+            spellingSuggestionDialog.setOnDismissListener(dialog -> spellingSuggestionDialog = null);
+            spellingSuggestionDialog.show();
+        });
     }
 
     public void updateResultUI(PredictResponse response) {

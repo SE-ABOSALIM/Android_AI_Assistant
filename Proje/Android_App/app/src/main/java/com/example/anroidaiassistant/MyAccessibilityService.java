@@ -50,6 +50,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private SpeechRecognizer speechRecognizer;
     private Intent speechRecognizerIntent;
     private boolean isListening = false;
+    private boolean isSpellAppMode = false;
     private boolean isRecognitionSessionActive = false;
     private boolean areRecognizerSoundsMuted = false;
     private String selectedLanguage = "TR";
@@ -151,7 +152,13 @@ public class MyAccessibilityService extends AccessibilityService {
                 if (matches != null && !matches.isEmpty()) {
                     String spokenText = matches.get(0);
                     updateOverlayText("Input: " + spokenText);
-                    sendPredictionRequest(spokenText);
+                    if (consumeSpellAppMode()) {
+                        if (commandExecutor != null) {
+                            commandExecutor.handleSpelledAppCandidate(spokenText);
+                        }
+                    } else {
+                        sendPredictionRequest(spokenText);
+                    }
                 }
                 if (isListening) {
                     scheduleListeningRestart(RESTART_DELAY_FAST_MS);
@@ -257,6 +264,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public void stopContinuousListening() {
         isListening = false;
+        isSpellAppMode = false;
         mainHandler.removeCallbacks(restartListeningRunnable);
         setRecognizerSoundsMuted(false);
         isRecognitionSessionActive = false;
@@ -344,6 +352,17 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean isContinuousListeningActive() {
         return isListening;
+    }
+
+    public void enableSpellAppMode() {
+        isSpellAppMode = true;
+        updateOverlayText("Spell app name...");
+    }
+
+    private boolean consumeSpellAppMode() {
+        boolean shouldConsume = isSpellAppMode;
+        isSpellAppMode = false;
+        return shouldConsume;
     }
 
     public void performHome() { performGlobalAction(GLOBAL_ACTION_HOME); }

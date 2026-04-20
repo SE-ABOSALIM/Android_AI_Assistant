@@ -20,6 +20,7 @@ import java.util.Set;
 public class CommandExecutor {
 
     private final Context context;
+    private int openAppFailureCount = 0;
 
     public CommandExecutor(Context context) {
         this.context = context;
@@ -94,28 +95,78 @@ public class CommandExecutor {
     }
 
     private void handleOpenApp(PredictResponse response) {
-        String rawAppCandidate = firstNonEmpty(
-                response.getParameterAsString("app_name"),
+        String appName = response.getParameterAsString("app_name");
+        String joinedAppName = response.getParameterAsString("app_name_joined");
+        boolean isSpelled = isTruthy(response.getParameterAsString("app_name_is_spelled"));
+
+        String displayAppCandidate = firstNonEmpty(
+                appName,
+                joinedAppName,
                 response.getParameterAsString("app_name_original_normalized"),
                 response.getParameterAsString("app_name_ascii"),
                 response.getParameterAsString("app_name_normalized")
         );
-        if (rawAppCandidate == null || rawAppCandidate.isEmpty()) {
-            return;
-        }
+
+        String spelledCandidate = firstNonEmpty(joinedAppName, joinSpelledCandidate(appName));
+        String rawAppCandidate = firstNonEmpty(
+                (isSpelled || hasText(joinedAppName)) ? spelledCandidate : null,
+                appName,
+                response.getParameterAsString("app_name_original_normalized"),
+                response.getParameterAsString("app_name_ascii"),
+                response.getParameterAsString("app_name_normalized")
+        );
 
         String candidateOriginalNormalized = normalizeText(
-                firstNonEmpty(response.getParameterAsString("app_name_original_normalized"), rawAppCandidate)
+                firstNonEmpty(
+                        (isSpelled || hasText(joinedAppName)) ? rawAppCandidate : null,
+                        response.getParameterAsString("app_name_original_normalized"),
+                        rawAppCandidate
+                )
         );
         String candidateAscii = normalizeAsciiText(
-                firstNonEmpty(response.getParameterAsString("app_name_ascii"), candidateOriginalNormalized)
+                firstNonEmpty(
+                        (isSpelled || hasText(joinedAppName)) ? rawAppCandidate : null,
+                        response.getParameterAsString("app_name_ascii"),
+                        candidateOriginalNormalized
+                )
         );
         String candidateCompact = normalizeAppCandidate(
-                firstNonEmpty(response.getParameterAsString("app_name_normalized"), rawAppCandidate)
+                firstNonEmpty(
+                        (isSpelled || hasText(joinedAppName)) ? rawAppCandidate : null,
+                        response.getParameterAsString("app_name_normalized"),
+                        rawAppCandidate
+                )
         );
 
-        if (candidateCompact.isEmpty()) {
-            Toast.makeText(context, "App not found: " + rawAppCandidate, Toast.LENGTH_SHORT).show();
+        openBestMatchingApp(
+                rawAppCandidate,
+                displayAppCandidate,
+                candidateOriginalNormalized,
+                candidateAscii,
+                candidateCompact
+        );
+    }
+
+    public void handleSpelledAppCandidate(String spokenText) {
+        String joinedCandidate = joinSpelledCandidate(spokenText);
+        openBestMatchingApp(
+                joinedCandidate,
+                spokenText,
+                normalizeText(joinedCandidate),
+                normalizeAsciiText(joinedCandidate),
+                normalizeAppCandidate(joinedCandidate)
+        );
+    }
+
+    private void openBestMatchingApp(
+            String rawAppCandidate,
+            String displayAppCandidate,
+            String candidateOriginalNormalized,
+            String candidateAscii,
+            String candidateCompact
+    ) {
+        if (!hasText(rawAppCandidate) || !hasText(candidateCompact)) {
+            onOpenAppFailure(firstNonEmpty(displayAppCandidate, rawAppCandidate));
             return;
         }
 
@@ -144,12 +195,15 @@ public class CommandExecutor {
             Intent intent = pm.getLaunchIntentForPackage(bestMatchPackage);
             if (intent != null) {
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(intent);
-                return;
+                try {
+                    context.startActivity(intent);
+                    resetOpenAppFailureCount();
+                    return;
+                } catch (Exception ignored) {}
             }
         }
 
-        Toast.makeText(context, "App not found: " + rawAppCandidate, Toast.LENGTH_SHORT).show();
+        onOpenAppFailure(firstNonEmpty(displayAppCandidate, rawAppCandidate));
     }
 
     private String normalizeDirection(String direction) {
@@ -188,6 +242,13 @@ public class CommandExecutor {
     }
 
     private String normalizeAppCandidate(String text) {
+        return normalizeAsciiText(text).replace(" ", "");
+    }
+
+    private String joinSpelledCandidate(String text) {
+        if (!hasText(text)) {
+            return null;
+        }
         return normalizeAsciiText(text).replace(" ", "");
     }
 
@@ -319,6 +380,36 @@ public class CommandExecutor {
             }
         }
         return null;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private boolean isTruthy(String value) {
+        return "true".equalsIgnoreCase(value)
+                || "1".equals(value)
+                || "yes".equalsIgnoreCase(value);
+    }
+
+    private void resetOpenAppFailureCount() {
+        openAppFailureCount = 0;
+    }
+
+    private void onOpenAppFailure(String appCandidate) {
+        openAppFailureCount++;
+        Toast.makeText(
+                context,
+                "App not found: " + firstNonEmpty(appCandidate, "unknown"),
+                Toast.LENGTH_SHORT
+        ).show();
+
+        if (openAppFailureCount == 2 || openAppFailureCount == 3) {
+            MainActivity mainActivity = MainActivity.getInstance();
+            if (mainActivity != null) {
+                mainActivity.showSpellingSuggestionDialog();
+            }
+        }
     }
 
     private void handleVolume(String action) {
