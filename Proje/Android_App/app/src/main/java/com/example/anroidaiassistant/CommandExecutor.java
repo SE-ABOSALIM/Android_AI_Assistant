@@ -81,6 +81,9 @@ public class CommandExecutor {
             case "TAKE_PHOTO":
                 handleTakePhoto();
                 break;
+            case "ASSISTANT_CONTROL":
+                handleAssistantControl(response.getParameterAsString("assistant_action"));
+                break;
             case "CALL_CONTACT":
                 handleCall(response.getParameterAsString("contact_name"));
                 break;
@@ -165,6 +168,23 @@ public class CommandExecutor {
         Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         context.startActivity(intent);
+    }
+
+    private void handleAssistantControl(String assistantAction) {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null) {
+            return;
+        }
+
+        String normalizedAction = normalizeDirection(assistantAction);
+        if ("stop_listening".equals(normalizedAction)) {
+            service.stopContinuousListening();
+
+            MainActivity mainActivity = MainActivity.getInstance();
+            if (mainActivity != null) {
+                mainActivity.syncListeningUiState();
+            }
+        }
     }
 
     private void handleCall(String contactName) {

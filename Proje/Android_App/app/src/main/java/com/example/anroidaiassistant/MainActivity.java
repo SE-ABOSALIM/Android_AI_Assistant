@@ -184,6 +184,10 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void syncListeningUiState() {
+        runOnUiThread(this::refreshListeningUiState);
+    }
+
     public void updateResultUI(PredictResponse response) {
         runOnUiThread(() -> {
             String debugInfo = "Intent: " + response.getIntent() + "\n"
