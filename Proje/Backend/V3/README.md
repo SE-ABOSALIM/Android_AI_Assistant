@@ -1,0 +1,26 @@
+# Android Assistant Backend Refactored
+
+Run:
+
+```bash
+uvicorn main:app --host 127.0.0.1 --port 8001
+```
+
+Expected structure:
+
+```text
+V3/
+├── main.py
+├── config.py
+├── schemas.py
+├── result_model/
+└── services/
+    ├── __init__.py
+    ├── text_utils.py
+    ├── thresholds.py
+    ├── model_service.py
+    ├── rule_service.py
+    ├── extractors.py
+    ├── validator.py
+    └── predict_service.py
+```
