@@ -7,7 +7,7 @@ public class RetrofitClient {
 
     // BURAYI KENDI PC IP ADRESINE GORE DEGISTIR
     // sondaki / olacak
-    private static final String BASE_URL = "http://10.245.3.102:8000/";
+    private static final String BASE_URL = "http://10.245.4.38:8000/";
 
     private static Retrofit retrofit;
 

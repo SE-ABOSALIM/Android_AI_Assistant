@@ -6,7 +6,7 @@ import torch
 from transformers import AutoTokenizer, MT5ForConditionalGeneration
 
 BASE_DIR = Path(__file__).resolve().parent
-MODEL_PATH = BASE_DIR / "../result_model"
+MODEL_PATH = BASE_DIR / "result_model"
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, use_fast=False)
 model = MT5ForConditionalGeneration.from_pretrained(MODEL_PATH)
