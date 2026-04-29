@@ -1,18 +1,10 @@
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class PredictRequest(BaseModel):
     text: str
     language: str
-
-
-class PredictionResult(BaseModel):
-    intent: str
-    parameters: Dict[str, Any]
-    confidence: float
-    raw_label: str
-    top_predictions: List[Dict[str, Any]] = []
 
 
 class FinalResponse(BaseModel):
@@ -29,4 +21,4 @@ class FinalResponse(BaseModel):
     confidence: float
     threshold: float
     raw_label: str
-    top_predictions: List[Dict[str, Any]] = []
+    top_predictions: List[Dict[str, Any]] = Field(default_factory=list)

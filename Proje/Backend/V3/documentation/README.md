@@ -3,7 +3,8 @@
 Run:
 
 ```bash
-uvicorn main:app --host 127.0.0.1 --port 8001
+# from Proje/Backend
+uvicorn V3.main:app --host 127.0.0.1 --port 8000
 ```
 
 Expected structure:

@@ -1,27 +1,14 @@
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
 
-import torch
-from transformers import AutoModelForSequenceClassification, AutoTokenizer
-
-from V3.config import MAX_LENGTH, MODEL_DIR
+from V3.config import MAX_LENGTH, MODEL_DIR, SUPPORTED_INTENTS
 from V3.services.text_utils import normalize_text
 
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
-model.to(device)
-model.eval()
-
-label_json_path = MODEL_DIR / "label_to_target_json.json"
-
-if label_json_path.exists():
-    with open(label_json_path, "r", encoding="utf-8") as f:
-        LABEL_TO_TARGET_JSON = json.load(f)
-else:
-    LABEL_TO_TARGET_JSON = {}
+_device = None
+_model = None
+_tokenizer = None
+_label_to_target_json: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 def label_to_json(label: str) -> Dict[str, Any]:
@@ -35,43 +22,45 @@ def label_to_json(label: str) -> Dict[str, Any]:
       {"intent": "SCROLL_SCREEN", "parameters": {"direction": "down"}}
     """
 
-    if label in LABEL_TO_TARGET_JSON:
-        return LABEL_TO_TARGET_JSON[label]
+    label_mapping = _load_label_mapping()
+
+    if label in label_mapping:
+        return _only_supported_intents(label_mapping[label])
 
     if "__" not in label:
-        return {
+        return _only_supported_intents({
             "intent": label,
             "parameters": {},
-        }
+        })
 
     intent, param = label.split("__", 1)
 
     if param == "none":
-        return {
+        return _only_supported_intents({
             "intent": intent,
             "parameters": {},
-        }
+        })
 
     if intent in ["SCROLL_SCREEN", "SWIPE_GESTURE"]:
-        return {
+        return _only_supported_intents({
             "intent": intent,
             "parameters": {
                 "direction": param,
             },
-        }
+        })
 
     if intent == "ADJUST_VOLUME":
-        return {
+        return _only_supported_intents({
             "intent": intent,
             "parameters": {
                 "volume_action": param,
             },
-        }
+        })
 
-    return {
+    return _only_supported_intents({
         "intent": intent,
         "parameters": {},
-    }
+    })
 
 
 def predict_model_debug(text: str, language: str) -> Dict[str, Any]:
@@ -79,6 +68,7 @@ def predict_model_debug(text: str, language: str) -> Dict[str, Any]:
     Model prediction + top-5 debug.
     """
 
+    torch, tokenizer, model, device = _get_model_bundle()
     source_text = f"[{language.upper()}] {normalize_text(text)}"
 
     inputs = tokenizer(
@@ -119,4 +109,69 @@ def predict_model_debug(text: str, language: str) -> Dict[str, Any]:
 
 
 def get_device_name() -> str:
-    return str(device)
+    global _device
+
+    if _device is not None:
+        return str(_device)
+
+    try:
+        import torch
+
+        return str(torch.device("cuda" if torch.cuda.is_available() else "cpu"))
+    except Exception:
+        return "unknown"
+
+
+def _get_model_bundle() -> Tuple[Any, Any, Any, Any]:
+    global _device, _model, _tokenizer
+
+    if _model is not None and _tokenizer is not None and _device is not None:
+        import torch
+
+        return torch, _tokenizer, _model, _device
+
+    import torch
+    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+    _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    _tokenizer = _load_tokenizer(AutoTokenizer)
+    _model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
+    _model.to(_device)
+    _model.eval()
+
+    return torch, _tokenizer, _model, _device
+
+
+def _load_tokenizer(auto_tokenizer):
+    try:
+        return auto_tokenizer.from_pretrained(MODEL_DIR, fix_mistral_regex=True)
+    except TypeError:
+        return auto_tokenizer.from_pretrained(MODEL_DIR)
+
+
+def _load_label_mapping() -> Dict[str, Dict[str, Any]]:
+    global _label_to_target_json
+
+    if _label_to_target_json is not None:
+        return _label_to_target_json
+
+    label_json_path = MODEL_DIR / "label_to_target_json.json"
+    if label_json_path.exists():
+        with open(label_json_path, "r", encoding="utf-8") as f:
+            _label_to_target_json = json.load(f)
+    else:
+        _label_to_target_json = {}
+
+    return _label_to_target_json
+
+
+def _only_supported_intents(model_json: Dict[str, Any]) -> Dict[str, Any]:
+    intent = model_json.get("intent", "UNKNOWN_COMMAND")
+
+    if intent == "UNKNOWN_COMMAND" or intent in SUPPORTED_INTENTS:
+        return model_json
+
+    return {
+        "intent": "UNKNOWN_COMMAND",
+        "parameters": {},
+    }

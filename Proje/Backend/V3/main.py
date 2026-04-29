@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from V3.config import MODEL_DIR
-from V3.schemas import PredictRequest
+from V3.schemas import FinalResponse, PredictRequest
 from V3.services.model_service import get_device_name
 from V3.services.predict_service import predict_command
 
@@ -18,7 +18,7 @@ def root():
     }
 
 
-@app.post("/predict")
+@app.post("/predict", response_model=FinalResponse)
 def predict(request: PredictRequest):
     return predict_command(
         text=request.text,
