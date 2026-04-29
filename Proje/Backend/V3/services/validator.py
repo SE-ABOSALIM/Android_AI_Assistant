@@ -81,14 +81,22 @@ def validate_and_build_response(
             accepted = False
             missing_slots.append("app_name")
 
+
     elif model_intent == "SET_TIMER":
+
         timer_params = extract_timer(original_text)
 
-        if timer_params:
-            parameters.update(timer_params)
-        else:
+        parameters.update(timer_params)
+
+        if "duration_value" not in parameters:
             accepted = False
-            missing_slots.extend(["duration_value", "duration_unit"])
+
+            missing_slots.append("duration_value")
+
+        if "duration_unit" not in parameters:
+            accepted = False
+
+            missing_slots.append("duration_unit")
 
     elif model_intent in ["GO_HOME", "TAKE_PHOTO", "STOP_LISTENING"]:
         pass

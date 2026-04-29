@@ -1,6 +1,7 @@
 import re
 from typing import Any, Dict, Optional
 
+from V3.services.extractors import extract_timer
 from V3.services.text_utils import normalize_text, normalized_lower
 
 
@@ -226,6 +227,80 @@ def rule_based_command(text: str, language: str) -> Optional[Dict[str, Any]]:
             "intent": "GO_HOME",
             "parameters": {},
             "rule_matched": "go_home",
+        }
+
+    # -------------------------
+    # SET TIMER
+    # -------------------------
+    timer_keywords = [
+        "timer",
+        "countdown",
+        "count down",
+        "timing",
+        "zamanlayici",
+        "sayac",
+        "geri say",
+        "sure tut",
+        "zaman tut",
+        "kronometre",
+    ]
+
+    timer_action_patterns = [
+        "set timer",
+        "set a timer",
+        "start timer",
+        "start a timer",
+        "start timing",
+        "run a timer",
+        "make a timer",
+        "create a timer",
+        "begin countdown",
+        "start countdown",
+        "count down",
+        "zamanlayici kur",
+        "zamanlayici ayarla",
+        "zamanlayici olustur",
+        "sayac kur",
+        "sayac baslat",
+        "geri sayim baslat",
+        "geri say",
+        "sure tut",
+        "zaman tut",
+        "kronometre ac",
+    ]
+
+    arabic_timer_keywords = [
+        "مؤقت",
+        "موقت",
+        "موقتا",
+        "مؤقتا",
+        "عداد",
+        "عدادا",
+        "عد تنازلي",
+        "توقيت",
+    ]
+
+    arabic_timer_action_patterns = [
+        "اضبط",
+        "ابدأ",
+        "ابدا",
+        "شغل",
+        "انشئ",
+        "أنشئ",
+    ]
+
+    timer_params = extract_timer(original)
+    has_timer_keyword = any(p in t for p in timer_keywords) or any(p in original for p in arabic_timer_keywords)
+    has_timer_action = any(p in t for p in timer_action_patterns) or (
+        any(p in original for p in arabic_timer_action_patterns)
+        and any(p in original for p in arabic_timer_keywords)
+    )
+
+    if has_timer_keyword and (timer_params or has_timer_action):
+        return {
+            "intent": "SET_TIMER",
+            "parameters": timer_params,
+            "rule_matched": "set_timer",
         }
 
     # -------------------------

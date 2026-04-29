@@ -1,0 +1,4476 @@
+[
+  {
+    "index": 1,
+    "input": {
+      "text": "YouTube'u aç",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 4.22,
+    "response": {
+      "input": "YouTube'u aç",
+      "normalized_input": "YouTube'u aç",
+      "language": "TR",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "youtube'u"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 2,
+    "input": {
+      "text": "WhatsApp'ı aç",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.99,
+    "response": {
+      "input": "WhatsApp'ı aç",
+      "normalized_input": "WhatsApp'ı aç",
+      "language": "TR",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "whatsapp'i"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 3,
+    "input": {
+      "text": "Google Maps'i aç",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 3.04,
+    "response": {
+      "input": "Google Maps'i aç",
+      "normalized_input": "Google Maps'i aç",
+      "language": "TR",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "google maps'i"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 4,
+    "input": {
+      "text": "Instagram uygulamasını başlat",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 70.78,
+    "response": {
+      "input": "Instagram uygulamasını başlat",
+      "normalized_input": "Instagram uygulamasını başlat",
+      "language": "TR",
+      "intent": "OPEN_APP",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "app_name"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.990998387336731,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.990998387336731
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.0013203894486650825
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.001190408132970333
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.0011668408988043666
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0009285312844440341
+        }
+      ]
+    }
+  },
+  {
+    "index": 5,
+    "input": {
+      "text": "Open YouTube",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.78,
+    "response": {
+      "input": "Open YouTube",
+      "normalized_input": "Open YouTube",
+      "language": "EN",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "youtube"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 6,
+    "input": {
+      "text": "Open WhatsApp",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 3.79,
+    "response": {
+      "input": "Open WhatsApp",
+      "normalized_input": "Open WhatsApp",
+      "language": "EN",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "whatsapp"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 7,
+    "input": {
+      "text": "Launch Google Maps",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.62,
+    "response": {
+      "input": "Launch Google Maps",
+      "normalized_input": "Launch Google Maps",
+      "language": "EN",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "google maps"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 8,
+    "input": {
+      "text": "Start Instagram app",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.44,
+    "response": {
+      "input": "Start Instagram app",
+      "normalized_input": "Start Instagram app",
+      "language": "EN",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "instagram app"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 9,
+    "input": {
+      "text": "افتح يوتيوب",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.41,
+    "response": {
+      "input": "افتح يوتيوب",
+      "normalized_input": "افتح يوتيوب",
+      "language": "AR",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "يوتيوب"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app_ar",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 10,
+    "input": {
+      "text": "افتح واتساب",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.4,
+    "response": {
+      "input": "افتح واتساب",
+      "normalized_input": "افتح واتساب",
+      "language": "AR",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "واتساب"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app_ar",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 11,
+    "input": {
+      "text": "شغل خرائط جوجل",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 68.23,
+    "response": {
+      "input": "شغل خرائط جوجل",
+      "normalized_input": "شغل خرائط جوجل",
+      "language": "AR",
+      "intent": "OPEN_APP",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "app_name"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.9843195080757141,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.9843195080757141
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.004818843677639961
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.0023360957857221365
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.0018874346278607845
+        },
+        {
+          "label": "TAKE_PHOTO__none",
+          "confidence": 0.0011533641954883933
+        }
+      ]
+    }
+  },
+  {
+    "index": 12,
+    "input": {
+      "text": "افتح تطبيق انستغرام",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.59,
+    "response": {
+      "input": "افتح تطبيق انستغرام",
+      "normalized_input": "افتح تطبيق انستغرام",
+      "language": "AR",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "تطبيق انستغرام"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app_ar",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 13,
+    "input": {
+      "text": "Aşağı kaydır",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.57,
+    "response": {
+      "input": "Aşağı kaydır",
+      "normalized_input": "Aşağı kaydır",
+      "language": "TR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::scroll_down",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 14,
+    "input": {
+      "text": "Yukarı kaydır",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.55,
+    "response": {
+      "input": "Yukarı kaydır",
+      "normalized_input": "Yukarı kaydır",
+      "language": "TR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "up"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::scroll_up",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 15,
+    "input": {
+      "text": "Sayfayı aşağı indir",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 52.96,
+    "response": {
+      "input": "Sayfayı aşağı indir",
+      "normalized_input": "Sayfayı aşağı indir",
+      "language": "TR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9698491096496582,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__down",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.9698491096496582
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.00804897677153349
+        },
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.004468456842005253
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.004177929367870092
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.003190192859619856
+        }
+      ]
+    }
+  },
+  {
+    "index": 16,
+    "input": {
+      "text": "Biraz yukarı kaydır",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.73,
+    "response": {
+      "input": "Biraz yukarı kaydır",
+      "normalized_input": "Biraz yukarı kaydır",
+      "language": "TR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "up"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::scroll_up",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 17,
+    "input": {
+      "text": "Scroll down",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.44,
+    "response": {
+      "input": "Scroll down",
+      "normalized_input": "Scroll down",
+      "language": "EN",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::scroll_down",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 18,
+    "input": {
+      "text": "Scroll up",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.1,
+    "response": {
+      "input": "Scroll up",
+      "normalized_input": "Scroll up",
+      "language": "EN",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "up"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::scroll_up",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 19,
+    "input": {
+      "text": "Move the page down",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 49.9,
+    "response": {
+      "input": "Move the page down",
+      "normalized_input": "Move the page down",
+      "language": "EN",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9679232239723206,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__down",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.9679232239723206
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.008148912340402603
+        },
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.00504185538738966
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0042325290851294994
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.004020668566226959
+        }
+      ]
+    }
+  },
+  {
+    "index": 20,
+    "input": {
+      "text": "Scroll a little up",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 44.44,
+    "response": {
+      "input": "Scroll a little up",
+      "normalized_input": "Scroll a little up",
+      "language": "EN",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "up"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9771732091903687,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__up",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.9771732091903687
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.006029387935996056
+        },
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.004118671175092459
+        },
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.0019285660237073898
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.0015227446565404534
+        }
+      ]
+    }
+  },
+  {
+    "index": 21,
+    "input": {
+      "text": "مرر للأسفل",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.26,
+    "response": {
+      "input": "مرر للأسفل",
+      "normalized_input": "مرر للأسفل",
+      "language": "AR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::scroll_down",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 22,
+    "input": {
+      "text": "مرر للأعلى",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.1,
+    "response": {
+      "input": "مرر للأعلى",
+      "normalized_input": "مرر للأعلى",
+      "language": "AR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "up"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::scroll_up",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 23,
+    "input": {
+      "text": "انزل في الصفحة",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 34.86,
+    "response": {
+      "input": "انزل في الصفحة",
+      "normalized_input": "انزل في الصفحة",
+      "language": "AR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.966651439666748,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__down",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.966651439666748
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.009346523322165012
+        },
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.007288474589586258
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.004031916614621878
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.002400977537035942
+        }
+      ]
+    }
+  },
+  {
+    "index": 24,
+    "input": {
+      "text": "ارفع الصفحة قليلا",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 32.34,
+    "response": {
+      "input": "ارفع الصفحة قليلا",
+      "normalized_input": "ارفع الصفحة قليلا",
+      "language": "AR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "up"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9614239931106567,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__up",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.9614239931106567
+        },
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.011551029980182648
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.009356093592941761
+        },
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.0028709822800010443
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.002633532974869013
+        }
+      ]
+    }
+  },
+  {
+    "index": 25,
+    "input": {
+      "text": "Sola kaydır",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.4,
+    "response": {
+      "input": "Sola kaydır",
+      "normalized_input": "Sola kaydır",
+      "language": "TR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "left"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::swipe_left",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 26,
+    "input": {
+      "text": "Sağa kaydır",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.06,
+    "response": {
+      "input": "Sağa kaydır",
+      "normalized_input": "Sağa kaydır",
+      "language": "TR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "right"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::swipe_right",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 27,
+    "input": {
+      "text": "Ekranı sola çek",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 31.91,
+    "response": {
+      "input": "Ekranı sola çek",
+      "normalized_input": "Ekranı sola çek",
+      "language": "TR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "left"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9748433828353882,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__left",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.9748433828353882
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.010564813390374184
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.004346937872469425
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.0014543439028784633
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0010643223067745566
+        }
+      ]
+    }
+  },
+  {
+    "index": 28,
+    "input": {
+      "text": "Bir sonraki sayfaya geç",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 44.32,
+    "response": {
+      "input": "Bir sonraki sayfaya geç",
+      "normalized_input": "Bir sonraki sayfaya geç",
+      "language": "TR",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.6450731754302979,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__down",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.6450731754302979
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.2551444470882416
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.04246462509036064
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.02540620043873787
+        },
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.005288242362439632
+        }
+      ]
+    }
+  },
+  {
+    "index": 29,
+    "input": {
+      "text": "Swipe left",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.28,
+    "response": {
+      "input": "Swipe left",
+      "normalized_input": "Swipe left",
+      "language": "EN",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "left"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::swipe_left",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 30,
+    "input": {
+      "text": "Swipe right",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 3.02,
+    "response": {
+      "input": "Swipe right",
+      "normalized_input": "Swipe right",
+      "language": "EN",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "right"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::swipe_right",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 31,
+    "input": {
+      "text": "Move to the next page",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.46,
+    "response": {
+      "input": "Move to the next page",
+      "normalized_input": "Move to the next page",
+      "language": "EN",
+      "intent": "SCROLL_SCREEN",
+      "parameters": {
+        "direction": "down"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.6941198706626892,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__down",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.6941198706626892
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.22181276977062225
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.029132355004549026
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.025502929463982582
+        },
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.005977997090667486
+        }
+      ]
+    }
+  },
+  {
+    "index": 32,
+    "input": {
+      "text": "Swipe the screen left",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 37.16,
+    "response": {
+      "input": "Swipe the screen left",
+      "normalized_input": "Swipe the screen left",
+      "language": "EN",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "left"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.975000262260437,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__left",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.975000262260437
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.009822209365665913
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.004980554338544607
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.0015318826772272587
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.001047356054186821
+        }
+      ]
+    }
+  },
+  {
+    "index": 33,
+    "input": {
+      "text": "اسحب لليسار",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 4.8,
+    "response": {
+      "input": "اسحب لليسار",
+      "normalized_input": "اسحب لليسار",
+      "language": "AR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "left"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::swipe_left",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 34,
+    "input": {
+      "text": "اسحب لليمين",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.79,
+    "response": {
+      "input": "اسحب لليمين",
+      "normalized_input": "اسحب لليمين",
+      "language": "AR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "right"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::swipe_right",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 35,
+    "input": {
+      "text": "انتقل للصفحة التالية",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 35.28,
+    "response": {
+      "input": "انتقل للصفحة التالية",
+      "normalized_input": "انتقل للصفحة التالية",
+      "language": "AR",
+      "intent": "GO_HOME",
+      "parameters": {},
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9067528247833252,
+      "threshold": 0.6,
+      "raw_label": "GO_HOME__none",
+      "top_predictions": [
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.9067528247833252
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.05155034363269806
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.01894454099237919
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.005210093222558498
+        },
+        {
+          "label": "TAKE_PHOTO__none",
+          "confidence": 0.0021243540104478598
+        }
+      ]
+    }
+  },
+  {
+    "index": 36,
+    "input": {
+      "text": "اسحب الشاشة لليسار",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 34.21,
+    "response": {
+      "input": "اسحب الشاشة لليسار",
+      "normalized_input": "اسحب الشاشة لليسار",
+      "language": "AR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {
+        "direction": "left"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9740995168685913,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__left",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__left",
+          "confidence": 0.9740995168685913
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.012793676927685738
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.0032676635310053825
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.0012894835090264678
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.000992102432064712
+        }
+      ]
+    }
+  },
+  {
+    "index": 37,
+    "input": {
+      "text": "Giriş butonuna bas",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.83,
+    "response": {
+      "input": "Giriş butonuna bas",
+      "normalized_input": "Giriş butonuna bas",
+      "language": "TR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "direction"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.6538829803466797,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.6538829803466797
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.2539650797843933
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.0350358821451664
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.010136098600924015
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.007105671800673008
+        }
+      ]
+    }
+  },
+  {
+    "index": 38,
+    "input": {
+      "text": "Kaydet düğmesine tıkla",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 45.31,
+    "response": {
+      "input": "Kaydet düğmesine tıkla",
+      "normalized_input": "Kaydet düğmesine tıkla",
+      "language": "TR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "direction"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.6155356764793396,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.6155356764793396
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.15046291053295135
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.07136276364326477
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.0349486880004406
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.02196137048304081
+        }
+      ]
+    }
+  },
+  {
+    "index": 39,
+    "input": {
+      "text": "Devam et butonuna bas",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 49.73,
+    "response": {
+      "input": "Devam et butonuna bas",
+      "normalized_input": "Devam et butonuna bas",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SWIPE_GESTURE: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.5231154561042786,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.5231154561042786
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.3850306570529938
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.02084222435951233
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.014554707333445549
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.013034596107900143
+        }
+      ]
+    }
+  },
+  {
+    "index": 40,
+    "input": {
+      "text": "Tamam seçeneğine dokun",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 35.29,
+    "response": {
+      "input": "Tamam seçeneğine dokun",
+      "normalized_input": "Tamam seçeneğine dokun",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SWIPE_GESTURE: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.5234628915786743,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.5234628915786743
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.08470451831817627
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.08423962444067001
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.07779308408498764
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.0553211085498333
+        }
+      ]
+    }
+  },
+  {
+    "index": 41,
+    "input": {
+      "text": "Click the login button",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.63,
+    "response": {
+      "input": "Click the login button",
+      "normalized_input": "Click the login button",
+      "language": "EN",
+      "intent": "GO_HOME",
+      "parameters": {},
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9844244122505188,
+      "threshold": 0.6,
+      "raw_label": "GO_HOME__none",
+      "top_predictions": [
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.9844244122505188
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.004005898721516132
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.003643078962340951
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.0009763835114426911
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0009688360732980072
+        }
+      ]
+    }
+  },
+  {
+    "index": 42,
+    "input": {
+      "text": "Tap the save button",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 35.09,
+    "response": {
+      "input": "Tap the save button",
+      "normalized_input": "Tap the save button",
+      "language": "EN",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "direction"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.7221308350563049,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.7221308350563049
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.09933966398239136
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.09494367241859436
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.016128193587064743
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.011577912606298923
+        }
+      ]
+    }
+  },
+  {
+    "index": 43,
+    "input": {
+      "text": "Press continue",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.09,
+    "response": {
+      "input": "Press continue",
+      "normalized_input": "Press continue",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SWIPE_GESTURE: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.5367274284362793,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.5367274284362793
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.18796932697296143
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.10167187452316284
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.03115934692323208
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.03109162300825119
+        }
+      ]
+    }
+  },
+  {
+    "index": 44,
+    "input": {
+      "text": "Tap OK",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.25,
+    "response": {
+      "input": "Tap OK",
+      "normalized_input": "Tap OK",
+      "language": "EN",
+      "intent": "OPEN_APP",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "app_name"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.785322368144989,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.785322368144989
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.11567690968513489
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.02187221311032772
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.013891677372157574
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.012402665801346302
+        }
+      ]
+    }
+  },
+  {
+    "index": 45,
+    "input": {
+      "text": "اضغط على زر تسجيل الدخول",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.11,
+    "response": {
+      "input": "اضغط على زر تسجيل الدخول",
+      "normalized_input": "اضغط على زر تسجيل الدخول",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for OPEN_APP: 0.45",
+      "needs_confirmation": true,
+      "confidence": 0.4197668731212616,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.4197668731212616
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.3085286021232605
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.08269575983285904
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.06827229261398315
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.036135848611593246
+        }
+      ]
+    }
+  },
+  {
+    "index": 46,
+    "input": {
+      "text": "اضغط على زر الحفظ",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 34.68,
+    "response": {
+      "input": "اضغط على زر الحفظ",
+      "normalized_input": "اضغط على زر الحفظ",
+      "language": "AR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "direction"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.7397741675376892,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.7397741675376892
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.10064197331666946
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.0937262773513794
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.01053916197270155
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.010239445604383945
+        }
+      ]
+    }
+  },
+  {
+    "index": 47,
+    "input": {
+      "text": "اضغط متابعة",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 35.14,
+    "response": {
+      "input": "اضغط متابعة",
+      "normalized_input": "اضغط متابعة",
+      "language": "AR",
+      "intent": "SWIPE_GESTURE",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "direction"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.7588840126991272,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.7588840126991272
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.12304776906967163
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.04146836698055267
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.021646086126565933
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.01029803603887558
+        }
+      ]
+    }
+  },
+  {
+    "index": 48,
+    "input": {
+      "text": "اضغط موافق",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 31.41,
+    "response": {
+      "input": "اضغط موافق",
+      "normalized_input": "اضغط موافق",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SWIPE_GESTURE: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.49721354246139526,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.49721354246139526
+        },
+        {
+          "label": "SWIPE_GESTURE__right",
+          "confidence": 0.4190027415752411
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.016202421858906746
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.015264791436493397
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.00986544881016016
+        }
+      ]
+    }
+  },
+  {
+    "index": 49,
+    "input": {
+      "text": "Merhaba yaz",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 33.5,
+    "response": {
+      "input": "Merhaba yaz",
+      "normalized_input": "Merhaba yaz",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9885898232460022,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9885898232460022
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.004041296895593405
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.001142919179983437
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0008467981242574751
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0007547069690190256
+        }
+      ]
+    }
+  },
+  {
+    "index": 50,
+    "input": {
+      "text": "Bugün nasılsın yaz",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 38.32,
+    "response": {
+      "input": "Bugün nasılsın yaz",
+      "normalized_input": "Bugün nasılsın yaz",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9941441416740417,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9941441416740417
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0009836578974500299
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0006881550652906299
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0004917194601148367
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.00045537331607192755
+        }
+      ]
+    }
+  },
+  {
+    "index": 51,
+    "input": {
+      "text": "Toplantıya geç kalacağım yaz",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 40.12,
+    "response": {
+      "input": "Toplantıya geç kalacağım yaz",
+      "normalized_input": "Toplantıya geç kalacağım yaz",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9936264753341675,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9936264753341675
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0008276915759779513
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0007197211962193251
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0007031279383227229
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.00047944774269126356
+        }
+      ]
+    }
+  },
+  {
+    "index": 52,
+    "input": {
+      "text": "Beni sonra ara yaz",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.31,
+    "response": {
+      "input": "Beni sonra ara yaz",
+      "normalized_input": "Beni sonra ara yaz",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9927529096603394,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9927529096603394
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0012098663719370961
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0007681300630792975
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0007556737982667983
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.00058064388576895
+        }
+      ]
+    }
+  },
+  {
+    "index": 53,
+    "input": {
+      "text": "Write hello",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 32.49,
+    "response": {
+      "input": "Write hello",
+      "normalized_input": "Write hello",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.7048438191413879,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.7048438191413879
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.24459055066108704
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.01124619785696268
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.009240452200174332
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.00777877401560545
+        }
+      ]
+    }
+  },
+  {
+    "index": 54,
+    "input": {
+      "text": "Write how are you today",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 34.1,
+    "response": {
+      "input": "Write how are you today",
+      "normalized_input": "Write how are you today",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9944109320640564,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9944109320640564
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0007509217830374837
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0007181247347034514
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0004937879857607186
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0004622030246537179
+        }
+      ]
+    }
+  },
+  {
+    "index": 55,
+    "input": {
+      "text": "Type I will be late to the meeting",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.52,
+    "response": {
+      "input": "Type I will be late to the meeting",
+      "normalized_input": "Type I will be late to the meeting",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9939966201782227,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9939966201782227
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0007917016628198326
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0007154284394346178
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.00070632976712659
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.00047359344898723066
+        }
+      ]
+    }
+  },
+  {
+    "index": 56,
+    "input": {
+      "text": "Write call me later",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.02,
+    "response": {
+      "input": "Write call me later",
+      "normalized_input": "Write call me later",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9942682981491089,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9942682981491089
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0007897659670561552
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0007257161778397858
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0006287768483161926
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.00045921560376882553
+        }
+      ]
+    }
+  },
+  {
+    "index": 57,
+    "input": {
+      "text": "اكتب مرحبا",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.41,
+    "response": {
+      "input": "اكتب مرحبا",
+      "normalized_input": "اكتب مرحبا",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9934090375900269,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9934090375900269
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.001417033257894218
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0010839550523087382
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0005034015630371869
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0004802849725820124
+        }
+      ]
+    }
+  },
+  {
+    "index": 58,
+    "input": {
+      "text": "اكتب كيف حالك اليوم",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.45,
+    "response": {
+      "input": "اكتب كيف حالك اليوم",
+      "normalized_input": "اكتب كيف حالك اليوم",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9944722056388855,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9944722056388855
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0007198420935310423
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0006301909452304244
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0005183418979868293
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.000514111714437604
+        }
+      ]
+    }
+  },
+  {
+    "index": 59,
+    "input": {
+      "text": "اكتب سأتأخر عن الاجتماع",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 35.97,
+    "response": {
+      "input": "اكتب سأتأخر عن الاجتماع",
+      "normalized_input": "اكتب سأتأخر عن الاجتماع",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9938681721687317,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9938681721687317
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0008050246979109943
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0007387540536001325
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.000692998175509274
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0004986088024452329
+        }
+      ]
+    }
+  },
+  {
+    "index": 60,
+    "input": {
+      "text": "اكتب اتصل بي لاحقا",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 35.95,
+    "response": {
+      "input": "اكتب اتصل بي لاحقا",
+      "normalized_input": "اكتب اتصل بي لاحقا",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.993808925151825,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.993808925151825
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0013291670475155115
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0007694117957726121
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.000466847704956308
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0004192687338218093
+        }
+      ]
+    }
+  },
+  {
+    "index": 61,
+    "input": {
+      "text": "Yazıyı sil",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 33.62,
+    "response": {
+      "input": "Yazıyı sil",
+      "normalized_input": "Yazıyı sil",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for OPEN_APP: 0.45",
+      "needs_confirmation": true,
+      "confidence": 0.2135753333568573,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.2135753333568573
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.19713307917118073
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.11586472392082214
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.07926809042692184
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.06900998950004578
+        }
+      ]
+    }
+  },
+  {
+    "index": 62,
+    "input": {
+      "text": "Metni temizle",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.1,
+    "response": {
+      "input": "Metni temizle",
+      "normalized_input": "Metni temizle",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SWIPE_GESTURE: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.42491015791893005,
+      "threshold": 0.55,
+      "raw_label": "SWIPE_GESTURE__none",
+      "top_predictions": [
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.42491015791893005
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.2370007038116455
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.07846906781196594
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.05684082955121994
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.05541711673140526
+        }
+      ]
+    }
+  },
+  {
+    "index": 63,
+    "input": {
+      "text": "Kutudaki yazıyı kaldır",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.43,
+    "response": {
+      "input": "Kutudaki yazıyı kaldır",
+      "normalized_input": "Kutudaki yazıyı kaldır",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for GO_HOME: 0.6",
+      "needs_confirmation": true,
+      "confidence": 0.5965830087661743,
+      "threshold": 0.6,
+      "raw_label": "GO_HOME__none",
+      "top_predictions": [
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.5965830087661743
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.23697549104690552
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.052474088966846466
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.03485206514596939
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.02259213849902153
+        }
+      ]
+    }
+  },
+  {
+    "index": 64,
+    "input": {
+      "text": "Tüm metni sil",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 43.64,
+    "response": {
+      "input": "Tüm metni sil",
+      "normalized_input": "Tüm metni sil",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SCROLL_SCREEN: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.3064002990722656,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__none",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.3064002990722656
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.19864283502101898
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.16647781431674957
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.1057136058807373
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.05814365670084953
+        }
+      ]
+    }
+  },
+  {
+    "index": 65,
+    "input": {
+      "text": "Clear the text",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 33.0,
+    "response": {
+      "input": "Clear the text",
+      "normalized_input": "Clear the text",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for OPEN_APP: 0.45",
+      "needs_confirmation": true,
+      "confidence": 0.4207703471183777,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.4207703471183777
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.2340521365404129
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.1349942982196808
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.037985652685165405
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.03451109305024147
+        }
+      ]
+    }
+  },
+  {
+    "index": 66,
+    "input": {
+      "text": "Delete the written text",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 31.99,
+    "response": {
+      "input": "Delete the written text",
+      "normalized_input": "Delete the written text",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for GO_HOME: 0.6",
+      "needs_confirmation": true,
+      "confidence": 0.4135209918022156,
+      "threshold": 0.6,
+      "raw_label": "GO_HOME__none",
+      "top_predictions": [
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.4135209918022156
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.27539941668510437
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.11731099337339401
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.08243908733129501
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.030629267916083336
+        }
+      ]
+    }
+  },
+  {
+    "index": 67,
+    "input": {
+      "text": "Remove all text",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 32.83,
+    "response": {
+      "input": "Remove all text",
+      "normalized_input": "Remove all text",
+      "language": "EN",
+      "intent": "OPEN_APP",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "app_name"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.49697789549827576,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.49697789549827576
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.1682576984167099
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0887061059474945
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.04567181318998337
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.03836819529533386
+        }
+      ]
+    }
+  },
+  {
+    "index": 68,
+    "input": {
+      "text": "Clear the input field",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.8,
+    "response": {
+      "input": "Clear the input field",
+      "normalized_input": "Clear the input field",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for OPEN_APP: 0.45",
+      "needs_confirmation": true,
+      "confidence": 0.22689449787139893,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.22689449787139893
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.2134069949388504
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.13108962774276733
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.12949851155281067
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.08569088578224182
+        }
+      ]
+    }
+  },
+  {
+    "index": 69,
+    "input": {
+      "text": "امسح النص",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 35.93,
+    "response": {
+      "input": "امسح النص",
+      "normalized_input": "امسح النص",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SCROLL_SCREEN: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.4378894865512848,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__none",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.4378894865512848
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.12201784551143646
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.07446910440921783
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.06901220232248306
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.05440807715058327
+        }
+      ]
+    }
+  },
+  {
+    "index": 70,
+    "input": {
+      "text": "احذف الكتابة",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 33.96,
+    "response": {
+      "input": "احذف الكتابة",
+      "normalized_input": "احذف الكتابة",
+      "language": "AR",
+      "intent": "OPEN_APP",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "app_name"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.6057797074317932,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.6057797074317932
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.09480039775371552
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.07854775339365005
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.05417219549417496
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.04527485743165016
+        }
+      ]
+    }
+  },
+  {
+    "index": 71,
+    "input": {
+      "text": "نظف خانة النص",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 32.94,
+    "response": {
+      "input": "نظف خانة النص",
+      "normalized_input": "نظف خانة النص",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for OPEN_APP: 0.45",
+      "needs_confirmation": true,
+      "confidence": 0.430766224861145,
+      "threshold": 0.45,
+      "raw_label": "OPEN_APP__none",
+      "top_predictions": [
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.430766224861145
+        },
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.3096400201320648
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.1530383825302124
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.04586787894368172
+        },
+        {
+          "label": "TAKE_PHOTO__none",
+          "confidence": 0.010743202641606331
+        }
+      ]
+    }
+  },
+  {
+    "index": 72,
+    "input": {
+      "text": "امسح كل النص",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 30.93,
+    "response": {
+      "input": "امسح كل النص",
+      "normalized_input": "امسح كل النص",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SCROLL_SCREEN: 0.55",
+      "needs_confirmation": true,
+      "confidence": 0.355601966381073,
+      "threshold": 0.55,
+      "raw_label": "SCROLL_SCREEN__none",
+      "top_predictions": [
+        {
+          "label": "SCROLL_SCREEN__none",
+          "confidence": 0.355601966381073
+        },
+        {
+          "label": "TAKE_PHOTO__none",
+          "confidence": 0.11061760783195496
+        },
+        {
+          "label": "SCROLL_SCREEN__down",
+          "confidence": 0.08800755441188812
+        },
+        {
+          "label": "SWIPE_GESTURE__none",
+          "confidence": 0.08729743957519531
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.06502779573202133
+        }
+      ]
+    }
+  },
+  {
+    "index": 73,
+    "input": {
+      "text": "5 dakika zamanlayıcı kur",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 32.98,
+    "response": {
+      "input": "5 dakika zamanlayıcı kur",
+      "normalized_input": "5 dakika zamanlayıcı kur",
+      "language": "TR",
+      "intent": "SET_TIMER",
+      "parameters": {
+        "duration_value": 5,
+        "duration_unit": "minute",
+        "duration_seconds": 300
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9934625625610352,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9934625625610352
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0008099531987681985
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005678581073880196
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0005667174118570983
+        },
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.0005378269706852734
+        }
+      ]
+    }
+  },
+  {
+    "index": 74,
+    "input": {
+      "text": "10 saniyelik timer başlat",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 38.28,
+    "response": {
+      "input": "10 saniyelik timer başlat",
+      "normalized_input": "10 saniyelik timer başlat",
+      "language": "TR",
+      "intent": "SET_TIMER",
+      "parameters": {
+        "duration_value": 10,
+        "duration_unit": "second",
+        "duration_seconds": 10
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9935478568077087,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9935478568077087
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0007663555443286896
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0006179586052894592
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005882703699171543
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.00046814887900836766
+        }
+      ]
+    }
+  },
+  {
+    "index": 75,
+    "input": {
+      "text": "Bir saat zamanlayıcı ayarla",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 42.9,
+    "response": {
+      "input": "Bir saat zamanlayıcı ayarla",
+      "normalized_input": "Bir saat zamanlayıcı ayarla",
+      "language": "TR",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.9934378266334534,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9934378266334534
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0007319864234887064
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0006318454397842288
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0005705003859475255
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0005121565773151815
+        }
+      ]
+    }
+  },
+  {
+    "index": 76,
+    "input": {
+      "text": "3 dakika sonra haber ver",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 45.85,
+    "response": {
+      "input": "3 dakika sonra haber ver",
+      "normalized_input": "3 dakika sonra haber ver",
+      "language": "TR",
+      "intent": "SET_TIMER",
+      "parameters": {
+        "duration_value": 3,
+        "duration_unit": "minute",
+        "duration_seconds": 180
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9929144382476807,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9929144382476807
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.000820605200715363
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0007388461963273585
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0006341735133901238
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005754379089921713
+        }
+      ]
+    }
+  },
+  {
+    "index": 77,
+    "input": {
+      "text": "Set a timer for 5 minutes",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 43.67,
+    "response": {
+      "input": "Set a timer for 5 minutes",
+      "normalized_input": "Set a timer for 5 minutes",
+      "language": "EN",
+      "intent": "SET_TIMER",
+      "parameters": {
+        "duration_value": 5,
+        "duration_unit": "minute",
+        "duration_seconds": 300
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9935662150382996,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9935662150382996
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.000750125793274492
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0006085729692131281
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005728313699364662
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.00045566403423435986
+        }
+      ]
+    }
+  },
+  {
+    "index": 78,
+    "input": {
+      "text": "Start a 10 second timer",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.08,
+    "response": {
+      "input": "Start a 10 second timer",
+      "normalized_input": "Start a 10 second timer",
+      "language": "EN",
+      "intent": "OPEN_APP",
+      "parameters": {
+        "app_name": "a 10 second timer"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.45,
+      "raw_label": "RULE::open_app",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 79,
+    "input": {
+      "text": "Set timer for one hour",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.32,
+    "response": {
+      "input": "Set timer for one hour",
+      "normalized_input": "Set timer for one hour",
+      "language": "EN",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.993533730506897,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.993533730506897
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0007498658960685134
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0006041349261067808
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005561458528973162
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.0005336237954907119
+        }
+      ]
+    }
+  },
+  {
+    "index": 80,
+    "input": {
+      "text": "Remind me after 3 minutes",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 40.78,
+    "response": {
+      "input": "Remind me after 3 minutes",
+      "normalized_input": "Remind me after 3 minutes",
+      "language": "EN",
+      "intent": "SET_TIMER",
+      "parameters": {
+        "duration_value": 3,
+        "duration_unit": "minute",
+        "duration_seconds": 180
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9569567441940308,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9569567441940308
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.02480984851717949
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.002162757096812129
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0019156463677063584
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.001866654958575964
+        }
+      ]
+    }
+  },
+  {
+    "index": 81,
+    "input": {
+      "text": "اضبط مؤقت لمدة خمس دقائق",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 42.86,
+    "response": {
+      "input": "اضبط مؤقت لمدة خمس دقائق",
+      "normalized_input": "اضبط مؤقت لمدة خمس دقائق",
+      "language": "AR",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.993498682975769,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.993498682975769
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0007277739932760596
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005874594207853079
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0005769967101514339
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0004709918866865337
+        }
+      ]
+    }
+  },
+  {
+    "index": 82,
+    "input": {
+      "text": "شغل مؤقت عشر ثواني",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.99,
+    "response": {
+      "input": "شغل مؤقت عشر ثواني",
+      "normalized_input": "شغل مؤقت عشر ثواني",
+      "language": "AR",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.9936556816101074,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9936556816101074
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0007090825820341706
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0005543957813642919
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005523536819964647
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.0005052611231803894
+        }
+      ]
+    }
+  },
+  {
+    "index": 83,
+    "input": {
+      "text": "اضبط مؤقت لمدة ساعة",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 32.79,
+    "response": {
+      "input": "اضبط مؤقت لمدة ساعة",
+      "normalized_input": "اضبط مؤقت لمدة ساعة",
+      "language": "AR",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.9935592412948608,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9935592412948608
+        },
+        {
+          "label": "GO_HOME__none",
+          "confidence": 0.0007277180557139218
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0005783993983641267
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0005462067201733589
+        },
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.0004709473578259349
+        }
+      ]
+    }
+  },
+  {
+    "index": 84,
+    "input": {
+      "text": "ذكرني بعد ثلاث دقائق",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.3,
+    "response": {
+      "input": "ذكرني بعد ثلاث دقائق",
+      "normalized_input": "ذكرني بعد ثلاث دقائق",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9545961022377014,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9545961022377014
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.026759641245007515
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.001972389407455921
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.001931670238263905
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0017162420554086566
+        }
+      ]
+    }
+  },
+  {
+    "index": 85,
+    "input": {
+      "text": "Sabah 7'ye alarm kur",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.94,
+    "response": {
+      "input": "Sabah 7'ye alarm kur",
+      "normalized_input": "Sabah 7'ye alarm kur",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9896065592765808,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9896065592765808
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0018791729817166924
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.001529423869214952
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0011129655176773667
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0009917756542563438
+        }
+      ]
+    }
+  },
+  {
+    "index": 86,
+    "input": {
+      "text": "Akşam 9 için alarm ayarla",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 40.3,
+    "response": {
+      "input": "Akşam 9 için alarm ayarla",
+      "normalized_input": "Akşam 9 için alarm ayarla",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for SET_TIMER: 0.5",
+      "needs_confirmation": true,
+      "confidence": 0.49650895595550537,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.49650895595550537
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.44791680574417114
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.008143750950694084
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.007530995178967714
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.006460417993366718
+        }
+      ]
+    }
+  },
+  {
+    "index": 87,
+    "input": {
+      "text": "Yarın sabah 8'e alarm kur",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.37,
+    "response": {
+      "input": "Yarın sabah 8'e alarm kur",
+      "normalized_input": "Yarın sabah 8'e alarm kur",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9937294721603394,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9937294721603394
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0007795996498316526
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0006699947407469153
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0006580404005944729
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0005824349354952574
+        }
+      ]
+    }
+  },
+  {
+    "index": 88,
+    "input": {
+      "text": "Saat 6:30'a alarm ayarla",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 36.44,
+    "response": {
+      "input": "Saat 6:30'a alarm ayarla",
+      "normalized_input": "Saat 6:30'a alarm ayarla",
+      "language": "TR",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.9714430570602417,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9714430570602417
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.010404087603092194
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0021965617779642344
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.002124303951859474
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0019231123151257634
+        }
+      ]
+    }
+  },
+  {
+    "index": 89,
+    "input": {
+      "text": "Set an alarm for 7 AM",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 33.57,
+    "response": {
+      "input": "Set an alarm for 7 AM",
+      "normalized_input": "Set an alarm for 7 AM",
+      "language": "EN",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.9672260880470276,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.9672260880470276
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.017886484041810036
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.001799984835088253
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.001543571474030614
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.0013247281312942505
+        }
+      ]
+    }
+  },
+  {
+    "index": 90,
+    "input": {
+      "text": "Set alarm at 9 PM",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 32.06,
+    "response": {
+      "input": "Set alarm at 9 PM",
+      "normalized_input": "Set alarm at 9 PM",
+      "language": "EN",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.5602205991744995,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.5602205991744995
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.3927086293697357
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.007247366476804018
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.00594775564968586
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.005584376398473978
+        }
+      ]
+    }
+  },
+  {
+    "index": 91,
+    "input": {
+      "text": "Wake me up tomorrow at 8 AM",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 34.96,
+    "response": {
+      "input": "Wake me up tomorrow at 8 AM",
+      "normalized_input": "Wake me up tomorrow at 8 AM",
+      "language": "EN",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9931064248085022,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9931064248085022
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0009631655411794782
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0008641717140562832
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0007086140103638172
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0006186340469866991
+        }
+      ]
+    }
+  },
+  {
+    "index": 92,
+    "input": {
+      "text": "Create an alarm for 6:30",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.96,
+    "response": {
+      "input": "Create an alarm for 6:30",
+      "normalized_input": "Create an alarm for 6:30",
+      "language": "EN",
+      "intent": "SET_TIMER",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [
+        "duration_value",
+        "duration_unit"
+      ],
+      "error_code": "MISSING_REQUIRED_SLOT",
+      "error_message": "Required parameter is missing.",
+      "needs_confirmation": true,
+      "confidence": 0.8560408353805542,
+      "threshold": 0.5,
+      "raw_label": "SET_TIMER__none",
+      "top_predictions": [
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.8560408353805542
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.11405979841947556
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.005064855329692364
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0028454663697630167
+        },
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.0026957206428050995
+        }
+      ]
+    }
+  },
+  {
+    "index": 93,
+    "input": {
+      "text": "اضبط منبه الساعة السابعة صباحا",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 42.91,
+    "response": {
+      "input": "اضبط منبه الساعة السابعة صباحا",
+      "normalized_input": "اضبط منبه الساعة السابعة صباحا",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.5892305970191956,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.5892305970191956
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.35773953795433044
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.007420038804411888
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.005416520405560732
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.0052446224726736546
+        }
+      ]
+    }
+  },
+  {
+    "index": 94,
+    "input": {
+      "text": "اضبط منبه الساعة التاسعة مساء",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 37.67,
+    "response": {
+      "input": "اضبط منبه الساعة التاسعة مساء",
+      "normalized_input": "اضبط منبه الساعة التاسعة مساء",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9353323578834534,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9353323578834534
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.03740467503666878
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.004025775007903576
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0033803556580096483
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.0029672032687813044
+        }
+      ]
+    }
+  },
+  {
+    "index": 95,
+    "input": {
+      "text": "أيقظني غدا الساعة الثامنة صباحا",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 34.83,
+    "response": {
+      "input": "أيقظني غدا الساعة الثامنة صباحا",
+      "normalized_input": "أيقظني غدا الساعة الثامنة صباحا",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.9937716126441956,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.9937716126441956
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.000722290831618011
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.0006739454693160951
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.0006165408995002508
+        },
+        {
+          "label": "OPEN_APP__none",
+          "confidence": 0.0005936036468483508
+        }
+      ]
+    }
+  },
+  {
+    "index": 96,
+    "input": {
+      "text": "اضبط منبه على السادسة والنصف",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 34.96,
+    "response": {
+      "input": "اضبط منبه على السادسة والنصف",
+      "normalized_input": "اضبط منبه على السادسة والنصف",
+      "language": "AR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "UNKNOWN_COMMAND",
+      "error_message": "This is not a supported command.",
+      "needs_confirmation": false,
+      "confidence": 0.5709571838378906,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.5709571838378906
+        },
+        {
+          "label": "CALL_CONTACT__none",
+          "confidence": 0.3648281395435333
+        },
+        {
+          "label": "SET_TIMER__none",
+          "confidence": 0.014957861974835396
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.006392819341272116
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0058670747093856335
+        }
+      ]
+    }
+  },
+  {
+    "index": 97,
+    "input": {
+      "text": "Sesi yükselt",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.04,
+    "response": {
+      "input": "Sesi yükselt",
+      "normalized_input": "Sesi yükselt",
+      "language": "TR",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "increase"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::volume_increase",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 98,
+    "input": {
+      "text": "Sesi azalt",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.14,
+    "response": {
+      "input": "Sesi azalt",
+      "normalized_input": "Sesi azalt",
+      "language": "TR",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "decrease"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::volume_decrease",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 99,
+    "input": {
+      "text": "Ses seviyesini biraz artır",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 38.4,
+    "response": {
+      "input": "Ses seviyesini biraz artır",
+      "normalized_input": "Ses seviyesini biraz artır",
+      "language": "TR",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "increase"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9620652794837952,
+      "threshold": 0.55,
+      "raw_label": "ADJUST_VOLUME__increase",
+      "top_predictions": [
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.9620652794837952
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.007627441547811031
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.00710848905146122
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.006448583211749792
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.0024527586065232754
+        }
+      ]
+    }
+  },
+  {
+    "index": 100,
+    "input": {
+      "text": "Telefonun sesini düşür",
+      "language": "tr"
+    },
+    "status_code": 200,
+    "elapsed_ms": 39.01,
+    "response": {
+      "input": "Telefonun sesini düşür",
+      "normalized_input": "Telefonun sesini düşür",
+      "language": "TR",
+      "intent": "UNKNOWN_COMMAND",
+      "parameters": {},
+      "accepted": false,
+      "missing_slots": [],
+      "error_code": "LOW_CONFIDENCE",
+      "error_message": "Model confidence is too low. Required threshold for UNKNOWN_COMMAND: 0.5",
+      "needs_confirmation": true,
+      "confidence": 0.49571293592453003,
+      "threshold": 0.5,
+      "raw_label": "UNKNOWN_COMMAND__none",
+      "top_predictions": [
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.49571293592453003
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.4207020699977875
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.02292693220078945
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.012422760017216206
+        },
+        {
+          "label": "TAKE_PHOTO__none",
+          "confidence": 0.006958555430173874
+        }
+      ]
+    }
+  },
+  {
+    "index": 101,
+    "input": {
+      "text": "Increase the volume",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.29,
+    "response": {
+      "input": "Increase the volume",
+      "normalized_input": "Increase the volume",
+      "language": "EN",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "increase"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::volume_increase",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 102,
+    "input": {
+      "text": "Decrease the volume",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 1.96,
+    "response": {
+      "input": "Decrease the volume",
+      "normalized_input": "Decrease the volume",
+      "language": "EN",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "decrease"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::volume_decrease",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 103,
+    "input": {
+      "text": "Turn the sound up",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.38,
+    "response": {
+      "input": "Turn the sound up",
+      "normalized_input": "Turn the sound up",
+      "language": "EN",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "increase"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::volume_increase",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 104,
+    "input": {
+      "text": "Lower the phone volume",
+      "language": "en"
+    },
+    "status_code": 200,
+    "elapsed_ms": 37.41,
+    "response": {
+      "input": "Lower the phone volume",
+      "normalized_input": "Lower the phone volume",
+      "language": "EN",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "decrease"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9433189630508423,
+      "threshold": 0.55,
+      "raw_label": "ADJUST_VOLUME__decrease",
+      "top_predictions": [
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.9433189630508423
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.01071153674274683
+        },
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.008695741184055805
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.007732308469712734
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.005286616738885641
+        }
+      ]
+    }
+  },
+  {
+    "index": 105,
+    "input": {
+      "text": "ارفع الصوت",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 2.05,
+    "response": {
+      "input": "ارفع الصوت",
+      "normalized_input": "ارفع الصوت",
+      "language": "AR",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "increase"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::volume_increase",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 106,
+    "input": {
+      "text": "اخفض الصوت",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 1.98,
+    "response": {
+      "input": "اخفض الصوت",
+      "normalized_input": "اخفض الصوت",
+      "language": "AR",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "decrease"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 1.0,
+      "threshold": 0.55,
+      "raw_label": "RULE::volume_decrease",
+      "top_predictions": []
+    }
+  },
+  {
+    "index": 107,
+    "input": {
+      "text": "زود الصوت قليلا",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 30.3,
+    "response": {
+      "input": "زود الصوت قليلا",
+      "normalized_input": "زود الصوت قليلا",
+      "language": "AR",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "increase"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9469835758209229,
+      "threshold": 0.55,
+      "raw_label": "ADJUST_VOLUME__increase",
+      "top_predictions": [
+        {
+          "label": "ADJUST_VOLUME__increase",
+          "confidence": 0.9469835758209229
+        },
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.015165029093623161
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.013873371295630932
+        },
+        {
+          "label": "SCROLL_SCREEN__up",
+          "confidence": 0.00538275670260191
+        },
+        {
+          "label": "ADJUST_VOLUME__unmute",
+          "confidence": 0.0035878028720617294
+        }
+      ]
+    }
+  },
+  {
+    "index": 108,
+    "input": {
+      "text": "قلل صوت الهاتف",
+      "language": "ar"
+    },
+    "status_code": 200,
+    "elapsed_ms": 30.86,
+    "response": {
+      "input": "قلل صوت الهاتف",
+      "normalized_input": "قلل صوت الهاتف",
+      "language": "AR",
+      "intent": "ADJUST_VOLUME",
+      "parameters": {
+        "volume_action": "decrease"
+      },
+      "accepted": true,
+      "missing_slots": [],
+      "error_code": null,
+      "error_message": null,
+      "needs_confirmation": false,
+      "confidence": 0.9303547739982605,
+      "threshold": 0.55,
+      "raw_label": "ADJUST_VOLUME__decrease",
+      "top_predictions": [
+        {
+          "label": "ADJUST_VOLUME__decrease",
+          "confidence": 0.9303547739982605
+        },
+        {
+          "label": "ADJUST_VOLUME__mute",
+          "confidence": 0.014657437801361084
+        },
+        {
+          "label": "UNKNOWN_COMMAND__none",
+          "confidence": 0.010581599548459053
+        },
+        {
+          "label": "TAKE_PHOTO__none",
+          "confidence": 0.0074186259880661964
+        },
+        {
+          "label": "ADJUST_VOLUME__none",
+          "confidence": 0.0065831998363137245
+        }
+      ]
+    }
+  }
+]
