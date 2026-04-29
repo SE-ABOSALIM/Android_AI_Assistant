@@ -6,65 +6,139 @@ import java.util.Map;
 
 public class PredictResponse {
     private String input;
-    
-    @SerializedName("intent")
-    private String intent;
 
-    private boolean accepted;
-    private double temperature;
-    @SerializedName(value = "parameters", alternate = {"params", "Params"})
+    @SerializedName("normalized_input")
+    private String normalizedInput;
+
+    private String language;
+    private String intent;
     private Map<String, Object> parameters;
-    
+    private boolean accepted;
+
     @SerializedName("missing_slots")
     private List<String> missingSlots;
 
+    @SerializedName("error_code")
+    private String errorCode;
+
+    @SerializedName("error_message")
+    private String errorMessage;
+
+    @SerializedName("needs_confirmation")
+    private boolean needsConfirmation;
+
+    private double confidence;
+    private double threshold;
+
+    @SerializedName("raw_label")
+    private String rawLabel;
+
+    @SerializedName("top_predictions")
+    private List<TopPrediction> topPredictions;
+
     public String getInput() {
         return input;
+    }
+
+    public String getNormalizedInput() {
+        return normalizedInput;
+    }
+
+    public String getLanguage() {
+        return language;
     }
 
     public String getIntent() {
         return intent;
     }
 
-    public boolean isAccepted() {
-        return accepted;
-    }
-
-    public double getTemperature() {
-        return temperature;
-    }
-
     public Map<String, Object> getParameters() {
         return parameters;
+    }
+
+    public boolean isAccepted() {
+        return accepted;
     }
 
     public List<String> getMissingSlots() {
         return missingSlots;
     }
 
-    // Helper to get string parameter safely
-    public String getParameterAsString(String key) {
-        if (parameters == null || !parameters.containsKey(key)) return null;
-        Object val = parameters.get(key);
-        return val != null ? val.toString() : null;
+    public String getErrorCode() {
+        return errorCode;
     }
 
-    // Helper to get int parameter safely
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public boolean isNeedsConfirmation() {
+        return needsConfirmation;
+    }
+
+    public double getConfidence() {
+        return confidence;
+    }
+
+    public double getThreshold() {
+        return threshold;
+    }
+
+    public String getRawLabel() {
+        return rawLabel;
+    }
+
+    public List<TopPrediction> getTopPredictions() {
+        return topPredictions;
+    }
+
+    public String getParameterAsString(String key) {
+        return getStringParam(parameters, key);
+    }
+
     public int getParameterAsInt(String key, int defaultValue) {
-        if (parameters == null || !parameters.containsKey(key)) return defaultValue;
-        Object val = parameters.get(key);
-        if (val instanceof Number) {
-            return ((Number) val).intValue();
+        int value = getIntParam(parameters, key);
+        return value == -1 ? defaultValue : value;
+    }
+
+    public static String getStringParam(Map<String, Object> params, String key) {
+        if (params == null || !params.containsKey(key) || params.get(key) == null) {
+            return null;
         }
+        return String.valueOf(params.get(key));
+    }
+
+    public static int getIntParam(Map<String, Object> params, String key) {
+        if (params == null || !params.containsKey(key) || params.get(key) == null) {
+            return -1;
+        }
+
+        Object value = params.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+
         try {
-            // Handle case where GSON might parse number as double string e.g. "600.0"
-            String strVal = val.toString();
-            if (strVal.contains(".")) {
-                return (int) Double.parseDouble(strVal);
+            String textValue = String.valueOf(value);
+            if (textValue.contains(".")) {
+                return (int) Double.parseDouble(textValue);
             }
-            return Integer.parseInt(strVal);
-        } catch (Exception e) {
-            return defaultValue;
+            return Integer.parseInt(textValue);
+        } catch (Exception ignored) {
+            return -1;
+        }
+    }
+
+    public static class TopPrediction {
+        private String label;
+        private double confidence;
+
+        public String getLabel() {
+            return label;
+        }
+
+        public double getConfidence() {
+            return confidence;
         }
     }
 }

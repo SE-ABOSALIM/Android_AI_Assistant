@@ -5,9 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
 
-    // BURAYI KENDI PC IP ADRESINE GORE DEGISTIR
-    // sondaki / olacak
-    private static final String BASE_URL = "http://10.245.4.38:8000/";
+    private static final String BASE_URL = "http://10.245.4.38:8001/";
 
     private static Retrofit retrofit;
 

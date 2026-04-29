@@ -4,10 +4,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,11 +17,22 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = "MainActivity";
 
     private Spinner spinnerLanguage;
     private TextView tvResult;
     private Button btnSpeak;
+    private EditText etCommand;
+    private Button btnPredict;
+    private String selectedLanguage = "TR";
+    private ApiService apiService;
+    private CommandExecutor commandExecutor;
     private boolean isServiceListening = false;
     private AlertDialog spellingSuggestionDialog;
 
@@ -41,6 +54,10 @@ public class MainActivity extends AppCompatActivity {
         spinnerLanguage = findViewById(R.id.spinnerLanguage);
         tvResult = findViewById(R.id.tvResult);
         btnSpeak = findViewById(R.id.btnSpeak);
+        etCommand = findViewById(R.id.etCommand);
+        btnPredict = findViewById(R.id.btnPredict);
+        apiService = RetrofitClient.getClient().create(ApiService.class);
+        commandExecutor = new CommandExecutor(this);
 
         String[] languages = {"TR", "EN", "AR"};
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
@@ -54,9 +71,10 @@ public class MainActivity extends AppCompatActivity {
         spinnerLanguage.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedLanguage = languages[position];
                 MyAccessibilityService service = MyAccessibilityService.getInstance();
                 if (service != null) {
-                    service.updateLanguage(languages[position]);
+                    service.updateLanguage(selectedLanguage);
                 }
             }
 
@@ -71,11 +89,50 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        btnPredict.setOnClickListener(view -> triggerTestCommand());
+
         checkOverlayPermission();
         if (!isAccessibilityServiceEnabled()) {
             checkAccessibilityPermission();
         }
         refreshListeningUiState();
+    }
+
+    private void triggerTestCommand() {
+        String commandText = etCommand.getText() == null
+                ? ""
+                : etCommand.getText().toString().trim();
+
+        if (commandText.isEmpty()) {
+            Toast.makeText(this, "Type a command first", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        sendManualPredictionRequest(commandText);
+    }
+
+    private void sendManualPredictionRequest(String text) {
+        PredictRequest request = new PredictRequest(text, selectedLanguage);
+        apiService.predict(request).enqueue(new Callback<PredictResponse>() {
+            @Override
+            public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    PredictResponse body = response.body();
+                    updateResultUI(body);
+                    commandExecutor.executeCommand(body);
+                    return;
+                }
+
+                Log.e(TAG, "Manual prediction failed. httpCode=" + response.code());
+                showAssistantMessage("No response from backend");
+            }
+
+            @Override
+            public void onFailure(Call<PredictResponse> call, Throwable t) {
+                Log.e(TAG, "Manual prediction request failed", t);
+                showAssistantMessage("Backend unavailable");
+            }
+        });
     }
 
     @Override
@@ -190,6 +247,10 @@ public class MainActivity extends AppCompatActivity {
         runOnUiThread(this::refreshListeningUiState);
     }
 
+    public void showAssistantMessage(String message) {
+        runOnUiThread(() -> tvResult.setText(message));
+    }
+
     public void showSpellingSuggestionDialog() {
         runOnUiThread(() -> {
             if (isFinishing() || isDestroyed()) {
@@ -223,10 +284,15 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateResultUI(PredictResponse response) {
         runOnUiThread(() -> {
-            String debugInfo = "Intent: " + response.getIntent() + "\n"
-                    + "Params: " + response.getParameters() + "\n"
-                    + "Accepted: " + response.isAccepted() + "\n";
-            tvResult.setText(debugInfo);
+            String responseInfo = "intent: " + response.getIntent() + "\n"
+                    + "language: " + response.getLanguage() + "\n"
+                    + "confidence: " + response.getConfidence() + "\n"
+                    + "accepted: " + response.isAccepted() + "\n"
+                    + "parameters: " + response.getParameters() + "\n"
+                    + "missing_slots: " + response.getMissingSlots() + "\n"
+                    + "error_code: " + response.getErrorCode() + "\n"
+                    + "error_message: " + response.getErrorMessage();
+            tvResult.setText(responseInfo);
         });
     }
 

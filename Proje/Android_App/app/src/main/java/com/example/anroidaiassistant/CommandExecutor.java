@@ -1,23 +1,31 @@
 package com.example.anroidaiassistant;
 
-import android.app.AlarmManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.provider.AlarmClock;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public class CommandExecutor {
+
+    private static final String TAG = "PredictResponse";
+    private static final int MAX_APP_CHOICES = 5;
 
     private final Context context;
     private int openAppFailureCount = 0;
@@ -27,183 +35,453 @@ public class CommandExecutor {
     }
 
     public void executeCommand(PredictResponse response) {
-        if (!response.isAccepted()) {
-            Toast.makeText(context, "Command not accepted", Toast.LENGTH_SHORT).show();
+        if (response == null) {
+            showMessage("No response from backend");
             return;
         }
 
-        String intentLabel = response.getIntent();
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (!response.isAccepted()) {
+            handleRejectedCommand(response);
+            return;
+        }
 
-        switch (intentLabel) {
+        if (response.isNeedsConfirmation()) {
+            handleRejectedCommand(response);
+            return;
+        }
+
+        if (errorEquals(response, "LOW_CONFIDENCE")
+                || errorEquals(response, "MISSING_REQUIRED_SLOT")
+                || errorEquals(response, "UNKNOWN_COMMAND")) {
+            handleRejectedCommand(response);
+            return;
+        }
+
+        String intent = response.getIntent();
+        if (!hasText(intent)) {
+            showMessage("Unsupported command");
+            return;
+        }
+
+        if ("UNKNOWN_COMMAND".equalsIgnoreCase(intent)) {
+            showMessage(firstNonEmpty(response.getErrorMessage(), "Command not supported"));
+            return;
+        }
+
+        Map<String, Object> parameters = response.getParameters();
+        switch (intent) {
             case "OPEN_APP":
-                handleOpenApp(response);
+                handleOpenApp(parameters);
                 break;
-            case "CLOSE_APP":
-                if (service != null) service.performBack();
-                break;
-            case "GO_HOME":
-            case "HOME_PAGE":
-                if (service != null) service.performHome();
-                break;
-            case "CLICK_ITEM":
-                if (service != null) service.clickNodeByText(response.getParameterAsString("button_text"));
-                break;
+
             case "SCROLL_SCREEN":
-                if (service != null) {
-                    String direction = normalizeDirection(response.getParameterAsString("direction"));
-                    if (!service.scroll(direction)) {
-                        Toast.makeText(context, "Scroll direction not supported", Toast.LENGTH_SHORT).show();
-                    }
-                }
+                handleScroll(parameters);
                 break;
+
             case "SWIPE_GESTURE":
-                if (service != null) {
-                    String direction = normalizeDirection(response.getParameterAsString("direction"));
-                    if (!service.swipe(direction)) {
-                        Toast.makeText(context, "Swipe direction not supported", Toast.LENGTH_SHORT).show();
-                    }
-                }
+                handleSwipe(parameters);
                 break;
-            case "SHOW_RECENTS":
-                if (service != null) service.performRecents();
-                break;
-            case "OPEN_NOTIFICATIONS":
-                if (service != null) service.performNotifications();
-                break;
+
             case "ADJUST_VOLUME":
-                handleVolume(response.getParameterAsString("volume_action"));
+                handleVolume(parameters);
                 break;
-            case "SET_ALARM":
-                handleSetAlarm(response.getParameterAsString("time_text"));
+
+            case "GO_HOME":
+                handleGoHome();
                 break;
+
             case "SET_TIMER":
-                handleSetTimer(response.getParameterAsInt("duration_seconds", 0));
+                handleSetTimer(parameters);
                 break;
+
             case "TAKE_PHOTO":
                 handleTakePhoto();
                 break;
-            case "ASSISTANT_CONTROL":
-                handleAssistantControl(response.getParameterAsString("assistant_action"));
+
+            case "STOP_LISTENING":
+                stopListening();
                 break;
-            case "CALL_CONTACT":
-                handleCall(response.getParameterAsString("contact_name"));
-                break;
+
             default:
-                Toast.makeText(context, "Unknown command: " + intentLabel, Toast.LENGTH_SHORT).show();
+                showMessage("Unsupported intent: " + intent);
+                break;
         }
     }
 
-    private void handleOpenApp(PredictResponse response) {
-        String appName = response.getParameterAsString("app_name");
-        String joinedAppName = response.getParameterAsString("app_name_joined");
-        boolean isSpelled = isTruthy(response.getParameterAsString("app_name_is_spelled"));
-
-        String displayAppCandidate = firstNonEmpty(
-                appName,
-                joinedAppName,
-                response.getParameterAsString("app_name_original_normalized"),
-                response.getParameterAsString("app_name_ascii"),
-                response.getParameterAsString("app_name_normalized")
-        );
-
-        String spelledCandidate = firstNonEmpty(joinedAppName, joinSpelledCandidate(appName));
-        String rawAppCandidate = firstNonEmpty(
-                (isSpelled || hasText(joinedAppName)) ? spelledCandidate : null,
-                appName,
-                response.getParameterAsString("app_name_original_normalized"),
-                response.getParameterAsString("app_name_ascii"),
-                response.getParameterAsString("app_name_normalized")
-        );
-
-        String candidateOriginalNormalized = normalizeText(
-                firstNonEmpty(
-                        (isSpelled || hasText(joinedAppName)) ? rawAppCandidate : null,
-                        response.getParameterAsString("app_name_original_normalized"),
-                        rawAppCandidate
-                )
-        );
-        String candidateAscii = normalizeAsciiText(
-                firstNonEmpty(
-                        (isSpelled || hasText(joinedAppName)) ? rawAppCandidate : null,
-                        response.getParameterAsString("app_name_ascii"),
-                        candidateOriginalNormalized
-                )
-        );
-        String candidateCompact = normalizeAppCandidate(
-                firstNonEmpty(
-                        (isSpelled || hasText(joinedAppName)) ? rawAppCandidate : null,
-                        response.getParameterAsString("app_name_normalized"),
-                        rawAppCandidate
-                )
-        );
-
-        openBestMatchingApp(
-                rawAppCandidate,
-                displayAppCandidate,
-                candidateOriginalNormalized,
-                candidateAscii,
-                candidateCompact
-        );
-    }
-
-    public void handleSpelledAppCandidate(String spokenText) {
-        String joinedCandidate = joinSpelledCandidate(spokenText);
-        openBestMatchingApp(
-                joinedCandidate,
-                spokenText,
-                normalizeText(joinedCandidate),
-                normalizeAsciiText(joinedCandidate),
-                normalizeAppCandidate(joinedCandidate)
-        );
-    }
-
-    private void openBestMatchingApp(
-            String rawAppCandidate,
-            String displayAppCandidate,
-            String candidateOriginalNormalized,
-            String candidateAscii,
-            String candidateCompact
-    ) {
-        if (!hasText(rawAppCandidate) || !hasText(candidateCompact)) {
-            onOpenAppFailure(firstNonEmpty(displayAppCandidate, rawAppCandidate));
+    private void handleRejectedCommand(PredictResponse response) {
+        if (response == null) {
+            showMessage("No response from backend");
             return;
         }
 
-        PackageManager pm = context.getPackageManager();
+        if (response.getMissingSlots() != null && !response.getMissingSlots().isEmpty()) {
+            showMessage(buildMissingSlotsMessage(response.getMissingSlots()));
+            return;
+        }
+
+        if (response.isNeedsConfirmation()) {
+            showMessage(firstNonEmpty(response.getErrorMessage(), "Please clarify the command."));
+            return;
+        }
+
+        if (errorEquals(response, "LOW_CONFIDENCE")) {
+            showMessage(firstNonEmpty(response.getErrorMessage(), "Please repeat or clarify."));
+            return;
+        }
+
+        if (errorEquals(response, "UNKNOWN_COMMAND")) {
+            showMessage(firstNonEmpty(response.getErrorMessage(), "Command not supported"));
+            return;
+        }
+
+        if (errorEquals(response, "MISSING_REQUIRED_SLOT")) {
+            showMessage(firstNonEmpty(response.getErrorMessage(), "Please provide the missing information."));
+            return;
+        }
+
+        showMessage(firstNonEmpty(response.getErrorMessage(), "Command not accepted"));
+    }
+
+    private String buildMissingSlotsMessage(List<String> missingSlots) {
+        if (containsSlot(missingSlots, "direction")) {
+            return "Which direction?";
+        }
+        if (containsSlot(missingSlots, "app_name")) {
+            return "Which app should I open?";
+        }
+        if (containsSlot(missingSlots, "duration_value") || containsSlot(missingSlots, "duration_unit")) {
+            return "How long should I set the timer for?";
+        }
+        if (containsSlot(missingSlots, "volume_action")) {
+            return "Should I increase, decrease, mute, or unmute the volume?";
+        }
+        return "Please provide: " + joinList(missingSlots);
+    }
+
+    private boolean containsSlot(List<String> missingSlots, String slot) {
+        for (String missingSlot : missingSlots) {
+            if (slot.equalsIgnoreCase(missingSlot)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void handleOpenApp(Map<String, Object> parameters) {
+        String appName = getStringParam(parameters, "app_name");
+        if (!hasText(appName)) {
+            showMessage("Which app should I open?");
+            return;
+        }
+
+        List<AppMatch> matches = findAppMatches(appName);
+        if (matches.isEmpty()) {
+            onOpenAppFailure(appName);
+            return;
+        }
+
+        if (matches.size() == 1) {
+            launchPackage(matches.get(0).packageName, matches.get(0).label);
+            return;
+        }
+
+        showAppChoice(matches, appName);
+    }
+
+    public void handleSpelledAppCandidate(String spokenText) {
+        if (!hasText(spokenText)) {
+            showMessage("Which app should I open?");
+            return;
+        }
+        Map<String, Object> parameters = new LinkedHashMap<>();
+        parameters.put("app_name", joinSpelledCandidate(spokenText));
+        handleOpenApp(parameters);
+    }
+
+    private List<AppMatch> findAppMatches(String appName) {
+        String candidateOriginalNormalized = normalizeText(appName);
+        String candidateAscii = normalizeAsciiText(appName);
+        String candidateCompact = normalizeAppCandidate(appName);
+        if (!hasText(candidateCompact)) {
+            return Collections.emptyList();
+        }
+
+        PackageManager packageManager = context.getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        List<ResolveInfo> pkgAppsList = pm.queryIntentActivities(mainIntent, 0);
+        List<ResolveInfo> installedApps = packageManager.queryIntentActivities(mainIntent, 0);
 
-        String bestMatchPackage = null;
-        float bestScore = -1f;
-        for (ResolveInfo app : pkgAppsList) {
-            float score = scoreAppMatch(
+        Map<String, AppMatch> exactMatches = new LinkedHashMap<>();
+        List<AppMatch> fuzzyMatches = new ArrayList<>();
+        float threshold = minimumAcceptableScore(candidateCompact);
+
+        for (ResolveInfo app : installedApps) {
+            String packageName = app.activityInfo.packageName;
+            String label = app.loadLabel(packageManager).toString();
+            AppMatch match = scoreAppMatch(
                     candidateCompact,
                     candidateAscii,
                     candidateOriginalNormalized,
-                    app.loadLabel(pm).toString(),
-                    app.activityInfo.packageName
+                    label,
+                    packageName
             );
-            if (score > bestScore) {
-                bestScore = score;
-                bestMatchPackage = app.activityInfo.packageName;
+
+            if (match.exact) {
+                exactMatches.put(packageName, match);
+            } else if (match.score >= threshold) {
+                fuzzyMatches.add(match);
             }
         }
 
-        if (bestMatchPackage != null && bestScore >= minimumAcceptableScore(candidateCompact)) {
-            Intent intent = pm.getLaunchIntentForPackage(bestMatchPackage);
-            if (intent != null) {
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                try {
-                    context.startActivity(intent);
-                    resetOpenAppFailureCount();
-                    return;
-                } catch (Exception ignored) {}
-            }
+        if (!exactMatches.isEmpty()) {
+            return new ArrayList<>(exactMatches.values());
         }
 
-        onOpenAppFailure(firstNonEmpty(displayAppCandidate, rawAppCandidate));
+        fuzzyMatches.sort(Comparator.comparing((AppMatch match) -> match.score).reversed());
+        return fuzzyMatches;
+    }
+
+    private AppMatch scoreAppMatch(
+            String candidateCompact,
+            String candidateAscii,
+            String candidateOriginalNormalized,
+            String appLabel,
+            String packageName
+    ) {
+        String labelOriginalNormalized = normalizeText(appLabel);
+        String labelAscii = normalizeAsciiText(appLabel);
+        String labelCompact = labelAscii.replace(" ", "");
+        String packageNormalized = normalizeText(packageName.replace('.', ' '));
+        String packageCompact = packageNormalized.replace(" ", "");
+
+        boolean exactLabelMatch = candidateCompact.equals(labelCompact);
+        boolean exactPackageMatch = candidateCompact.equals(packageCompact);
+        float score = exactLabelMatch ? 1.0f : (exactPackageMatch ? 0.98f : 0.0f);
+
+        if (!candidateAscii.contains(" ") && tokenize(labelAscii).contains(candidateAscii)) {
+            score = Math.max(score, 0.96f);
+        }
+        if (labelCompact.contains(candidateCompact) || candidateCompact.contains(labelCompact)) {
+            score = Math.max(score, 0.92f - lengthPenalty(candidateCompact, labelCompact));
+        }
+        if (packageCompact.contains(candidateCompact) || candidateCompact.contains(packageCompact)) {
+            score = Math.max(score, 0.82f - lengthPenalty(candidateCompact, packageCompact));
+        }
+
+        score = Math.max(score, levenshteinSimilarity(candidateCompact, labelCompact));
+        score = Math.max(score, levenshteinSimilarity(candidateCompact, packageCompact) * 0.84f);
+        score = Math.max(score, tokenOverlapScore(candidateAscii, labelAscii) * 0.90f);
+        score = Math.max(score, tokenOverlapScore(candidateOriginalNormalized, labelOriginalNormalized) * 0.86f);
+
+        return new AppMatch(appLabel, packageName, score, exactLabelMatch || exactPackageMatch);
+    }
+
+    private void showAppChoice(List<AppMatch> matches, String appName) {
+        MainActivity activity = MainActivity.getInstance();
+        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
+            showMessage("Multiple apps match. Please say the full app name.");
+            return;
+        }
+
+        int choiceCount = Math.min(matches.size(), MAX_APP_CHOICES);
+        String[] labels = new String[choiceCount];
+        for (int i = 0; i < choiceCount; i++) {
+            labels[i] = matches.get(i).label;
+        }
+
+        activity.runOnUiThread(() -> new AlertDialog.Builder(activity)
+                .setTitle("Choose app")
+                .setMessage("Multiple apps match: " + appName)
+                .setItems(labels, (dialog, which) -> {
+                    AppMatch selectedMatch = matches.get(which);
+                    launchPackage(selectedMatch.packageName, selectedMatch.label);
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .show());
+    }
+
+    private void launchPackage(String packageName, String label) {
+        PackageManager packageManager = context.getPackageManager();
+        Intent intent = packageManager.getLaunchIntentForPackage(packageName);
+        if (intent == null) {
+            showMessage("App not found. Please spell the app name.");
+            return;
+        }
+
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            context.startActivity(intent);
+            openAppFailureCount = 0;
+        } catch (Exception exception) {
+            Log.e(TAG, "Failed to launch app: " + packageName, exception);
+            showMessage("Could not open " + firstNonEmpty(label, "app"));
+        }
+    }
+
+    private void onOpenAppFailure(String appCandidate) {
+        openAppFailureCount++;
+        showMessage("App not found. Please spell the app name.");
+
+        if (openAppFailureCount == 2 || openAppFailureCount == 3) {
+            MainActivity mainActivity = MainActivity.getInstance();
+            if (mainActivity != null) {
+                mainActivity.showSpellingSuggestionDialog();
+            }
+        }
+    }
+
+    private void handleScroll(Map<String, Object> parameters) {
+        String direction = normalizeDirection(getStringParam(parameters, "direction"));
+        if (!hasText(direction)) {
+            showMessage("Which direction?");
+            return;
+        }
+
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null) {
+            showMessage("Accessibility service is not connected");
+            return;
+        }
+
+        if (!service.scroll(direction)) {
+            showMessage("Cannot scroll " + direction);
+        } else {
+        }
+    }
+
+    private void handleSwipe(Map<String, Object> parameters) {
+        String direction = normalizeDirection(getStringParam(parameters, "direction"));
+        if (!hasText(direction)) {
+            showMessage("Which direction?");
+            return;
+        }
+
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null) {
+            showMessage("Accessibility service is not connected");
+            return;
+        }
+
+        if (!service.swipe(direction)) {
+            showMessage("Swipe direction not supported");
+        } else {
+        }
+    }
+
+    private void handleVolume(Map<String, Object> parameters) {
+        String volumeAction = normalizeDirection(getStringParam(parameters, "volume_action"));
+        if (!hasText(volumeAction)) {
+            showMessage("Should I increase, decrease, mute, or unmute the volume?");
+            return;
+        }
+
+        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        if (audioManager == null) {
+            showMessage("Volume control is unavailable");
+            return;
+        }
+
+        switch (volumeAction) {
+            case "increase":
+                audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+                break;
+            case "decrease":
+                audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+                break;
+            case "mute":
+                audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI);
+                break;
+            case "unmute":
+                audioManager.adjustVolume(AudioManager.ADJUST_UNMUTE, AudioManager.FLAG_SHOW_UI);
+                break;
+            default:
+                showMessage("Volume action not supported");
+                break;
+        }
+    }
+
+    private void handleGoHome() {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null) {
+            showMessage("Accessibility service is not connected");
+            return;
+        }
+        service.performHome();
+    }
+
+    private void handleSetTimer(Map<String, Object> parameters) {
+        int durationValue = getIntParam(parameters, "duration_value");
+        String durationUnit = getStringParam(parameters, "duration_unit");
+        int durationSeconds = getIntParam(parameters, "duration_seconds");
+
+        if (durationValue <= 0 || !hasText(durationUnit)) {
+            showMessage("How long should I set the timer for?");
+            return;
+        }
+
+        if (durationSeconds <= 0) {
+            showMessage("Timer duration is missing");
+            return;
+        }
+
+        Intent intent = new Intent(AlarmClock.ACTION_SET_TIMER)
+                .putExtra(AlarmClock.EXTRA_LENGTH, durationSeconds)
+                .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            context.startActivity(intent);
+        } catch (Exception exception) {
+            Log.e(TAG, "Failed to set timer", exception);
+            showMessage("Timer app is unavailable");
+        }
+    }
+
+    private void handleTakePhoto() {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service != null && service.capturePhoto()) {
+            return;
+        }
+
+        Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            context.startActivity(intent);
+        } catch (Exception exception) {
+            Log.e(TAG, "Failed to open camera", exception);
+            showMessage("Camera unavailable");
+        }
+    }
+
+    private void stopListening() {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service != null) {
+            service.stopContinuousListening();
+        }
+
+        MainActivity mainActivity = MainActivity.getInstance();
+        if (mainActivity != null) {
+            mainActivity.syncListeningUiState();
+        }
+    }
+
+    private void showMessage(String message) {
+        if (!hasText(message)) {
+            return;
+        }
+
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean errorEquals(PredictResponse response, String errorCode) {
+        return response.getErrorCode() != null && response.getErrorCode().equalsIgnoreCase(errorCode);
+    }
+
+    private String getStringParam(Map<String, Object> params, String key) {
+        return PredictResponse.getStringParam(params, key);
+    }
+
+    private int getIntParam(Map<String, Object> params, String key) {
+        return PredictResponse.getIntParam(params, key);
     }
 
     private String normalizeDirection(String direction) {
@@ -250,43 +528,6 @@ public class CommandExecutor {
             return null;
         }
         return normalizeAsciiText(text).replace(" ", "");
-    }
-
-    private float scoreAppMatch(
-            String candidateCompact,
-            String candidateAscii,
-            String candidateOriginalNormalized,
-            String appLabel,
-            String packageName
-    ) {
-        String labelOriginalNormalized = normalizeText(appLabel);
-        String labelAscii = normalizeAsciiText(appLabel);
-        String labelCompact = labelAscii.replace(" ", "");
-        String packageNormalized = normalizeText(packageName.replace('.', ' '));
-        String packageCompact = packageNormalized.replace(" ", "");
-
-        if (candidateCompact.equals(labelCompact)) {
-            return 1.0f;
-        }
-        if (candidateCompact.equals(packageCompact)) {
-            return 0.98f;
-        }
-
-        float score = 0.0f;
-
-        if (labelCompact.contains(candidateCompact) || candidateCompact.contains(labelCompact)) {
-            score = Math.max(score, 0.92f - lengthPenalty(candidateCompact, labelCompact));
-        }
-        if (packageCompact.contains(candidateCompact) || candidateCompact.contains(packageCompact)) {
-            score = Math.max(score, 0.86f - lengthPenalty(candidateCompact, packageCompact));
-        }
-
-        score = Math.max(score, levenshteinSimilarity(candidateCompact, labelCompact));
-        score = Math.max(score, levenshteinSimilarity(candidateCompact, packageCompact) * 0.88f);
-        score = Math.max(score, tokenOverlapScore(candidateAscii, labelAscii) * 0.90f);
-        score = Math.max(score, tokenOverlapScore(candidateOriginalNormalized, labelOriginalNormalized) * 0.86f);
-
-        return score;
     }
 
     private float minimumAcceptableScore(String candidateCompact) {
@@ -382,97 +623,35 @@ public class CommandExecutor {
         return null;
     }
 
+    private String joinList(List<String> values) {
+        StringBuilder builder = new StringBuilder();
+        for (String value : values) {
+            if (!hasText(value)) {
+                continue;
+            }
+            if (builder.length() > 0) {
+                builder.append(", ");
+            }
+            builder.append(value);
+        }
+        return builder.toString();
+    }
+
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
     }
 
-    private boolean isTruthy(String value) {
-        return "true".equalsIgnoreCase(value)
-                || "1".equals(value)
-                || "yes".equalsIgnoreCase(value);
-    }
+    private static class AppMatch {
+        private final String label;
+        private final String packageName;
+        private final float score;
+        private final boolean exact;
 
-    private void resetOpenAppFailureCount() {
-        openAppFailureCount = 0;
-    }
-
-    private void onOpenAppFailure(String appCandidate) {
-        openAppFailureCount++;
-        Toast.makeText(
-                context,
-                "App not found: " + firstNonEmpty(appCandidate, "unknown"),
-                Toast.LENGTH_SHORT
-        ).show();
-
-        if (openAppFailureCount == 2 || openAppFailureCount == 3) {
-            MainActivity mainActivity = MainActivity.getInstance();
-            if (mainActivity != null) {
-                mainActivity.showSpellingSuggestionDialog();
-            }
+        private AppMatch(String label, String packageName, float score, boolean exact) {
+            this.label = label;
+            this.packageName = packageName;
+            this.score = score;
+            this.exact = exact;
         }
-    }
-
-    private void handleVolume(String action) {
-        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        if ("increase".equalsIgnoreCase(action)) {
-            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
-        } else if ("decrease".equalsIgnoreCase(action)) {
-            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
-        }
-    }
-
-    private void handleSetAlarm(String time) {
-        if (time == null || !time.contains(":")) return;
-        try {
-            String[] parts = time.split(":");
-            Intent intent = new Intent(AlarmClock.ACTION_SET_ALARM)
-                    .putExtra(AlarmClock.EXTRA_HOUR, Integer.parseInt(parts[0]))
-                    .putExtra(AlarmClock.EXTRA_MINUTES, Integer.parseInt(parts[1]))
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-        } catch (Exception e) {
-            Toast.makeText(context, "Error setting alarm", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void handleSetTimer(int seconds) {
-        if (seconds <= 0) return;
-        Intent intent = new Intent(AlarmClock.ACTION_SET_TIMER)
-                .putExtra(AlarmClock.EXTRA_LENGTH, seconds)
-                .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
-    }
-
-    private void handleTakePhoto() {
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
-        if (service != null && service.capturePhoto()) {
-            return;
-        }
-
-        Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
-    }
-
-    private void handleAssistantControl(String assistantAction) {
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
-        if (service == null) {
-            return;
-        }
-
-        String normalizedAction = normalizeDirection(assistantAction);
-        if ("stop_listening".equals(normalizedAction)) {
-            service.stopContinuousListening();
-
-            MainActivity mainActivity = MainActivity.getInstance();
-            if (mainActivity != null) {
-                mainActivity.syncListeningUiState();
-            }
-        }
-    }
-
-    private void handleCall(String contactName) {
-        Toast.makeText(context, "Calling " + contactName, Toast.LENGTH_SHORT).show();
     }
 }

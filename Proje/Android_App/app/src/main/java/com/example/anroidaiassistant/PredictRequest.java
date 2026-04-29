@@ -1,7 +1,12 @@
 package com.example.anroidaiassistant;
 
+import com.google.gson.annotations.SerializedName;
+
 public class PredictRequest {
+    @SerializedName("text")
     private String text;
+
+    @SerializedName("language")
     private String language;
 
     public PredictRequest(String text, String language) {

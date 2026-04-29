@@ -16,6 +16,7 @@ import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,6 +34,7 @@ import retrofit2.Response;
 
 public class MyAccessibilityService extends AccessibilityService {
 
+    private static final String TAG = "MyAccessibilityService";
     private static MyAccessibilityService instance;
     private static final int RESTART_DELAY_FAST_MS = 200;
     private static final int RESTART_DELAY_SLOW_MS = 800;
@@ -313,6 +315,19 @@ public class MyAccessibilityService extends AccessibilityService {
         }
     }
 
+    public void showFeedback(String text) {
+        updateOverlayText(text);
+    }
+
+    public void submitTextCommand(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            showFeedback("Type a command first");
+            return;
+        }
+        updateOverlayText("Input: " + text.trim());
+        sendPredictionRequest(text.trim());
+    }
+
     private void sendPredictionRequest(String text) {
         PredictRequest request = new PredictRequest(text, selectedLanguage);
         apiService.predict(request).enqueue(new Callback<PredictResponse>() {
@@ -328,11 +343,25 @@ public class MyAccessibilityService extends AccessibilityService {
                     }
                     
                     commandExecutor.executeCommand(body);
+                } else {
+                    Log.e(TAG, "Prediction failed. httpCode=" + response.code());
+                    showRequestError("No response from backend");
                 }
             }
             @Override
-            public void onFailure(Call<PredictResponse> call, Throwable t) {}
+            public void onFailure(Call<PredictResponse> call, Throwable t) {
+                Log.e(TAG, "Prediction request failed", t);
+                showRequestError("Backend unavailable");
+            }
         });
+    }
+
+    private void showRequestError(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        MainActivity mainActivity = MainActivity.getInstance();
+        if (mainActivity != null) {
+            mainActivity.showAssistantMessage(message);
+        }
     }
 
     @Override
@@ -478,11 +507,54 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private boolean scrollDown() {
+        if (performScrollActionOnNodeTree(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)) {
+            return true;
+        }
         return scrollByRatio(0.50f, 0.78f, 0.50f, 0.24f);
     }
 
     private boolean scrollUp() {
+        if (performScrollActionOnNodeTree(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD)) {
+            return true;
+        }
         return scrollByRatio(0.50f, 0.24f, 0.50f, 0.78f);
+    }
+
+    private boolean performScrollActionOnNodeTree(int action) {
+        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+        return performScrollAction(rootNode, action);
+    }
+
+    private boolean performScrollAction(AccessibilityNodeInfo node, int action) {
+        if (node == null) {
+            return false;
+        }
+
+        if ((node.isScrollable() || supportsAction(node, action)) && node.performAction(action)) {
+            return true;
+        }
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            AccessibilityNodeInfo child = node.getChild(i);
+            if (performScrollAction(child, action)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean supportsAction(AccessibilityNodeInfo node, int actionId) {
+        List<AccessibilityNodeInfo.AccessibilityAction> actions = node.getActionList();
+        if (actions == null) {
+            return false;
+        }
+
+        for (AccessibilityNodeInfo.AccessibilityAction action : actions) {
+            if (action != null && action.getId() == actionId) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean scrollByRatio(
@@ -573,6 +645,7 @@ public class MyAccessibilityService extends AccessibilityService {
         swipePath.lineTo(endX, endY);
         GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
         gestureBuilder.addStroke(new GestureDescription.StrokeDescription(swipePath, 0, durationMillis));
-        return dispatchGesture(gestureBuilder.build(), null, null);
+        boolean dispatched = dispatchGesture(gestureBuilder.build(), null, null);
+        return dispatched;
     }
 }
