@@ -9,9 +9,21 @@ public class PredictRequest {
     @SerializedName("language")
     private String language;
 
+    @SerializedName("session_id")
+    private String sessionId;
+
+    @SerializedName("catalog_version")
+    private String catalogVersion;
+
     public PredictRequest(String text, String language) {
+        this(text, language, AssistantSession.getSessionId());
+    }
+
+    public PredictRequest(String text, String language, String sessionId) {
         this.text = text;
         this.language = language;
+        this.sessionId = sessionId;
+        this.catalogVersion = AssistantSession.getCatalogVersion();
     }
 
     public String getText() {
@@ -20,5 +32,13 @@ public class PredictRequest {
 
     public String getLanguage() {
         return language;
+    }
+
+    public String getSessionId() {
+        return sessionId;
+    }
+
+    public String getCatalogVersion() {
+        return catalogVersion;
     }
 }

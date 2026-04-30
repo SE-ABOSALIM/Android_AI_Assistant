@@ -34,6 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private ApiService apiService;
     private CommandExecutor commandExecutor;
     private boolean isServiceListening = false;
+    private boolean isCatalogSyncInProgress = false;
     private AlertDialog spellingSuggestionDialog;
 
     private static MainActivity instance;
@@ -108,11 +109,11 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        sendManualPredictionRequest(commandText);
+        ensureAppCatalogThen(() -> sendManualPredictionRequest(commandText));
     }
 
     private void sendManualPredictionRequest(String text) {
-        PredictRequest request = new PredictRequest(text, selectedLanguage);
+        PredictRequest request = new PredictRequest(text, selectedLanguage, AssistantSession.getSessionId());
         apiService.predict(request).enqueue(new Callback<PredictResponse>() {
             @Override
             public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {
@@ -181,6 +182,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleListening() {
+        if (isCatalogSyncInProgress) {
+            return;
+        }
+
         if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
                 != android.content.pm.PackageManager.PERMISSION_GRANTED) {
             requestPermissions(
@@ -212,14 +217,48 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!isServiceListening) {
-            service.startContinuousListening();
-            isServiceListening = true;
+            String sessionId = AssistantSession.startNewSession();
+            syncAppCatalogForSession(sessionId, () -> {
+                service.startContinuousListening();
+                isServiceListening = true;
+                refreshListeningUiState();
+            });
         } else {
             service.stopContinuousListening();
             isServiceListening = false;
+            AssistantSession.endSession();
+            refreshListeningUiState();
+        }
+    }
+
+    private void ensureAppCatalogThen(Runnable onCatalogReady) {
+        if (AssistantSession.getSessionId() != null && AssistantSession.getCatalogVersion() != null) {
+            onCatalogReady.run();
+            return;
         }
 
-        refreshListeningUiState();
+        String sessionId = AssistantSession.startNewSession();
+        syncAppCatalogForSession(sessionId, onCatalogReady);
+    }
+
+    private void syncAppCatalogForSession(String sessionId, Runnable onSuccess) {
+        isCatalogSyncInProgress = true;
+        btnSpeak.setEnabled(false);
+        tvResult.setText("Uygulama listesi gonderiliyor...");
+
+        AppCatalogSyncer.syncInstalledApps(this, apiService, sessionId, (success, message) -> runOnUiThread(() -> {
+            isCatalogSyncInProgress = false;
+            btnSpeak.setEnabled(true);
+
+            if (success) {
+                onSuccess.run();
+                return;
+            }
+
+            AssistantSession.endSession();
+            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            refreshListeningUiState();
+        }));
     }
 
     private void refreshListeningUiState() {

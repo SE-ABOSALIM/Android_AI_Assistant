@@ -174,6 +174,12 @@ public class CommandExecutor {
             return;
         }
 
+        String packageName = getStringParam(parameters, "app_package_name");
+        if (hasText(packageName)) {
+            launchPackage(packageName, appName);
+            return;
+        }
+
         List<AppMatch> matches = findAppMatches(appName);
         if (matches.isEmpty()) {
             onOpenAppFailure(appName);
@@ -457,6 +463,7 @@ public class CommandExecutor {
         if (service != null) {
             service.stopContinuousListening();
         }
+        AssistantSession.endSession();
 
         MainActivity mainActivity = MainActivity.getInstance();
         if (mainActivity != null) {

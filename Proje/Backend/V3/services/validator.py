@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional
 
+from V3.services.app_catalog_service import find_app_match, has_app_catalog, is_catalog_version_current
 from V3.services.extractors import extract_app_name, extract_timer
 from V3.services.text_utils import normalize_text
 from V3.services.thresholds import get_threshold
@@ -13,6 +14,8 @@ def validate_and_build_response(
     confidence: float,
     raw_label: str,
     top_predictions: Optional[List[Dict[str, Any]]] = None,
+    session_id: Optional[str] = None,
+    catalog_version: Optional[str] = None,
 ) -> Dict[str, Any]:
     threshold = get_threshold(model_intent)
     top_predictions = top_predictions or []
@@ -65,10 +68,26 @@ def validate_and_build_response(
 
     elif model_intent == "OPEN_APP":
         app_name = extract_app_name(original_text, language)
-        if app_name:
-            parameters["app_name"] = app_name
-        else:
+        if not app_name:
             missing_slots.append("app_name")
+        elif not has_app_catalog(session_id):
+            accepted = False
+            error_code = "APP_CATALOG_MISSING"
+            error_message = "Installed app catalog is missing for this session."
+        elif not is_catalog_version_current(session_id, catalog_version):
+            accepted = False
+            error_code = "APP_CATALOG_STALE"
+            error_message = "Installed app catalog version is stale for this session."
+        else:
+            app_match = find_app_match(session_id, app_name)
+            if app_match:
+                parameters["app_name"] = app_match.label
+                parameters["app_package_name"] = app_match.package_name
+                parameters["app_match_score"] = round(app_match.score, 4)
+            else:
+                accepted = False
+                error_code = "APP_NOT_IN_CATALOG"
+                error_message = "The requested app does not match an installed app."
 
     elif model_intent == "SET_TIMER":
         parameters.update(extract_timer(original_text))

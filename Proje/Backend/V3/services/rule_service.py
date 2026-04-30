@@ -1,7 +1,7 @@
 import re
 from typing import Any, Dict, Iterable, Optional
 
-from V3.services.extractors import extract_app_name, extract_timer
+from V3.services.extractors import extract_timer
 from V3.services.text_utils import normalize_text, normalized_lower
 
 
@@ -277,10 +277,6 @@ def rule_based_command(text: str, language: str) -> Optional[Dict[str, Any]]:
 
     if has_timer_keyword and (timer_params or has_timer_action):
         return _command("SET_TIMER", "set_timer", timer_params)
-
-    app_name = extract_app_name(original, language)
-    if app_name:
-        return _command("OPEN_APP", "open_app")
 
     return None
 

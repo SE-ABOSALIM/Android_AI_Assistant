@@ -267,6 +267,7 @@ public class MyAccessibilityService extends AccessibilityService {
     public void stopContinuousListening() {
         isListening = false;
         isSpellAppMode = false;
+        AssistantSession.endSession();
         mainHandler.removeCallbacks(restartListeningRunnable);
         setRecognizerSoundsMuted(false);
         isRecognitionSessionActive = false;
@@ -329,7 +330,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void sendPredictionRequest(String text) {
-        PredictRequest request = new PredictRequest(text, selectedLanguage);
+        PredictRequest request = new PredictRequest(text, selectedLanguage, AssistantSession.getSessionId());
         apiService.predict(request).enqueue(new Callback<PredictResponse>() {
             @Override
             public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {

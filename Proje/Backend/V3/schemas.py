@@ -5,6 +5,27 @@ from pydantic import BaseModel, Field
 class PredictRequest(BaseModel):
     text: str
     language: str
+    session_id: Optional[str] = None
+    catalog_version: Optional[str] = None
+
+
+class AppCatalogEntry(BaseModel):
+    label: str
+    package_name: str
+    aliases: List[str] = Field(default_factory=list)
+
+
+class AppCatalogRequest(BaseModel):
+    session_id: str
+    catalog_version: Optional[str] = None
+    apps: List[AppCatalogEntry] = Field(default_factory=list)
+
+
+class AppCatalogResponse(BaseModel):
+    accepted: bool
+    session_id: str
+    catalog_version: str
+    app_count: int
 
 
 class FinalResponse(BaseModel):

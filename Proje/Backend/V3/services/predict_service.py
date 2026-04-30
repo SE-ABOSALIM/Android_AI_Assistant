@@ -5,7 +5,12 @@ from V3.services.rule_service import rule_based_command
 from V3.services.validator import validate_and_build_response
 
 
-def predict_command(text: str, language: str) -> Dict[str, Any]:
+def predict_command(
+    text: str,
+    language: str,
+    session_id: str = None,
+    catalog_version: str = None,
+) -> Dict[str, Any]:
     """
     Main prediction pipeline:
     1. Rule-based direct command detection
@@ -24,6 +29,8 @@ def predict_command(text: str, language: str) -> Dict[str, Any]:
             confidence=1.0,
             raw_label=f"RULE::{rule_result['rule_matched']}",
             top_predictions=[],
+            session_id=session_id,
+            catalog_version=catalog_version,
         )
 
     model_result = predict_model_debug(
@@ -39,4 +46,6 @@ def predict_command(text: str, language: str) -> Dict[str, Any]:
         confidence=model_result["confidence"],
         raw_label=model_result["raw_label"],
         top_predictions=model_result["top_predictions"],
+        session_id=session_id,
+        catalog_version=catalog_version,
     )
