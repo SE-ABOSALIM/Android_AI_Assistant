@@ -146,7 +146,6 @@ TIMER_KEYWORDS = [
     "geri say",
     "sure tut",
     "zaman tut",
-    "kronometre",
 ]
 
 TIMER_ACTION_PATTERNS = [
@@ -170,7 +169,6 @@ TIMER_ACTION_PATTERNS = [
     "geri say",
     "sure tut",
     "zaman tut",
-    "kronometre ac",
 ]
 
 ARABIC_PATTERNS = {
@@ -184,7 +182,7 @@ ARABIC_PATTERNS = {
     "volume_unmute": ["افتح الصوت", "الغ كتم الصوت", "ارجع الصوت", "شغل الصوت مرة أخرى"],
     "go_home": ["اذهب للشاشة الرئيسية", "اذهب الى الشاشة الرئيسية", "الشاشة الرئيسية"],
     "take_photo": ["التقط صورة", "خذ صورة", "افتح الكاميرا"],
-    "timer_keywords": ["مؤقت", "موقت", "موقتا", "مؤقتا", "عداد", "عدادا", "عد تنازلي", "توقيت"],
+    "timer_keywords": ["مؤقت", "موقت", "موقتا", "مؤقتا", "منبه", "منبها", "عداد", "عدادا", "عد تنازلي", "توقيت"],
     "timer_actions": ["اضبط", "ابدأ", "ابدا", "شغل", "انشئ", "أنشئ"],
     "negation": ["لا ", "لا ت", "لات"],
 }

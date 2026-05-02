@@ -17,6 +17,9 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -35,7 +38,9 @@ public class MainActivity extends AppCompatActivity {
     private CommandExecutor commandExecutor;
     private boolean isServiceListening = false;
     private boolean isCatalogSyncInProgress = false;
+    private Call<AppCatalogResponse> appCatalogSyncCall;
     private AlertDialog spellingSuggestionDialog;
+    private Runnable pendingPermissionAction;
 
     private static MainActivity instance;
 
@@ -43,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
         return instance;
     }
 
-    private static final int REQUEST_CODE_RECORD_AUDIO_PERMISSION = 200;
+    private static final int REQUEST_CODE_RUNTIME_PERMISSIONS = 200;
     private static final int REQUEST_CODE_OVERLAY_PERMISSION = 300;
 
     @Override
@@ -109,6 +114,10 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
+        if (!ensureRuntimePermissions(this::triggerTestCommand)) {
+            return;
+        }
+
         ensureAppCatalogThen(() -> sendManualPredictionRequest(commandText));
     }
 
@@ -145,6 +154,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        cancelAppCatalogSyncIfNeeded();
+        if (spellingSuggestionDialog != null) {
+            spellingSuggestionDialog.dismiss();
+        }
         instance = null;
     }
 
@@ -186,12 +199,7 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
-                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(
-                    new String[]{android.Manifest.permission.RECORD_AUDIO},
-                    REQUEST_CODE_RECORD_AUDIO_PERMISSION
-            );
+        if (!ensureRuntimePermissions(this::toggleListening)) {
             return;
         }
 
@@ -226,8 +234,31 @@ public class MainActivity extends AppCompatActivity {
         } else {
             service.stopContinuousListening();
             isServiceListening = false;
-            AssistantSession.endSession();
             refreshListeningUiState();
+        }
+    }
+
+    private boolean ensureRuntimePermissions(Runnable onGranted) {
+        List<String> missingPermissions = new ArrayList<>();
+        addMissingPermission(missingPermissions, android.Manifest.permission.RECORD_AUDIO);
+        addMissingPermission(missingPermissions, android.Manifest.permission.READ_CONTACTS);
+        addMissingPermission(missingPermissions, android.Manifest.permission.CALL_PHONE);
+
+        if (missingPermissions.isEmpty()) {
+            return true;
+        }
+
+        pendingPermissionAction = onGranted;
+        requestPermissions(
+                missingPermissions.toArray(new String[0]),
+                REQUEST_CODE_RUNTIME_PERMISSIONS
+        );
+        return false;
+    }
+
+    private void addMissingPermission(List<String> permissions, String permission) {
+        if (checkSelfPermission(permission) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            permissions.add(permission);
         }
     }
 
@@ -246,8 +277,17 @@ public class MainActivity extends AppCompatActivity {
         btnSpeak.setEnabled(false);
         tvResult.setText("Uygulama listesi gonderiliyor...");
 
-        AppCatalogSyncer.syncInstalledApps(this, apiService, sessionId, (success, message) -> runOnUiThread(() -> {
+        appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(this, apiService, sessionId, (success, message) -> runOnUiThread(() -> {
+            if (isFinishing() || isDestroyed()) {
+                return;
+            }
+
+            if (!sessionId.equals(AssistantSession.getSessionId())) {
+                return;
+            }
+
             isCatalogSyncInProgress = false;
+            appCatalogSyncCall = null;
             btnSpeak.setEnabled(true);
 
             if (success) {
@@ -255,10 +295,34 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            AssistantSession.endSession();
+            closeCurrentBackendSession();
             Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
             refreshListeningUiState();
         }));
+
+        if (appCatalogSyncCall == null) {
+            isCatalogSyncInProgress = false;
+            btnSpeak.setEnabled(true);
+            closeCurrentBackendSession();
+            refreshListeningUiState();
+        }
+    }
+
+    private void cancelAppCatalogSyncIfNeeded() {
+        if (appCatalogSyncCall != null) {
+            appCatalogSyncCall.cancel();
+            appCatalogSyncCall = null;
+        }
+
+        if (isCatalogSyncInProgress) {
+            isCatalogSyncInProgress = false;
+            closeCurrentBackendSession();
+        }
+    }
+
+    private void closeCurrentBackendSession() {
+        String endedSessionId = AssistantSession.endSession();
+        AppCatalogSyncer.closeSession(apiService, endedSessionId);
     }
 
     private void refreshListeningUiState() {
@@ -338,13 +402,23 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CODE_RECORD_AUDIO_PERMISSION) {
-            if (grantResults.length > 0
-                    && grantResults[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                toggleListening();
-            } else {
-                Toast.makeText(this, "Mikrofon izni gerekli", Toast.LENGTH_SHORT).show();
+        if (requestCode == REQUEST_CODE_RUNTIME_PERMISSIONS) {
+            boolean allGranted = grantResults.length > 0;
+            for (int grantResult : grantResults) {
+                if (grantResult != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                    allGranted = false;
+                    break;
+                }
             }
+
+            Runnable action = pendingPermissionAction;
+            pendingPermissionAction = null;
+            if (allGranted && action != null) {
+                action.run();
+                return;
+            }
+
+            Toast.makeText(this, "Mikrofon, rehber ve arama izinleri gerekli", Toast.LENGTH_SHORT).show();
         }
     }
 }

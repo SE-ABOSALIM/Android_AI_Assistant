@@ -13,7 +13,18 @@ OPEN_APP_PATTERNS = [
     r"^ac\s+(.+)$",
 ]
 
+CALL_CONTACT_PATTERNS = [
+    r"^call\s+(.+)$",
+    r"^phone\s+(.+)$",
+    r"^ring\s+(.+)$",
+    r"^(.+)\s+call$",
+    r"^(.+)\s+ara$",
+]
+
 REJECT_APP_NAMES = {"app", "application", "uygulama"}
+ARABIC_CALL_PATTERNS = [
+    r"^\u0627\u062a\u0635\u0644\s+\u0628?(.+)$",
+]
 ARABIC_OPEN_PATTERN = r"^افتح\s+(.+)$"
 APP_SUFFIX_SEPARATORS = ("'", "’", "‘", "`", "´")
 
@@ -116,7 +127,7 @@ SCALE_WORDS = {
     "مايه": 100,
 }
 
-HALF_WORDS = {"half", "yarim", "bucuk", "نصف"}
+HALF_WORDS = {"half", "yarim", "bucuk", "نصف", "نص"}
 CONNECTOR_WORDS = {"and", "ve", "و", "a", "an"}
 
 UNIT_MAP = {
@@ -208,6 +219,27 @@ def extract_app_name(text: str, language: str) -> Optional[str]:
     return None
 
 
+def extract_contact_name(text: str, language: str) -> Optional[str]:
+    original = normalize_text(text)
+    t = normalized_lower(original)
+
+    for pattern in CALL_CONTACT_PATTERNS:
+        match = re.match(pattern, t, flags=re.IGNORECASE)
+        if match:
+            contact_name = _clean_contact_name(match.group(1))
+            if contact_name:
+                return contact_name
+
+    for pattern in ARABIC_CALL_PATTERNS:
+        match = re.match(pattern, original, flags=re.IGNORECASE)
+        if match:
+            contact_name = _clean_contact_name(match.group(1))
+            if contact_name:
+                return contact_name
+
+    return None
+
+
 def _clean_app_name(app_name: str) -> str:
     app_name = app_name.strip()
 
@@ -218,6 +250,21 @@ def _clean_app_name(app_name: str) -> str:
                 return stem.strip()
 
     return app_name
+
+
+def _clean_contact_name(contact_name: str) -> str:
+    contact_name = _clean_app_name(contact_name)
+    normalized = normalized_lower(contact_name)
+
+    if " " not in normalized:
+        for suffix in ("yi", "yu", "ni", "nu"):
+            if len(normalized) > len(suffix) + 2 and normalized.endswith(suffix):
+                return contact_name[: -len(suffix)].strip()
+
+        if len(normalized) > 5 and normalized.endswith(("i", "u")):
+            return contact_name[:-1].strip()
+
+    return contact_name
 
 
 def _is_turkish_case_suffix(suffix: str) -> bool:
@@ -285,26 +332,37 @@ def _extract_word_duration_components(text: str, include_implicit: bool) -> List
     components = []
     tokens = WORD_TOKEN_PATTERN.findall(text)
     previous_unit_index = -1
+    consumed_post_unit_half_indexes = set()
 
     for i, raw_unit in enumerate(tokens):
         normalized_unit, unit = _unit_from_token(raw_unit)
         if not unit:
             continue
 
+        added_component = False
         value = _number_before_unit(tokens, previous_unit_index + 1, i)
         if value is not None:
             component = _build_component(value, unit)
             if component:
                 components.append(component)
+                added_component = True
             previous_unit_index = i
-            continue
 
-        if include_implicit:
+        elif include_implicit:
             implicit_value = IMPLICIT_UNIT_VALUES.get(normalized_unit)
             if implicit_value:
                 component = _build_component(implicit_value, unit)
                 if component:
                     components.append(component)
+                    added_component = True
+
+        half_index = _post_unit_half_index(tokens, i)
+        if half_index is not None and half_index not in consumed_post_unit_half_indexes:
+            if added_component or not include_implicit:
+                half_component = _build_component(0.5, unit)
+                if half_component:
+                    components.append(half_component)
+                    consumed_post_unit_half_indexes.add(half_index)
 
         previous_unit_index = i
 
@@ -318,6 +376,32 @@ def _number_before_unit(tokens: List[str], start_index: int, unit_index: int) ->
             return value
 
     return None
+
+
+def _post_unit_half_index(tokens: List[str], unit_index: int) -> Optional[int]:
+    for index in range(unit_index + 1, min(len(tokens), unit_index + 5)):
+        token = _normalize_number_token(tokens[index])
+        if token in CONNECTOR_WORDS:
+            continue
+
+        if token in HALF_WORDS and not _next_meaningful_token_is_unit(tokens, index + 1):
+            return index
+
+        return None
+
+    return None
+
+
+def _next_meaningful_token_is_unit(tokens: List[str], start_index: int) -> bool:
+    for index in range(start_index, min(len(tokens), start_index + 4)):
+        token = _normalize_number_token(tokens[index])
+        if token in CONNECTOR_WORDS:
+            continue
+
+        _, unit = _unit_from_token(token)
+        return unit is not None
+
+    return False
 
 
 def _build_component(value: float, unit: str) -> Optional[Dict[str, Any]]:

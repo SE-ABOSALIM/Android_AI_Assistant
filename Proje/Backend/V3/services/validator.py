@@ -1,8 +1,8 @@
 from typing import Any, Dict, List, Optional
 
-from V3.services.app_catalog_service import find_app_match, has_app_catalog, is_catalog_version_current
-from V3.services.extractors import extract_app_name, extract_timer
-from V3.services.text_utils import normalize_text
+from V3.services.app_catalog_service import has_app_catalog, is_catalog_version_current, resolve_app_match
+from V3.services.extractors import extract_app_name, extract_contact_name, extract_timer
+from V3.services.text_utils import normalize_text, normalized_lower
 from V3.services.thresholds import get_threshold
 
 
@@ -79,21 +79,45 @@ def validate_and_build_response(
             error_code = "APP_CATALOG_STALE"
             error_message = "Installed app catalog version is stale for this session."
         else:
-            app_match = find_app_match(session_id, app_name)
-            if app_match:
-                parameters["app_name"] = app_match.label
-                parameters["app_package_name"] = app_match.package_name
-                parameters["app_match_score"] = round(app_match.score, 4)
+            app_resolution = resolve_app_match(session_id, app_name)
+            if app_resolution.is_ambiguous:
+                accepted = False
+                parameters["app_name"] = app_name
+                parameters["app_match_candidates"] = [
+                    {
+                        "label": match.label,
+                        "package_name": match.package_name,
+                        "score": round(match.score, 4),
+                    }
+                    for match in app_resolution.ambiguous_matches
+                ]
+                error_code = "APP_MATCH_AMBIGUOUS"
+                error_message = "Multiple installed apps match the requested app name."
+            elif app_resolution.match:
+                parameters["app_name"] = app_resolution.match.label
+                parameters["app_package_name"] = app_resolution.match.package_name
+                parameters["app_match_score"] = round(app_resolution.match.score, 4)
             else:
                 accepted = False
                 error_code = "APP_NOT_IN_CATALOG"
                 error_message = "The requested app does not match an installed app."
 
     elif model_intent == "SET_TIMER":
-        parameters.update(extract_timer(original_text))
-        _require(parameters, "duration_value", missing_slots)
-        _require(parameters, "duration_unit", missing_slots)
-        _require(parameters, "duration_seconds", missing_slots)
+        if _looks_like_stopwatch_command(original_text):
+            accepted = False
+            error_code = "UNSUPPORTED_STOPWATCH"
+            error_message = "Stopwatch commands are not supported as timer commands."
+        else:
+            parameters.update(extract_timer(original_text))
+            _require(parameters, "duration_value", missing_slots)
+            _require(parameters, "duration_unit", missing_slots)
+            _require(parameters, "duration_seconds", missing_slots)
+
+    elif model_intent == "CALL_CONTACT":
+        contact_name = extract_contact_name(original_text, language)
+        if contact_name:
+            parameters["contact_name"] = contact_name
+        _require(parameters, "contact_name", missing_slots)
 
     elif model_intent in ["GO_HOME", "TAKE_PHOTO", "STOP_LISTENING"]:
         pass
@@ -130,6 +154,11 @@ def validate_and_build_response(
 def _require(parameters: Dict[str, Any], key: str, missing_slots: List[str]) -> None:
     if not parameters.get(key):
         missing_slots.append(key)
+
+
+def _looks_like_stopwatch_command(text: str) -> bool:
+    normalized = normalized_lower(text)
+    return "kronometre" in normalized or "stopwatch" in normalized
 
 
 def _response(

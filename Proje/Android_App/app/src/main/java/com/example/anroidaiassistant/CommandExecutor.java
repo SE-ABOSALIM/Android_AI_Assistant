@@ -1,22 +1,26 @@
 package com.example.anroidaiassistant;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.database.Cursor;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.provider.AlarmClock;
+import android.provider.ContactsContract;
 import android.provider.MediaStore;
+import android.telecom.TelecomManager;
 import android.util.Log;
 import android.widget.Toast;
-
-import androidx.appcompat.app.AlertDialog;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -86,6 +90,10 @@ public class CommandExecutor {
                 handleVolume(parameters);
                 break;
 
+            case "CALL_CONTACT":
+                handleCallContact(parameters);
+                break;
+
             case "GO_HOME":
                 handleGoHome();
                 break;
@@ -111,6 +119,11 @@ public class CommandExecutor {
     private void handleRejectedCommand(PredictResponse response) {
         if (response == null) {
             showMessage("No response from backend");
+            return;
+        }
+
+        if (errorEquals(response, "APP_MATCH_AMBIGUOUS")) {
+            handleBackendAppAmbiguity(response);
             return;
         }
 
@@ -154,6 +167,9 @@ public class CommandExecutor {
         }
         if (containsSlot(missingSlots, "volume_action")) {
             return "Should I increase, decrease, mute, or unmute the volume?";
+        }
+        if (containsSlot(missingSlots, "contact_name")) {
+            return "Who should I call?";
         }
         return "Please provide: " + joinList(missingSlots);
     }
@@ -202,6 +218,46 @@ public class CommandExecutor {
         Map<String, Object> parameters = new LinkedHashMap<>();
         parameters.put("app_name", joinSpelledCandidate(spokenText));
         handleOpenApp(parameters);
+    }
+
+    private void handleBackendAppAmbiguity(PredictResponse response) {
+        Map<String, Object> parameters = response.getParameters();
+        List<AppMatch> matches = getBackendAppMatchCandidates(parameters);
+        if (matches.isEmpty()) {
+            showMessage(firstNonEmpty(response.getErrorMessage(), "Multiple apps match. Please say the full app name."));
+            return;
+        }
+
+        showAppChoice(matches, firstNonEmpty(getStringParam(parameters, "app_name"), "app"));
+    }
+
+    private List<AppMatch> getBackendAppMatchCandidates(Map<String, Object> parameters) {
+        if (parameters == null || !(parameters.get("app_match_candidates") instanceof List<?>)) {
+            return Collections.emptyList();
+        }
+
+        List<AppMatch> matches = new ArrayList<>();
+        for (Object rawCandidate : (List<?>) parameters.get("app_match_candidates")) {
+            if (!(rawCandidate instanceof Map<?, ?>)) {
+                continue;
+            }
+
+            Map<?, ?> candidate = (Map<?, ?>) rawCandidate;
+            String label = stringValue(candidate.get("label"));
+            String packageName = stringValue(candidate.get("package_name"));
+            if (!hasText(label) || !hasText(packageName)) {
+                continue;
+            }
+
+            matches.add(new AppMatch(
+                    label,
+                    packageName,
+                    floatValue(candidate.get("score"), 0.0f),
+                    false
+            ));
+        }
+
+        return matches;
     }
 
     private List<AppMatch> findAppMatches(String appName) {
@@ -283,27 +339,35 @@ public class CommandExecutor {
     }
 
     private void showAppChoice(List<AppMatch> matches, String appName) {
-        MainActivity activity = MainActivity.getInstance();
-        if (activity == null || activity.isFinishing() || activity.isDestroyed()) {
-            showMessage("Multiple apps match. Please say the full app name.");
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null || !service.isContinuousListeningActive()) {
+            showMessage("Multiple apps match. Start listening and say the number.");
             return;
         }
 
         int choiceCount = Math.min(matches.size(), MAX_APP_CHOICES);
-        String[] labels = new String[choiceCount];
+        List<MyAccessibilityService.NumberedChoice> choices = new ArrayList<>();
         for (int i = 0; i < choiceCount; i++) {
-            labels[i] = matches.get(i).label;
+            AppMatch match = matches.get(i);
+            choices.add(new MyAccessibilityService.NumberedChoice(match.label, match.packageName));
         }
 
-        activity.runOnUiThread(() -> new AlertDialog.Builder(activity)
-                .setTitle("Choose app")
-                .setMessage("Multiple apps match: " + appName)
-                .setItems(labels, (dialog, which) -> {
-                    AppMatch selectedMatch = matches.get(which);
-                    launchPackage(selectedMatch.packageName, selectedMatch.label);
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
-                .show());
+        service.startNumberSelection(
+                "Birden fazla uygulama bulundu: " + appName,
+                choices,
+                new MyAccessibilityService.NumberSelectionCallback() {
+                    @Override
+                    public void onSelected(int selectedIndex) {
+                        AppMatch selectedMatch = matches.get(selectedIndex);
+                        launchPackage(selectedMatch.packageName, selectedMatch.label);
+                    }
+
+                    @Override
+                    public void onCancelled() {
+                        showMessage("App selection cancelled");
+                    }
+                }
+        );
     }
 
     private void launchPackage(String packageName, String label) {
@@ -389,21 +453,287 @@ public class CommandExecutor {
 
         switch (volumeAction) {
             case "increase":
-                audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI);
+                audioManager.adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_RAISE,
+                        AudioManager.FLAG_SHOW_UI
+                );
                 break;
             case "decrease":
-                audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
+                audioManager.adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_LOWER,
+                        AudioManager.FLAG_SHOW_UI
+                );
                 break;
             case "mute":
-                audioManager.adjustVolume(AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI);
+                audioManager.adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_MUTE,
+                        AudioManager.FLAG_SHOW_UI
+                );
                 break;
             case "unmute":
-                audioManager.adjustVolume(AudioManager.ADJUST_UNMUTE, AudioManager.FLAG_SHOW_UI);
+                audioManager.adjustStreamVolume(
+                        AudioManager.STREAM_MUSIC,
+                        AudioManager.ADJUST_UNMUTE,
+                        AudioManager.FLAG_SHOW_UI
+                );
                 break;
             default:
                 showMessage("Volume action not supported");
                 break;
         }
+    }
+
+    private void handleCallContact(Map<String, Object> parameters) {
+        String contactName = getStringParam(parameters, "contact_name");
+        if (!hasText(contactName)) {
+            showMessage("Who should I call?");
+            return;
+        }
+
+        if (looksLikePhoneNumber(contactName)) {
+            callPhoneNumber(normalizePhoneNumber(contactName));
+            return;
+        }
+
+        List<ContactPhoneMatch> contactPhoneMatches = findContactPhoneMatches(contactName);
+        if (contactPhoneMatches.isEmpty()) {
+            showMessage("Contact not found or has no phone number: " + contactName);
+            return;
+        }
+
+        if (contactPhoneMatches.size() == 1) {
+            callPhoneNumber(contactPhoneMatches.get(0).phoneNumber);
+            return;
+        }
+
+        showContactChoice(contactPhoneMatches, contactName);
+    }
+
+    private List<ContactPhoneMatch> findContactPhoneMatches(String contactName) {
+        if (context.checkSelfPermission(Manifest.permission.READ_CONTACTS)
+                != PackageManager.PERMISSION_GRANTED) {
+            showMessage("Contact permission is required to call contacts");
+            return Collections.emptyList();
+        }
+
+        String[] projection = {
+                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
+                ContactsContract.CommonDataKinds.Phone.NUMBER
+        };
+
+        Map<String, ContactPhoneMatch> uniqueMatches = new LinkedHashMap<>();
+        try (Cursor cursor = context.getContentResolver().query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                projection,
+                null,
+                null,
+                null
+        )) {
+            if (cursor == null) {
+                return Collections.emptyList();
+            }
+
+            int displayNameIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME);
+            int numberIndex = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+            if (displayNameIndex < 0 || numberIndex < 0) {
+                return Collections.emptyList();
+            }
+
+            while (cursor.moveToNext()) {
+                String displayName = cursor.getString(displayNameIndex);
+                String phoneNumber = cursor.getString(numberIndex);
+                if (!hasText(displayName) || !hasText(phoneNumber)) {
+                    continue;
+                }
+
+                int score = scoreContactName(contactName, displayName);
+                if (score < 80) {
+                    continue;
+                }
+
+                String normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+                String key = normalizeAsciiText(displayName) + ":" + normalizedPhoneNumber;
+                ContactPhoneMatch existing = uniqueMatches.get(key);
+                if (existing == null || score > existing.score) {
+                    uniqueMatches.put(key, new ContactPhoneMatch(displayName, normalizedPhoneNumber, score));
+                }
+            }
+        } catch (Exception exception) {
+            Log.e(TAG, "Failed to query contacts", exception);
+            return Collections.emptyList();
+        }
+
+        List<ContactPhoneMatch> matches = new ArrayList<>(uniqueMatches.values());
+        matches.sort((left, right) -> {
+            int scoreCompare = Integer.compare(right.score, left.score);
+            if (scoreCompare != 0) {
+                return scoreCompare;
+            }
+            return left.displayName.compareToIgnoreCase(right.displayName);
+        });
+
+        if (matches.size() > MAX_APP_CHOICES) {
+            return new ArrayList<>(matches.subList(0, MAX_APP_CHOICES));
+        }
+        return matches;
+    }
+
+    private void showContactChoice(List<ContactPhoneMatch> matches, String contactName) {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null || !service.isContinuousListeningActive()) {
+            showMessage("Multiple contacts match. Start listening and say the number.");
+            return;
+        }
+
+        List<MyAccessibilityService.NumberedChoice> choices = new ArrayList<>();
+        for (ContactPhoneMatch match : matches) {
+            choices.add(new MyAccessibilityService.NumberedChoice(
+                    match.displayName,
+                    formatPhoneNumberForDisplay(match.phoneNumber)
+            ));
+        }
+
+        service.startNumberSelection(
+                "Birden fazla kisi bulundu: " + contactName,
+                choices,
+                new MyAccessibilityService.NumberSelectionCallback() {
+                    @Override
+                    public void onSelected(int selectedIndex) {
+                        callPhoneNumber(matches.get(selectedIndex).phoneNumber);
+                    }
+
+                    @Override
+                    public void onCancelled() {
+                        showMessage("Contact selection cancelled");
+                    }
+                }
+        );
+    }
+
+    private int scoreContactName(String candidateName, String displayName) {
+        String candidate = normalizeContactQuery(candidateName);
+        String contact = normalizeAsciiText(displayName);
+        if (!hasText(candidate) || !hasText(contact)) {
+            return 0;
+        }
+
+        if (candidate.equals(contact)) {
+            return 100;
+        }
+        return 0;
+    }
+
+    private String normalizeContactQuery(String value) {
+        String normalized = normalizeAsciiText(value);
+        return normalized
+                .replaceAll("\\s+(i|yi|u|yu|e|ye|a|ya)$", "")
+                .trim();
+    }
+
+    private void callPhoneNumber(String phoneNumber) {
+        if (!hasText(phoneNumber)) {
+            showMessage("Contact has no phone number");
+            return;
+        }
+
+        String dialerPackageName = getDefaultDialerPackageName();
+        boolean canCallDirectly = context.checkSelfPermission(Manifest.permission.CALL_PHONE)
+                == PackageManager.PERMISSION_GRANTED;
+
+        if (canCallDirectly) {
+            Intent callIntent = buildPhoneIntent(Intent.ACTION_CALL, phoneNumber);
+            if (tryStartPhoneIntentWithResolvedPackage(callIntent, dialerPackageName)) {
+                return;
+            }
+        }
+
+        Intent dialIntent = buildPhoneIntent(Intent.ACTION_DIAL, phoneNumber);
+        if (tryStartPhoneIntentWithResolvedPackage(dialIntent, dialerPackageName)) {
+            if (!canCallDirectly) {
+                showMessage("Phone call permission is required");
+            }
+            return;
+        }
+
+        showMessage("Could not start phone call");
+    }
+
+    private Intent buildPhoneIntent(String action, String phoneNumber) {
+        Intent intent = new Intent(action, Uri.fromParts("tel", phoneNumber, null));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        return intent;
+    }
+
+    private boolean tryStartPhoneIntentWithResolvedPackage(Intent intent, String preferredPackageName) {
+        for (String packageName : getPhoneIntentPackageCandidates(intent, preferredPackageName)) {
+            Intent packagedIntent = new Intent(intent);
+            packagedIntent.setPackage(packageName);
+            if (tryStartPhoneIntent(packagedIntent)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<String> getPhoneIntentPackageCandidates(Intent intent, String preferredPackageName) {
+        Set<String> packageNames = new LinkedHashSet<>();
+        addPhonePackageCandidate(packageNames, preferredPackageName);
+        addPhonePackageCandidate(packageNames, "com.samsung.android.dialer");
+        addPhonePackageCandidate(packageNames, "com.google.android.dialer");
+        addPhonePackageCandidate(packageNames, "com.android.dialer");
+        addPhonePackageCandidate(packageNames, "com.android.contacts");
+        addPhonePackageCandidate(packageNames, "com.google.android.contacts");
+
+        PackageManager packageManager = context.getPackageManager();
+        List<ResolveInfo> handlers = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        for (ResolveInfo handler : handlers) {
+            if (isSystemPhoneHandler(handler)) {
+                addPhonePackageCandidate(packageNames, handler.activityInfo.packageName);
+            }
+        }
+
+        return new ArrayList<>(packageNames);
+    }
+
+    private void addPhonePackageCandidate(Set<String> packageNames, String packageName) {
+        if (hasText(packageName)) {
+            packageNames.add(packageName);
+        }
+    }
+
+    private boolean isSystemPhoneHandler(ResolveInfo handler) {
+        if (handler == null || handler.activityInfo == null || handler.activityInfo.applicationInfo == null) {
+            return false;
+        }
+
+        int flags = handler.activityInfo.applicationInfo.flags;
+        return (flags & android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0
+                || (flags & android.content.pm.ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0;
+    }
+
+    private boolean tryStartPhoneIntent(Intent intent) {
+        try {
+            context.startActivity(intent);
+            return true;
+        } catch (Exception exception) {
+            Log.w(TAG, "Failed to start phone intent: " + intent.getAction(), exception);
+            return false;
+        }
+    }
+
+    private String getDefaultDialerPackageName() {
+        try {
+            TelecomManager telecomManager = (TelecomManager) context.getSystemService(Context.TELECOM_SERVICE);
+            if (telecomManager != null) {
+                return telecomManager.getDefaultDialerPackage();
+            }
+        } catch (Exception exception) {
+            Log.w(TAG, "Could not resolve default dialer package", exception);
+        }
+        return null;
     }
 
     private void handleGoHome() {
@@ -462,8 +792,11 @@ public class CommandExecutor {
         MyAccessibilityService service = MyAccessibilityService.getInstance();
         if (service != null) {
             service.stopContinuousListening();
+        } else {
+            String endedSessionId = AssistantSession.endSession();
+            ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
+            AppCatalogSyncer.closeSession(apiService, endedSessionId);
         }
-        AssistantSession.endSession();
 
         MainActivity mainActivity = MainActivity.getInstance();
         if (mainActivity != null) {
@@ -489,6 +822,39 @@ public class CommandExecutor {
 
     private int getIntParam(Map<String, Object> params, String key) {
         return PredictResponse.getIntParam(params, key);
+    }
+
+    private String stringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private float floatValue(Object value, float defaultValue) {
+        if (value instanceof Number) {
+            return ((Number) value).floatValue();
+        }
+
+        try {
+            return Float.parseFloat(String.valueOf(value));
+        } catch (Exception ignored) {
+            return defaultValue;
+        }
+    }
+
+    private boolean looksLikePhoneNumber(String value) {
+        if (!hasText(value) || !value.matches(".*\\d.*")) {
+            return false;
+        }
+
+        String normalized = normalizePhoneNumber(value);
+        return normalized.replace("+", "").length() >= 3;
+    }
+
+    private String normalizePhoneNumber(String value) {
+        return value == null ? "" : value.replaceAll("[^0-9+]", "");
+    }
+
+    private String formatPhoneNumberForDisplay(String value) {
+        return hasText(value) ? value : "";
     }
 
     private String normalizeDirection(String direction) {
@@ -659,6 +1025,18 @@ public class CommandExecutor {
             this.packageName = packageName;
             this.score = score;
             this.exact = exact;
+        }
+    }
+
+    private static class ContactPhoneMatch {
+        private final String displayName;
+        private final String phoneNumber;
+        private final int score;
+
+        private ContactPhoneMatch(String displayName, String phoneNumber, int score) {
+            this.displayName = displayName;
+            this.phoneNumber = phoneNumber;
+            this.score = score;
         }
     }
 }

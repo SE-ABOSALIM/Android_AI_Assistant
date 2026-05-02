@@ -27,7 +27,7 @@ public final class AppCatalogSyncer {
         void onComplete(boolean success, String message);
     }
 
-    public static void syncInstalledApps(
+    public static Call<AppCatalogResponse> syncInstalledApps(
             Context context,
             ApiService apiService,
             String sessionId,
@@ -35,16 +35,21 @@ public final class AppCatalogSyncer {
     ) {
         if (context == null || apiService == null || !hasText(sessionId)) {
             notifyCallback(callback, false, "App catalog sync is unavailable");
-            return;
+            return null;
         }
 
         List<AppCatalogEntry> apps = collectLaunchableApps(context);
         String catalogVersion = buildCatalogVersion(apps);
         AppCatalogRequest request = new AppCatalogRequest(sessionId, catalogVersion, apps);
 
-        apiService.syncAppCatalog(request).enqueue(new Callback<AppCatalogResponse>() {
+        Call<AppCatalogResponse> call = apiService.syncAppCatalog(request);
+        call.enqueue(new Callback<AppCatalogResponse>() {
             @Override
             public void onResponse(Call<AppCatalogResponse> call, Response<AppCatalogResponse> response) {
+                if (call.isCanceled()) {
+                    return;
+                }
+
                 if (response.isSuccessful() && response.body() != null && response.body().isAccepted()) {
                     AssistantSession.setCatalogVersion(response.body().getCatalogVersion());
                     notifyCallback(callback, true, "App catalog synced");
@@ -57,8 +62,31 @@ public final class AppCatalogSyncer {
 
             @Override
             public void onFailure(Call<AppCatalogResponse> call, Throwable t) {
+                if (call.isCanceled()) {
+                    return;
+                }
+
                 Log.e(TAG, "App catalog sync request failed", t);
                 notifyCallback(callback, false, "Backend unavailable");
+            }
+        });
+        return call;
+    }
+
+    public static void closeSession(ApiService apiService, String sessionId) {
+        if (apiService == null || !hasText(sessionId)) {
+            return;
+        }
+
+        apiService.closeAppCatalog(sessionId).enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {}
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                if (!call.isCanceled()) {
+                    Log.w(TAG, "App catalog close request failed", t);
+                }
             }
         });
     }

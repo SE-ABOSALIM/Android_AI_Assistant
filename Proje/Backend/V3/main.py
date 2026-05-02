@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 
 from V3.config import MODEL_DIR
-from V3.schemas import AppCatalogRequest, AppCatalogResponse, FinalResponse, PredictRequest
+from V3.schemas import AppCatalogCloseResponse, AppCatalogRequest, AppCatalogResponse, FinalResponse, PredictRequest
 from V3.services.model_service import get_device_name
 from V3.services.predict_service import predict_command
-from V3.services.app_catalog_service import save_app_catalog
+from V3.services.app_catalog_service import catalog_count, delete_app_catalog, save_app_catalog
 
 app = FastAPI(title="Android Assistant Intent API")
 
@@ -41,4 +41,15 @@ def app_catalog(request: AppCatalogRequest):
         session_id=result["session_id"],
         catalog_version=result["catalog_version"],
         app_count=result["app_count"],
+    )
+
+
+@app.delete("/app-catalog/{session_id}", response_model=AppCatalogCloseResponse)
+def close_app_catalog(session_id: str):
+    removed = delete_app_catalog(session_id)
+    return AppCatalogCloseResponse(
+        accepted=True,
+        session_id=session_id,
+        removed=removed,
+        remaining_sessions=catalog_count(),
     )

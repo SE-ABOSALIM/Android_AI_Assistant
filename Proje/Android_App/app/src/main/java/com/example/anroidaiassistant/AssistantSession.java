@@ -26,8 +26,10 @@ public final class AssistantSession {
         return catalogVersion;
     }
 
-    public static synchronized void endSession() {
+    public static synchronized String endSession() {
+        String endedSessionId = currentSessionId;
         currentSessionId = null;
         catalogVersion = null;
+        return endedSessionId;
     }
 }

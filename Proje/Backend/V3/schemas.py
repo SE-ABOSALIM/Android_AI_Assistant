@@ -28,6 +28,13 @@ class AppCatalogResponse(BaseModel):
     app_count: int
 
 
+class AppCatalogCloseResponse(BaseModel):
+    accepted: bool
+    session_id: str
+    removed: bool
+    remaining_sessions: int
+
+
 class FinalResponse(BaseModel):
     input: str
     normalized_input: str
