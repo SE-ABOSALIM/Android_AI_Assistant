@@ -32,6 +32,8 @@ public class CommandExecutor {
     private static final String TAG = "PredictResponse";
     private static final int MAX_APP_CHOICES = 5;
     private static final int MIN_CONTACT_FUZZY_SCORE = 82;
+    private static final int CONTACT_CONTAINS_QUERY_SCORE = 90;
+    private static final int CONTACT_CONTAINS_QUERY_PHRASE_SCORE = 93;
 
     private final Context context;
     private int openAppFailureCount = 0;
@@ -624,12 +626,28 @@ public class CommandExecutor {
             return;
         }
 
-        if (contactPhoneMatches.size() == 1 && contactPhoneMatches.get(0).exact) {
-            callPhoneNumber(contactPhoneMatches.get(0).phoneNumber);
+        List<ContactPhoneMatch> exactContactMatches = exactContactMatches(contactPhoneMatches);
+        if (exactContactMatches.size() == 1) {
+            callPhoneNumber(exactContactMatches.get(0).phoneNumber);
+            return;
+        }
+
+        if (exactContactMatches.size() > 1) {
+            showContactChoice(exactContactMatches, contactName);
             return;
         }
 
         showContactChoice(contactPhoneMatches, contactName);
+    }
+
+    private List<ContactPhoneMatch> exactContactMatches(List<ContactPhoneMatch> contactPhoneMatches) {
+        List<ContactPhoneMatch> exactMatches = new ArrayList<>();
+        for (ContactPhoneMatch match : contactPhoneMatches) {
+            if (match.exact) {
+                exactMatches.add(match);
+            }
+        }
+        return exactMatches;
     }
 
     private List<ContactPhoneMatch> findContactPhoneMatches(String contactName) {
@@ -759,6 +777,11 @@ public class CommandExecutor {
             return new ContactNameScore(100, true);
         }
 
+        int containedNameScore = scoreContainedContactName(candidate, contact);
+        if (containedNameScore > 0) {
+            return new ContactNameScore(containedNameScore, false);
+        }
+
         if (isShortInitialSuffixMatch(candidate, contact)
                 || isShortInitialSuffixMatch(contact, candidate)) {
             return new ContactNameScore(94, false);
@@ -780,6 +803,63 @@ public class CommandExecutor {
         return normalized
                 .replaceAll("\\s+(i|yi|u|yu|e|ye|a|ya)$", "")
                 .trim();
+    }
+
+    private int scoreContainedContactName(String candidate, String contact) {
+        List<String> candidateTokens = orderedTokens(candidate);
+        List<String> contactTokens = orderedTokens(contact);
+        if (candidateTokens.isEmpty() || contactTokens.isEmpty()) {
+            return 0;
+        }
+
+        if (containsTokenPhrase(contactTokens, candidateTokens)) {
+            return candidateTokens.size() > 1
+                    ? CONTACT_CONTAINS_QUERY_PHRASE_SCORE
+                    : CONTACT_CONTAINS_QUERY_SCORE;
+        }
+
+        String candidateCompact = candidate.replace(" ", "");
+        String contactCompact = contact.replace(" ", "");
+        if (candidateCompact.length() >= 4 && contactCompact.contains(candidateCompact)) {
+            return CONTACT_CONTAINS_QUERY_SCORE;
+        }
+
+        return 0;
+    }
+
+    private boolean containsTokenPhrase(List<String> haystackTokens, List<String> needleTokens) {
+        if (needleTokens.size() > haystackTokens.size()) {
+            return false;
+        }
+
+        for (int start = 0; start <= haystackTokens.size() - needleTokens.size(); start++) {
+            boolean matched = true;
+            for (int offset = 0; offset < needleTokens.size(); offset++) {
+                if (!haystackTokens.get(start + offset).equals(needleTokens.get(offset))) {
+                    matched = false;
+                    break;
+                }
+            }
+            if (matched) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private List<String> orderedTokens(String text) {
+        List<String> tokens = new ArrayList<>();
+        if (!hasText(text)) {
+            return tokens;
+        }
+
+        for (String token : normalizeText(text).split(" ")) {
+            if (hasText(token)) {
+                tokens.add(token);
+            }
+        }
+        return tokens;
     }
 
     private boolean isShortInitialSuffixMatch(String shorterName, String longerName) {
