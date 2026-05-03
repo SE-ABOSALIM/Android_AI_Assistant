@@ -31,6 +31,7 @@ public class CommandExecutor {
 
     private static final String TAG = "PredictResponse";
     private static final int MAX_APP_CHOICES = 5;
+    private static final int MIN_CONTACT_FUZZY_SCORE = 82;
 
     private final Context context;
     private int openAppFailureCount = 0;
@@ -221,9 +222,31 @@ public class CommandExecutor {
             showMessage("Which app should I open?");
             return;
         }
-        Map<String, Object> parameters = new LinkedHashMap<>();
-        parameters.put("app_name", joinSpelledCandidate(spokenText));
-        handleOpenApp(parameters);
+
+        List<AppMatch> matches = findSpelledAppMatches(spokenText);
+        if (matches.isEmpty()) {
+            onOpenAppFailure(spokenText);
+            return;
+        }
+
+        List<AppMatch> exactMatches = new ArrayList<>();
+        for (AppMatch match : matches) {
+            if (match.exact) {
+                exactMatches.add(match);
+            }
+        }
+
+        if (exactMatches.size() == 1) {
+            launchPackage(exactMatches.get(0).packageName, exactMatches.get(0).label);
+            return;
+        }
+
+        if (!exactMatches.isEmpty()) {
+            showAppChoice(exactMatches, spokenText);
+            return;
+        }
+
+        showAppChoice(matches, spokenText);
     }
 
     private boolean handleBackendAppCandidates(PredictResponse response) {
@@ -267,6 +290,10 @@ public class CommandExecutor {
     }
 
     private List<AppMatch> findAppMatches(String appName) {
+        return findAppMatches(appName, false);
+    }
+
+    private List<AppMatch> findAppMatches(String appName, boolean spelledCandidate) {
         String candidateOriginalNormalized = normalizeText(appName);
         String candidateAscii = normalizeAsciiText(appName);
         String candidateCompact = normalizeAppCandidate(appName);
@@ -281,7 +308,7 @@ public class CommandExecutor {
 
         Map<String, AppMatch> exactMatches = new LinkedHashMap<>();
         List<AppMatch> fuzzyMatches = new ArrayList<>();
-        float threshold = minimumAcceptableScore(candidateCompact);
+        float threshold = minimumAcceptableScore(candidateCompact, spelledCandidate);
 
         for (ResolveInfo app : installedApps) {
             String packageName = app.activityInfo.packageName;
@@ -307,6 +334,26 @@ public class CommandExecutor {
 
         fuzzyMatches.sort(Comparator.comparing((AppMatch match) -> match.score).reversed());
         return fuzzyMatches;
+    }
+
+    private List<AppMatch> findSpelledAppMatches(String spokenText) {
+        Map<String, AppMatch> matchesByPackage = new LinkedHashMap<>();
+
+        for (String candidate : joinSpelledCandidates(spokenText)) {
+            for (AppMatch match : findAppMatches(candidate, true)) {
+                AppMatch existing = matchesByPackage.get(match.packageName);
+                if (existing == null || match.score > existing.score || (match.exact && !existing.exact)) {
+                    matchesByPackage.put(match.packageName, match);
+                }
+            }
+        }
+
+        List<AppMatch> matches = new ArrayList<>(matchesByPackage.values());
+        matches.sort(Comparator.comparing((AppMatch match) -> match.score).reversed());
+        if (matches.size() > MAX_APP_CHOICES) {
+            return new ArrayList<>(matches.subList(0, MAX_APP_CHOICES));
+        }
+        return matches;
     }
 
     private AppMatch scoreAppMatch(
@@ -363,7 +410,7 @@ public class CommandExecutor {
         }
 
         service.startNumberSelection(
-                "Birden fazla uygulama bulundu: " + appName,
+                buildAppChoiceTitle(matches, appName),
                 choices,
                 new MyAccessibilityService.NumberSelectionCallback() {
                     @Override
@@ -378,6 +425,13 @@ public class CommandExecutor {
                     }
                 }
         );
+    }
+
+    private String buildAppChoiceTitle(List<AppMatch> matches, String appName) {
+        if (matches.size() == 1) {
+            return "Benzer uygulama bulundu: " + appName;
+        }
+        return "Birden fazla uygulama bulundu: " + appName;
     }
 
     private Drawable getAppIcon(String packageName) {
@@ -570,7 +624,7 @@ public class CommandExecutor {
             return;
         }
 
-        if (contactPhoneMatches.size() == 1) {
+        if (contactPhoneMatches.size() == 1 && contactPhoneMatches.get(0).exact) {
             callPhoneNumber(contactPhoneMatches.get(0).phoneNumber);
             return;
         }
@@ -615,16 +669,21 @@ public class CommandExecutor {
                     continue;
                 }
 
-                int score = scoreContactName(contactName, displayName);
-                if (score < 80) {
+                ContactNameScore contactNameScore = scoreContactName(contactName, displayName);
+                if (contactNameScore.score < MIN_CONTACT_FUZZY_SCORE) {
                     continue;
                 }
 
                 String normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
                 String key = normalizeAsciiText(displayName) + ":" + normalizedPhoneNumber;
                 ContactPhoneMatch existing = uniqueMatches.get(key);
-                if (existing == null || score > existing.score) {
-                    uniqueMatches.put(key, new ContactPhoneMatch(displayName, normalizedPhoneNumber, score));
+                if (existing == null || contactNameScore.score > existing.score) {
+                    uniqueMatches.put(key, new ContactPhoneMatch(
+                            displayName,
+                            normalizedPhoneNumber,
+                            contactNameScore.score,
+                            contactNameScore.exact
+                    ));
                 }
             }
         } catch (Exception exception) {
@@ -634,6 +693,9 @@ public class CommandExecutor {
 
         List<ContactPhoneMatch> matches = new ArrayList<>(uniqueMatches.values());
         matches.sort((left, right) -> {
+            if (left.exact != right.exact) {
+                return left.exact ? -1 : 1;
+            }
             int scoreCompare = Integer.compare(right.score, left.score);
             if (scoreCompare != 0) {
                 return scoreCompare;
@@ -663,7 +725,7 @@ public class CommandExecutor {
         }
 
         service.startNumberSelection(
-                "Birden fazla kisi bulundu: " + contactName,
+                buildContactChoiceTitle(matches, contactName),
                 choices,
                 new MyAccessibilityService.NumberSelectionCallback() {
                     @Override
@@ -679,17 +741,38 @@ public class CommandExecutor {
         );
     }
 
-    private int scoreContactName(String candidateName, String displayName) {
+    private String buildContactChoiceTitle(List<ContactPhoneMatch> matches, String contactName) {
+        if (matches.size() == 1 && !matches.get(0).exact) {
+            return "Benzer kisi bulundu: " + contactName;
+        }
+        return "Birden fazla kisi bulundu: " + contactName;
+    }
+
+    private ContactNameScore scoreContactName(String candidateName, String displayName) {
         String candidate = normalizeContactQuery(candidateName);
         String contact = normalizeAsciiText(displayName);
         if (!hasText(candidate) || !hasText(contact)) {
-            return 0;
+            return new ContactNameScore(0, false);
         }
 
         if (candidate.equals(contact)) {
-            return 100;
+            return new ContactNameScore(100, true);
         }
-        return 0;
+
+        if (isShortInitialSuffixMatch(candidate, contact)
+                || isShortInitialSuffixMatch(contact, candidate)) {
+            return new ContactNameScore(94, false);
+        }
+
+        String candidateCompact = candidate.replace(" ", "");
+        String contactCompact = contact.replace(" ", "");
+        int fullSimilarity = Math.round(levenshteinSimilarity(candidateCompact, contactCompact) * 100.0f);
+
+        String candidateLoose = looseContactNameKey(candidateCompact);
+        String contactLoose = looseContactNameKey(contactCompact);
+        int looseSimilarity = Math.round(levenshteinSimilarity(candidateLoose, contactLoose) * 100.0f);
+
+        return new ContactNameScore(Math.max(fullSimilarity, looseSimilarity), false);
     }
 
     private String normalizeContactQuery(String value) {
@@ -697,6 +780,56 @@ public class CommandExecutor {
         return normalized
                 .replaceAll("\\s+(i|yi|u|yu|e|ye|a|ya)$", "")
                 .trim();
+    }
+
+    private boolean isShortInitialSuffixMatch(String shorterName, String longerName) {
+        if (!hasText(shorterName) || !hasText(longerName) || shorterName.length() >= longerName.length()) {
+            return false;
+        }
+
+        if (!longerName.startsWith(shorterName + " ")) {
+            return false;
+        }
+
+        String suffix = longerName.substring(shorterName.length()).trim();
+        if (!hasText(suffix)) {
+            return false;
+        }
+
+        for (String token : suffix.split(" ")) {
+            if (token.length() > 2) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private String looseContactNameKey(String value) {
+        if (!hasText(value)) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        char previous = 0;
+        for (int i = 0; i < value.length(); i++) {
+            char current = normalizeLooseContactChar(value.charAt(i));
+            if (current == previous) {
+                continue;
+            }
+            builder.append(current);
+            previous = current;
+        }
+        return builder.toString();
+    }
+
+    private char normalizeLooseContactChar(char value) {
+        switch (value) {
+            case 'o':
+            case 'u':
+                return 'u';
+            default:
+                return value;
+        }
     }
 
     private void callPhoneNumber(String phoneNumber) {
@@ -962,14 +1095,207 @@ public class CommandExecutor {
         return normalizeAsciiText(text).replace(" ", "");
     }
 
-    private String joinSpelledCandidate(String text) {
+    private List<String> joinSpelledCandidates(String text) {
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
         if (!hasText(text)) {
-            return null;
+            return new ArrayList<>(candidates);
         }
-        return normalizeAsciiText(text).replace(" ", "");
+
+        candidates.addAll(joinSpelledLetterNameCandidates(text));
+        candidates.add(normalizeAsciiText(text).replace(" ", ""));
+
+        candidates.remove(null);
+        candidates.remove("");
+        return new ArrayList<>(candidates);
     }
 
-    private float minimumAcceptableScore(String candidateCompact) {
+    private List<String> joinSpelledLetterNameCandidates(String text) {
+        String normalized = normalizeAsciiText(text);
+        if (!hasText(normalized)) {
+            return Collections.emptyList();
+        }
+
+        List<String> candidates = new ArrayList<>();
+        candidates.add("");
+        int matchedTokens = 0;
+        int totalTokens = 0;
+        String[] tokens = normalized.split(" ");
+        for (int i = 0; i < tokens.length; i++) {
+            String token = tokens[i];
+            if (!hasText(token)) {
+                continue;
+            }
+
+            totalTokens++;
+            SpelledLetterMatch spelledLetterMatch = spelledTokenToLetters(tokens, i);
+            List<Character> letters = spelledLetterMatch.letters;
+            if (spelledLetterMatch.consumedTokens > 1) {
+                i += spelledLetterMatch.consumedTokens - 1;
+                totalTokens += spelledLetterMatch.consumedTokens - 1;
+            }
+            if (letters.isEmpty()) {
+                if (token.length() == 1 && Character.isLetterOrDigit(token.charAt(0))) {
+                    letters = Collections.singletonList(token.charAt(0));
+                } else {
+                    continue;
+                }
+            }
+
+            List<String> nextCandidates = new ArrayList<>();
+            for (String candidate : candidates) {
+                for (Character letter : letters) {
+                    nextCandidates.add(candidate + letter);
+                }
+            }
+            candidates = nextCandidates;
+            matchedTokens++;
+        }
+
+        if (matchedTokens == 0 || matchedTokens < Math.max(1, totalTokens - 1)) {
+            return Collections.emptyList();
+        }
+
+        return candidates;
+    }
+
+    private SpelledLetterMatch spelledTokenToLetters(String[] tokens, int index) {
+        String token = tokens[index];
+
+        if (("duble".equals(token) || "double".equals(token) || "cift".equals(token))
+                && index + 1 < tokens.length
+                && ("ve".equals(tokens[index + 1]) || "v".equals(tokens[index + 1])
+                || "u".equals(tokens[index + 1]) || "yu".equals(tokens[index + 1])
+                || "you".equals(tokens[index + 1]))) {
+            return new SpelledLetterMatch(Collections.singletonList('w'), 2);
+        }
+
+        switch (token) {
+            case "a":
+            case "ah":
+                return new SpelledLetterMatch(Collections.singletonList('a'), 1);
+            case "b":
+            case "be":
+            case "bee":
+                return new SpelledLetterMatch(Collections.singletonList('b'), 1);
+            case "c":
+            case "ce":
+            case "cee":
+                return new SpelledLetterMatch(Collections.singletonList('c'), 1);
+            case "d":
+            case "de":
+            case "dee":
+                return new SpelledLetterMatch(Collections.singletonList('d'), 1);
+            case "e":
+                return new SpelledLetterMatch(Collections.singletonList('e'), 1);
+            case "f":
+            case "fe":
+            case "ef":
+                return new SpelledLetterMatch(Collections.singletonList('f'), 1);
+            case "g":
+            case "ge":
+                return new SpelledLetterMatch(Collections.singletonList('g'), 1);
+            case "h":
+            case "he":
+            case "aitch":
+            case "eyc":
+                return new SpelledLetterMatch(Collections.singletonList('h'), 1);
+            case "i":
+            case "ii":
+                return new SpelledLetterMatch(Collections.singletonList('i'), 1);
+            case "j":
+            case "je":
+            case "jay":
+                return new SpelledLetterMatch(Collections.singletonList('j'), 1);
+            case "k":
+            case "ka":
+            case "key":
+                return new SpelledLetterMatch(Collections.singletonList('k'), 1);
+            case "l":
+            case "le":
+            case "el":
+                return new SpelledLetterMatch(Collections.singletonList('l'), 1);
+            case "m":
+            case "me":
+            case "em":
+                return new SpelledLetterMatch(Collections.singletonList('m'), 1);
+            case "n":
+            case "ne":
+            case "en":
+                return new SpelledLetterMatch(Collections.singletonList('n'), 1);
+            case "o":
+            case "oh":
+                return new SpelledLetterMatch(Collections.singletonList('o'), 1);
+            case "p":
+            case "pe":
+            case "pee":
+                return new SpelledLetterMatch(Collections.singletonList('p'), 1);
+            case "q":
+            case "ku":
+            case "queue":
+                return new SpelledLetterMatch(Collections.singletonList('q'), 1);
+            case "r":
+            case "re":
+            case "ar":
+                return new SpelledLetterMatch(Collections.singletonList('r'), 1);
+            case "s":
+            case "se":
+            case "es":
+                return new SpelledLetterMatch(Collections.singletonList('s'), 1);
+            case "t":
+            case "te":
+            case "tee":
+                return new SpelledLetterMatch(Collections.singletonList('t'), 1);
+            case "u":
+            case "yu":
+            case "you":
+                return new SpelledLetterMatch(Collections.singletonList('u'), 1);
+            case "v":
+            case "vee":
+                return new SpelledLetterMatch(Collections.singletonList('v'), 1);
+            case "ve":
+                List<Character> veCandidates = new ArrayList<>();
+                veCandidates.add('v');
+                veCandidates.add('w');
+                return new SpelledLetterMatch(veCandidates, 1);
+            case "w":
+            case "we":
+            case "dabilyu":
+            case "dabiliyu":
+            case "dabulyu":
+            case "doubleyou":
+            case "doubleu":
+                return new SpelledLetterMatch(Collections.singletonList('w'), 1);
+            case "x":
+            case "iks":
+            case "ex":
+                return new SpelledLetterMatch(Collections.singletonList('x'), 1);
+            case "y":
+            case "ye":
+            case "why":
+                return new SpelledLetterMatch(Collections.singletonList('y'), 1);
+            case "z":
+            case "ze":
+            case "zet":
+            case "zed":
+            case "zee":
+                return new SpelledLetterMatch(Collections.singletonList('z'), 1);
+            default:
+                return new SpelledLetterMatch(Collections.emptyList(), 1);
+        }
+    }
+
+    private float minimumAcceptableScore(String candidateCompact, boolean spelledCandidate) {
+        if (spelledCandidate) {
+            int length = candidateCompact.length();
+            if (length <= 4) {
+                return 0.80f;
+            }
+            if (length <= 7) {
+                return 0.76f;
+            }
+            return 0.72f;
+        }
+
         int length = candidateCompact.length();
         if (length <= 4) {
             return 0.95f;
@@ -1098,11 +1424,33 @@ public class CommandExecutor {
         private final String displayName;
         private final String phoneNumber;
         private final int score;
+        private final boolean exact;
 
-        private ContactPhoneMatch(String displayName, String phoneNumber, int score) {
+        private ContactPhoneMatch(String displayName, String phoneNumber, int score, boolean exact) {
             this.displayName = displayName;
             this.phoneNumber = phoneNumber;
             this.score = score;
+            this.exact = exact;
+        }
+    }
+
+    private static class ContactNameScore {
+        private final int score;
+        private final boolean exact;
+
+        private ContactNameScore(int score, boolean exact) {
+            this.score = score;
+            this.exact = exact;
+        }
+    }
+
+    private static class SpelledLetterMatch {
+        private final List<Character> letters;
+        private final int consumedTokens;
+
+        private SpelledLetterMatch(List<Character> letters, int consumedTokens) {
+            this.letters = letters;
+            this.consumedTokens = consumedTokens;
         }
     }
 }
