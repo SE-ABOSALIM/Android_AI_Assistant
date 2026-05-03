@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
+import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.provider.AlarmClock;
@@ -122,8 +123,13 @@ public class CommandExecutor {
             return;
         }
 
-        if (errorEquals(response, "APP_MATCH_AMBIGUOUS")) {
-            handleBackendAppAmbiguity(response);
+        if (errorEquals(response, "APP_MATCH_AMBIGUOUS")
+                || errorEquals(response, "APP_NOT_IN_CATALOG")
+                || errorEquals(response, "APP_MATCH_NOT_FOUND")) {
+            if (handleBackendAppCandidates(response)) {
+                return;
+            }
+            showMessage(firstNonEmpty(response.getErrorMessage(), "App not found"));
             return;
         }
 
@@ -220,15 +226,15 @@ public class CommandExecutor {
         handleOpenApp(parameters);
     }
 
-    private void handleBackendAppAmbiguity(PredictResponse response) {
+    private boolean handleBackendAppCandidates(PredictResponse response) {
         Map<String, Object> parameters = response.getParameters();
         List<AppMatch> matches = getBackendAppMatchCandidates(parameters);
         if (matches.isEmpty()) {
-            showMessage(firstNonEmpty(response.getErrorMessage(), "Multiple apps match. Please say the full app name."));
-            return;
+            return false;
         }
 
         showAppChoice(matches, firstNonEmpty(getStringParam(parameters, "app_name"), "app"));
+        return true;
     }
 
     private List<AppMatch> getBackendAppMatchCandidates(Map<String, Object> parameters) {
@@ -349,7 +355,11 @@ public class CommandExecutor {
         List<MyAccessibilityService.NumberedChoice> choices = new ArrayList<>();
         for (int i = 0; i < choiceCount; i++) {
             AppMatch match = matches.get(i);
-            choices.add(new MyAccessibilityService.NumberedChoice(match.label, match.packageName));
+            choices.add(new MyAccessibilityService.NumberedChoice(
+                    match.label,
+                    buildAppChoiceSubtitle(match.packageName),
+                    getAppIcon(match.packageName)
+            ));
         }
 
         service.startNumberSelection(
@@ -368,6 +378,62 @@ public class CommandExecutor {
                     }
                 }
         );
+    }
+
+    private Drawable getAppIcon(String packageName) {
+        if (!hasText(packageName)) {
+            return null;
+        }
+
+        try {
+            return context.getPackageManager().getApplicationIcon(packageName);
+        } catch (Exception exception) {
+            Log.w(TAG, "Could not load app icon: " + packageName, exception);
+            return null;
+        }
+    }
+
+    private String buildAppChoiceSubtitle(String packageName) {
+        String source = inferReadableAppSource(packageName);
+        return hasText(source) ? source : "Installed app";
+    }
+
+    private String inferReadableAppSource(String packageName) {
+        if (!hasText(packageName)) {
+            return "";
+        }
+
+        String normalized = packageName.toLowerCase(Locale.US);
+        if (normalized.startsWith("com.google.") || normalized.contains(".google.")) {
+            return "Google";
+        }
+        if (normalized.startsWith("com.microsoft.")
+                || normalized.startsWith("com.azure.")
+                || normalized.contains(".microsoft.")
+                || normalized.contains(".azure.")) {
+            return "Microsoft";
+        }
+        if (normalized.startsWith("com.facebook.")
+                || normalized.startsWith("com.instagram.")
+                || normalized.startsWith("com.whatsapp.")) {
+            return "Meta";
+        }
+        if (normalized.startsWith("org.telegram.") || normalized.contains(".telegram.")) {
+            return "Telegram";
+        }
+        if (normalized.startsWith("com.spotify.")) {
+            return "Spotify";
+        }
+        if (normalized.startsWith("com.netflix.")) {
+            return "Netflix";
+        }
+        if (normalized.contains("turktelekom") || normalized.contains("turk.telekom")) {
+            return "Turk Telekom";
+        }
+        if (normalized.startsWith("com.android.")) {
+            return "System";
+        }
+        return "";
     }
 
     private void launchPackage(String packageName, String label) {

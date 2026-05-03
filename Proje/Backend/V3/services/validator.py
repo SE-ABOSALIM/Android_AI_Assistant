@@ -14,6 +14,7 @@ def validate_and_build_response(
     confidence: float,
     raw_label: str,
     top_predictions: Optional[List[Dict[str, Any]]] = None,
+    text_alternatives: Optional[List[str]] = None,
     session_id: Optional[str] = None,
     catalog_version: Optional[str] = None,
 ) -> Dict[str, Any]:
@@ -67,8 +68,8 @@ def validate_and_build_response(
         _require(parameters, "volume_action", missing_slots)
 
     elif model_intent == "OPEN_APP":
-        app_name = extract_app_name(original_text, language)
-        if not app_name:
+        app_names = _extract_app_name_candidates(original_text, language, text_alternatives)
+        if not app_names:
             missing_slots.append("app_name")
         elif not has_app_catalog(session_id):
             accepted = False
@@ -79,28 +80,28 @@ def validate_and_build_response(
             error_code = "APP_CATALOG_STALE"
             error_message = "Installed app catalog version is stale for this session."
         else:
-            app_resolution = resolve_app_match(session_id, app_name)
-            if app_resolution.is_ambiguous:
+            app_resolution = _resolve_best_app_match(session_id, app_names)
+            app_name = app_resolution["app_name"]
+            if app_resolution["ambiguous_matches"]:
                 accepted = False
                 parameters["app_name"] = app_name
-                parameters["app_match_candidates"] = [
-                    {
-                        "label": match.label,
-                        "package_name": match.package_name,
-                        "score": round(match.score, 4),
-                    }
-                    for match in app_resolution.ambiguous_matches
-                ]
+                parameters["app_match_candidates"] = _serialize_app_matches(app_resolution["ambiguous_matches"])
                 error_code = "APP_MATCH_AMBIGUOUS"
                 error_message = "Multiple installed apps match the requested app name."
-            elif app_resolution.match:
-                parameters["app_name"] = app_resolution.match.label
-                parameters["app_package_name"] = app_resolution.match.package_name
-                parameters["app_match_score"] = round(app_resolution.match.score, 4)
+            elif app_resolution["match"]:
+                match = app_resolution["match"]
+                parameters["app_name"] = match.label
+                parameters["app_package_name"] = match.package_name
+                parameters["app_match_score"] = round(match.score, 4)
             else:
                 accepted = False
+                parameters["app_name"] = app_name
+                parameters["app_match_candidates"] = _serialize_app_matches(app_resolution["suggested_matches"])
                 error_code = "APP_NOT_IN_CATALOG"
-                error_message = "The requested app does not match an installed app."
+                if app_resolution["suggested_matches"]:
+                    error_message = "The requested app did not match confidently. Choose one of the closest installed apps."
+                else:
+                    error_message = "The requested app does not match an installed app."
 
     elif model_intent == "SET_TIMER":
         if _looks_like_stopwatch_command(original_text):
@@ -154,6 +155,98 @@ def validate_and_build_response(
 def _require(parameters: Dict[str, Any], key: str, missing_slots: List[str]) -> None:
     if not parameters.get(key):
         missing_slots.append(key)
+
+
+def _extract_app_name_candidates(
+    original_text: str,
+    language: str,
+    text_alternatives: Optional[List[str]],
+) -> List[str]:
+    candidates: List[str] = []
+    seen = set()
+
+    for text in [original_text, *(text_alternatives or [])]:
+        app_name = extract_app_name(text, language)
+        if app_name and app_name.casefold() not in seen:
+            candidates.append(app_name)
+            seen.add(app_name.casefold())
+
+    return candidates
+
+
+def _resolve_best_app_match(session_id: Optional[str], app_names: List[str]) -> Dict[str, Any]:
+    best_matches = []
+    ambiguous_matches = []
+    suggested_matches = []
+
+    for app_name in app_names:
+        resolution = resolve_app_match(session_id, app_name)
+        if resolution.match:
+            best_matches.append((app_name, resolution.match))
+        if resolution.ambiguous_matches:
+            ambiguous_matches.extend((app_name, match) for match in resolution.ambiguous_matches)
+        if resolution.suggested_matches:
+            suggested_matches.extend((app_name, match) for match in resolution.suggested_matches)
+
+    if best_matches:
+        best_matches.sort(key=lambda item: (-item[1].score, item[1].label.casefold(), item[1].package_name))
+        best_score = best_matches[0][1].score
+        tied_matches = [
+            match
+            for _, match in best_matches
+            if best_score - match.score <= 0.03
+        ]
+        deduped_ties = _dedupe_app_matches(tied_matches)
+        if len(deduped_ties) > 1:
+            return {
+                "app_name": best_matches[0][0],
+                "match": None,
+                "ambiguous_matches": deduped_ties[:5],
+                "suggested_matches": [],
+            }
+        return {
+            "app_name": best_matches[0][0],
+            "match": best_matches[0][1],
+            "ambiguous_matches": [],
+            "suggested_matches": [],
+        }
+
+    if ambiguous_matches:
+        ambiguous_matches.sort(key=lambda item: (-item[1].score, item[1].label.casefold(), item[1].package_name))
+        return {
+            "app_name": ambiguous_matches[0][0],
+            "match": None,
+            "ambiguous_matches": _dedupe_app_matches([match for _, match in ambiguous_matches])[:5],
+            "suggested_matches": [],
+        }
+
+    suggested_matches.sort(key=lambda item: (-item[1].score, item[1].label.casefold(), item[1].package_name))
+    return {
+        "app_name": app_names[0],
+        "match": None,
+        "ambiguous_matches": [],
+        "suggested_matches": _dedupe_app_matches([match for _, match in suggested_matches])[:5],
+    }
+
+
+def _dedupe_app_matches(matches: List[Any]) -> List[Any]:
+    by_package_name = {}
+    for match in matches:
+        existing = by_package_name.get(match.package_name)
+        if existing is None or match.score > existing.score:
+            by_package_name[match.package_name] = match
+    return list(by_package_name.values())
+
+
+def _serialize_app_matches(matches: List[Any]) -> List[Dict[str, Any]]:
+    return [
+        {
+            "label": match.label,
+            "package_name": match.package_name,
+            "score": round(match.score, 4),
+        }
+        for match in matches
+    ]
 
 
 def _looks_like_stopwatch_command(text: str) -> bool:

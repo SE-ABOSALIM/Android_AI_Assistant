@@ -1,6 +1,8 @@
 package com.example.anroidaiassistant;
 
 import com.google.gson.annotations.SerializedName;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PredictRequest {
     @SerializedName("text")
@@ -8,6 +10,9 @@ public class PredictRequest {
 
     @SerializedName("language")
     private String language;
+
+    @SerializedName("text_alternatives")
+    private List<String> textAlternatives;
 
     @SerializedName("session_id")
     private String sessionId;
@@ -20,8 +25,13 @@ public class PredictRequest {
     }
 
     public PredictRequest(String text, String language, String sessionId) {
+        this(text, language, sessionId, null);
+    }
+
+    public PredictRequest(String text, String language, String sessionId, List<String> textAlternatives) {
         this.text = text;
         this.language = language;
+        this.textAlternatives = textAlternatives == null ? new ArrayList<>() : new ArrayList<>(textAlternatives);
         this.sessionId = sessionId;
         this.catalogVersion = AssistantSession.getCatalogVersion();
     }
@@ -32,6 +42,10 @@ public class PredictRequest {
 
     public String getLanguage() {
         return language;
+    }
+
+    public List<String> getTextAlternatives() {
+        return textAlternatives;
     }
 
     public String getSessionId() {

@@ -6,6 +6,7 @@
     android:padding="24dp">
 
     <LinearLayout
+        android:id="@+id/selection_window"
         android:layout_width="320dp"
         android:layout_height="wrap_content"
         android:layout_gravity="center"

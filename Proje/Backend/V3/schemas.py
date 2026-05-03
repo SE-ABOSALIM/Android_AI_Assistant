@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 class PredictRequest(BaseModel):
     text: str
     language: str
+    text_alternatives: List[str] = Field(default_factory=list)
     session_id: Optional[str] = None
     catalog_version: Optional[str] = None
 

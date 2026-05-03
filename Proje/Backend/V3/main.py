@@ -24,6 +24,7 @@ def predict(request: PredictRequest):
     return predict_command(
         text=request.text,
         language=request.language,
+        text_alternatives=request.text_alternatives,
         session_id=request.session_id,
         catalog_version=request.catalog_version,
     )

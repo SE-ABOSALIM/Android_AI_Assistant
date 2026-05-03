@@ -8,6 +8,7 @@ from V3.services.validator import validate_and_build_response
 def predict_command(
     text: str,
     language: str,
+    text_alternatives: list[str] = None,
     session_id: str = None,
     catalog_version: str = None,
 ) -> Dict[str, Any]:
@@ -29,6 +30,7 @@ def predict_command(
             confidence=1.0,
             raw_label=f"RULE::{rule_result['rule_matched']}",
             top_predictions=[],
+            text_alternatives=text_alternatives,
             session_id=session_id,
             catalog_version=catalog_version,
         )
@@ -46,6 +48,7 @@ def predict_command(
         confidence=model_result["confidence"],
         raw_label=model_result["raw_label"],
         top_predictions=model_result["top_predictions"],
+        text_alternatives=text_alternatives,
         session_id=session_id,
         catalog_version=catalog_version,
     )

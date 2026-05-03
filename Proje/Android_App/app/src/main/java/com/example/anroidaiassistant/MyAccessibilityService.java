@@ -5,6 +5,7 @@ import android.accessibilityservice.GestureDescription;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
@@ -20,12 +21,14 @@ import android.speech.SpeechRecognizer;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
@@ -180,7 +183,7 @@ public class MyAccessibilityService extends AccessibilityService {
                         }
                     } else {
                         updateOverlayText("Input: " + spokenText);
-                        sendPredictionRequest(spokenText);
+                        sendPredictionRequest(spokenText, matches);
                     }
                 }
                 if (isListening) {
@@ -358,17 +361,35 @@ public class MyAccessibilityService extends AccessibilityService {
             tvSelectionTitle = selectionOverlayView.findViewById(R.id.tv_selection_title);
             selectionChoiceContainer = selectionOverlayView.findViewById(R.id.selection_choice_container);
             tvSelectionHint = selectionOverlayView.findViewById(R.id.tv_selection_hint);
+            View selectionWindow = selectionOverlayView.findViewById(R.id.selection_window);
+
+            selectionOverlayView.setFocusable(true);
+            selectionOverlayView.setFocusableInTouchMode(true);
+            selectionOverlayView.setOnClickListener(view -> cancelNumberSelection());
+            selectionOverlayView.setOnKeyListener((view, keyCode, event) -> {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    if (event.getAction() == KeyEvent.ACTION_UP) {
+                        cancelNumberSelection();
+                    }
+                    return true;
+                }
+                return false;
+            });
+
+            if (selectionWindow != null) {
+                selectionWindow.setOnClickListener(view -> {});
+            }
 
             WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                            | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                     PixelFormat.TRANSLUCENT);
 
             params.gravity = Gravity.CENTER;
             windowManager.addView(selectionOverlayView, params);
+            selectionOverlayView.requestFocus();
         }
 
         updateSelectionWindow(warning);
@@ -427,6 +448,15 @@ public class MyAccessibilityService extends AccessibilityService {
         numberParams.setMargins(0, 0, dp(12), 0);
         row.addView(number, numberParams);
 
+        if (choice.icon != null) {
+            ImageView icon = new ImageView(this);
+            icon.setImageDrawable(choice.icon);
+            icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(36), dp(36));
+            iconParams.setMargins(0, 0, dp(12), 0);
+            row.addView(icon, iconParams);
+        }
+
         LinearLayout textColumn = new LinearLayout(this);
         textColumn.setOrientation(LinearLayout.VERTICAL);
 
@@ -480,7 +510,16 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void sendPredictionRequest(String text) {
-        PredictRequest request = new PredictRequest(text, selectedLanguage, AssistantSession.getSessionId());
+        sendPredictionRequest(text, null);
+    }
+
+    private void sendPredictionRequest(String text, List<String> alternatives) {
+        PredictRequest request = new PredictRequest(
+                text,
+                selectedLanguage,
+                AssistantSession.getSessionId(),
+                alternatives
+        );
         apiService.predict(request).enqueue(new Callback<PredictResponse>() {
             @Override
             public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {
@@ -520,6 +559,19 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {}
+
+    @Override
+    protected boolean onKeyEvent(KeyEvent event) {
+        if (isNumberSelectionMode
+                && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            if (event.getAction() == KeyEvent.ACTION_UP) {
+                cancelNumberSelection();
+            }
+            return true;
+        }
+
+        return super.onKeyEvent(event);
+    }
 
     @Override
     public void onDestroy() {
@@ -594,12 +646,7 @@ public class MyAccessibilityService extends AccessibilityService {
         Integer selectedIndex = parseSelectionNumber(spokenText, numberSelectionChoices.size());
         if (selectedIndex == null) {
             if (isCancelSelection(spokenText)) {
-                NumberSelectionCallback callback = numberSelectionCallback;
-                clearNumberSelection();
-                updateOverlayText("Selection cancelled.");
-                if (callback != null) {
-                    callback.onCancelled();
-                }
+                cancelNumberSelection();
                 return;
             }
 
@@ -608,6 +655,19 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         completeNumberSelection(selectedIndex);
+    }
+
+    private void cancelNumberSelection() {
+        if (!isNumberSelectionMode) {
+            return;
+        }
+
+        NumberSelectionCallback callback = numberSelectionCallback;
+        clearNumberSelection();
+        updateOverlayText("Selection cancelled.");
+        if (callback != null) {
+            callback.onCancelled();
+        }
     }
 
     private void completeNumberSelection(int selectedIndex) {
@@ -657,26 +717,69 @@ public class MyAccessibilityService extends AccessibilityService {
             case "birinci":
             case "one":
             case "first":
+            case "واحد":
+            case "واحده":
+            case "احد":
+            case "احدى":
+            case "اول":
+            case "اولى":
+            case "الاول":
+            case "الاولى":
+            case "wahid":
+            case "vahid":
                 return 1;
             case "iki":
             case "ikinci":
             case "two":
             case "second":
+            case "اثنين":
+            case "اثنان":
+            case "اتنين":
+            case "ثنين":
+            case "اثنتين":
+            case "اثنتان":
+            case "ثاني":
+            case "الثاني":
+            case "تاني":
+            case "isnan":
+            case "ithnan":
+            case "itnen":
                 return 2;
             case "uc":
             case "ucuncu":
             case "three":
             case "third":
+            case "ثلاثه":
+            case "ثلاثة":
+            case "ثلاث":
+            case "تلاته":
+            case "تلاتة":
+            case "ثالث":
+            case "الثالث":
+            case "talata":
+            case "thalatha":
                 return 3;
             case "dort":
             case "dorduncu":
             case "four":
             case "fourth":
+            case "اربعه":
+            case "اربعة":
+            case "اربع":
+            case "رابع":
+            case "الرابع":
+            case "arbaa":
                 return 4;
             case "bes":
             case "besinci":
             case "five":
             case "fifth":
+            case "خمسه":
+            case "خمسة":
+            case "خمس":
+            case "خامس":
+            case "الخامس":
+            case "khamsa":
                 return 5;
             default:
                 return null;
@@ -688,21 +791,50 @@ public class MyAccessibilityService extends AccessibilityService {
         return normalized.contains("iptal")
                 || normalized.contains("cancel")
                 || normalized.contains("vazgec")
-                || normalized.contains("vaz gectim");
+                || normalized.contains("vaz gectim")
+                || normalized.contains("geri")
+                || normalized.contains("kapat")
+                || normalized.contains("cik")
+                || normalized.contains("cikis")
+                || normalized.contains("الغاء")
+                || normalized.contains("الغي")
+                || normalized.contains("خروج")
+                || normalized.contains("رجوع")
+                || normalized.contains("اقفل");
     }
 
     private String normalizeSelectionText(String text) {
-        return text.trim()
+        return normalizeSelectionDigits(text).trim()
                 .toLowerCase(Locale.US)
+                .replace('\u0640', ' ')
+                .replace('\u0623', '\u0627')
+                .replace('\u0625', '\u0627')
+                .replace('\u0622', '\u0627')
                 .replace('\u00e7', 'c')
                 .replace('\u011f', 'g')
                 .replace('\u0131', 'i')
                 .replace('\u00f6', 'o')
                 .replace('\u015f', 's')
                 .replace('\u00fc', 'u')
-                .replaceAll("[^a-z0-9\\s]", " ")
+                .replaceAll("[\\u064B-\\u065F\\u0670]", "")
+                .replaceAll("[^\\p{L}0-9\\s]", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
+    }
+
+    private String normalizeSelectionDigits(String text) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if (ch >= '\u0660' && ch <= '\u0669') {
+                builder.append((char) ('0' + (ch - '\u0660')));
+            } else if (ch >= '\u06F0' && ch <= '\u06F9') {
+                builder.append((char) ('0' + (ch - '\u06F0')));
+            } else {
+                builder.append(ch);
+            }
+        }
+        return builder.toString();
     }
 
     private void clearNumberSelection() {
@@ -720,10 +852,16 @@ public class MyAccessibilityService extends AccessibilityService {
     public static class NumberedChoice {
         public final String title;
         public final String subtitle;
+        public final Drawable icon;
 
         public NumberedChoice(String title, String subtitle) {
+            this(title, subtitle, null);
+        }
+
+        public NumberedChoice(String title, String subtitle, Drawable icon) {
             this.title = title;
             this.subtitle = subtitle;
+            this.icon = icon;
         }
     }
 
