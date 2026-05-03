@@ -18,6 +18,7 @@ class AppCatalogEntry(BaseModel):
 
 class AppCatalogRequest(BaseModel):
     session_id: str
+    language: Optional[str] = None
     catalog_version: Optional[str] = None
     apps: List[AppCatalogEntry] = Field(default_factory=list)
 

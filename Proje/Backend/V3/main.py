@@ -34,6 +34,7 @@ def predict(request: PredictRequest):
 def app_catalog(request: AppCatalogRequest):
     result = save_app_catalog(
         session_id=request.session_id,
+        language=request.language,
         catalog_version=request.catalog_version,
         apps=request.apps,
     )

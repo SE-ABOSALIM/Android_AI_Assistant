@@ -13,6 +13,9 @@ SUGGESTION_MIN_SCORE = 0.35
 MAX_INDEXED_CANDIDATE_APPS = 80
 NGRAM_SIZE = 3
 MIN_NGRAM_MATCH_RATIO = 0.25
+MAX_ARABIC_PHONETIC_ALIASES = 12
+MAX_ARABIC_PHONETIC_TOKENS = 6
+MAX_ARABIC_PHONETIC_TOKEN_VARIANTS = 3
 
 BRAND_ALIAS_GROUPS = [
 
@@ -424,10 +427,16 @@ class AppMatchResolution:
 _catalogs: Dict[str, Dict[str, object]] = {}
 
 
-def save_app_catalog(session_id: str, catalog_version: Optional[str], apps: Iterable[object]) -> Dict[str, object]:
+def save_app_catalog(
+    session_id: str,
+    catalog_version: Optional[str],
+    apps: Iterable[object],
+    language: Optional[str] = None,
+) -> Dict[str, object]:
     _cleanup_expired_catalogs()
 
     entries: List[AppCatalogEntryRecord] = []
+    include_arabic_phonetic_aliases = _is_arabic_language(language)
 
     for app in apps:
         label = _get_value(app, "label")
@@ -445,13 +454,19 @@ def save_app_catalog(session_id: str, catalog_version: Optional[str], apps: Iter
             label=label_text,
             package_name=package_text,
             aliases=alias_texts,
-            match_aliases=_build_match_aliases(label_text, package_text, alias_texts),
+            match_aliases=_build_match_aliases(
+                label_text,
+                package_text,
+                alias_texts,
+                include_arabic_phonetic_aliases=include_arabic_phonetic_aliases,
+            ),
         ))
 
     version = catalog_version or _build_catalog_version(entries)
     now = time.monotonic()
     _catalogs[session_id] = {
         "catalog_version": version,
+        "language": str(language).strip().upper() if _has_text(language) else None,
         "apps": entries,
         "search_index": _build_catalog_search_index(entries),
         "created_at": now,
@@ -647,13 +662,24 @@ def _add_candidate_scores(candidate_scores: Dict[int, float], app_indexes: Itera
         candidate_scores[app_index] = candidate_scores.get(app_index, 0.0) + score
 
 
-def _build_match_aliases(label: str, package_name: str, aliases: List[str]) -> List[str]:
-    raw_aliases: Set[str] = set()
+def _build_match_aliases(
+    label: str,
+    package_name: str,
+    aliases: List[str],
+    include_arabic_phonetic_aliases: bool = False,
+) -> List[str]:
+    display_aliases: Set[str] = set()
 
     for raw_alias in [label, *aliases]:
         if _has_text(raw_alias):
-            raw_aliases.add(str(raw_alias))
-            raw_aliases.add(_split_compound_words(str(raw_alias)))
+            display_aliases.add(str(raw_alias))
+            display_aliases.add(_split_compound_words(str(raw_alias)))
+
+    raw_aliases: Set[str] = set(display_aliases)
+    generated_arabic_aliases: Set[str] = set()
+    if include_arabic_phonetic_aliases:
+        for display_alias in display_aliases:
+            generated_arabic_aliases.update(_arabic_phonetic_aliases(display_alias))
 
     raw_aliases.update(_package_aliases(package_name))
 
@@ -664,7 +690,243 @@ def _build_match_aliases(label: str, package_name: str, aliases: List[str]) -> L
                 expanded.add(normalized)
                 expanded.add(normalized.replace(" ", ""))
 
+    for generated_alias in generated_arabic_aliases:
+        normalized = _normalize_words(generated_alias)
+        if normalized:
+            expanded.add(normalized)
+            expanded.add(normalized.replace(" ", ""))
+
     return sorted(expanded)
+
+
+def _is_arabic_language(language: Optional[str]) -> bool:
+    return _has_text(language) and str(language).strip().casefold().replace("_", "-").startswith("ar")
+
+
+def _arabic_phonetic_aliases(value: str) -> Set[str]:
+    if not _should_build_arabic_phonetic_alias(value):
+        return set()
+
+    normalized = _normalize_words(_split_compound_words(str(value)))
+    tokens = [token for token in normalized.split(" ") if token]
+    if not tokens:
+        return set()
+
+    if len(tokens) > MAX_ARABIC_PHONETIC_TOKENS:
+        tokens = tokens[:MAX_ARABIC_PHONETIC_TOKENS]
+
+    token_variants: List[List[str]] = []
+    for token in tokens:
+        variants = _latin_token_to_arabic_phonetic_variants(token)
+        if not variants:
+            return set()
+        token_variants.append(variants[:MAX_ARABIC_PHONETIC_TOKEN_VARIANTS])
+
+    spaced_aliases = _combine_arabic_phonetic_tokens(token_variants)
+    aliases: Set[str] = set()
+    for alias in spaced_aliases:
+        aliases.add(alias)
+        aliases.add(alias.replace(" ", ""))
+
+    return {alias for alias in aliases if alias}
+
+
+def _should_build_arabic_phonetic_alias(value: str) -> bool:
+    text = str(value)
+    if re.search(r"[\u0600-\u06FF]", text):
+        return False
+
+    if not re.search(r"[A-Za-z]", text):
+        return False
+
+    normalized = _normalize_words(_split_compound_words(text))
+    compact = normalized.replace(" ", "")
+    if len(compact) < 2 or len(compact) > 48:
+        return False
+
+    tokens = [token for token in normalized.split(" ") if token]
+    if len(tokens) == 1 and len(compact) > 18:
+        return False
+
+    return True
+
+
+def _combine_arabic_phonetic_tokens(token_variants: List[List[str]]) -> List[str]:
+    aliases = [""]
+    for variants in token_variants:
+        next_aliases = []
+        for alias in aliases:
+            for variant in variants:
+                next_aliases.append(f"{alias} {variant}".strip())
+                if len(next_aliases) >= MAX_ARABIC_PHONETIC_ALIASES:
+                    break
+            if len(next_aliases) >= MAX_ARABIC_PHONETIC_ALIASES:
+                break
+        aliases = next_aliases
+
+    return aliases[:MAX_ARABIC_PHONETIC_ALIASES]
+
+
+def _latin_token_to_arabic_phonetic_variants(token: str) -> List[str]:
+    normalized = re.sub(r"[^a-z0-9]", "", _normalize_words(token))
+    if not normalized:
+        return []
+
+    special_aliases = {
+        "app": ["اب", "آب"],
+        "apps": ["ابس", "آبس"],
+        "bank": ["بنك"],
+        "business": ["بزنس"],
+        "bus": ["باص", "بس"],
+        "chat": ["شات", "تشات"],
+        "cup": ["كاب", "كب", "كوب"],
+        "flow": ["فلو"],
+        "flowq": ["فلو كيو", "فلوكيو", "فلوكي"],
+        "game": ["جيم"],
+        "games": ["جيمز"],
+        "go": ["جو", "غو"],
+        "hero": ["هيرو"],
+        "heroes": ["هيروز", "هيروس"],
+        "job": ["جوب"],
+        "key": ["كي"],
+        "keyboard": ["كيبورد"],
+        "lite": ["لايت"],
+        "max": ["ماكس"],
+        "mobile": ["موبايل"],
+        "music": ["ميوزك"],
+        "pay": ["باي"],
+        "photo": ["فوتو"],
+        "photos": ["فوتوز"],
+        "plus": ["بلس"],
+        "point": ["بوينت"],
+        "power": ["باور"],
+        "pro": ["برو"],
+        "q": ["كيو", "كي"],
+        "queue": ["كيو"],
+        "search": ["سيرتش"],
+        "shop": ["شوب"],
+        "swift": ["سويفت"],
+        "tv": ["تي في"],
+        "video": ["فيديو"],
+        "vpn": ["في بي ان"],
+    }
+
+    variants: List[str] = []
+    variants.extend(special_aliases.get(normalized, []))
+
+    general = _latin_token_to_arabic_phonetic(normalized)
+    if general:
+        variants.append(general)
+        compressed = _compress_repeated_arabic_sounds(general)
+        if compressed != general:
+            variants.append(compressed)
+
+    return _dedupe_preserve_order(variants)
+
+
+def _latin_token_to_arabic_phonetic(token: str) -> str:
+    chunks = {
+        "tion": "شن",
+        "sion": "شن",
+        "tch": "تش",
+        "igh": "اي",
+        "eigh": "اي",
+        "air": "ير",
+        "are": "ير",
+        "ear": "ير",
+        "eer": "ير",
+        "er": "ر",
+        "ir": "ير",
+        "ur": "ر",
+        "sh": "ش",
+        "ch": "تش",
+        "th": "ث",
+        "ph": "ف",
+        "ck": "ك",
+        "qu": "كيو",
+        "kh": "خ",
+        "oo": "و",
+        "ee": "ي",
+        "ea": "ي",
+        "ie": "ي",
+        "ai": "اي",
+        "ay": "اي",
+        "oa": "و",
+        "ow": "او",
+        "ou": "او",
+        "oi": "وي",
+        "oy": "وي",
+    }
+    chars = {
+        "a": "ا",
+        "b": "ب",
+        "d": "د",
+        "e": "ي",
+        "f": "ف",
+        "g": "ج",
+        "h": "ه",
+        "i": "ي",
+        "j": "ج",
+        "k": "ك",
+        "l": "ل",
+        "m": "م",
+        "n": "ن",
+        "o": "و",
+        "p": "ب",
+        "q": "ك",
+        "r": "ر",
+        "s": "س",
+        "t": "ت",
+        "u": "و",
+        "v": "ف",
+        "w": "و",
+        "x": "كس",
+        "y": "ي",
+        "z": "ز",
+    }
+
+    result: List[str] = []
+    index = 0
+    while index < len(token):
+        if token[index].isdigit():
+            result.append(token[index])
+            index += 1
+            continue
+
+        matched = False
+        for size in (4, 3, 2):
+            chunk = token[index:index + size]
+            if chunk in chunks:
+                result.append(chunks[chunk])
+                index += size
+                matched = True
+                break
+        if matched:
+            continue
+
+        char = token[index]
+        if char == "c":
+            next_char = token[index + 1:index + 2]
+            result.append("س" if next_char in {"e", "i", "y"} else "ك")
+        else:
+            result.append(chars.get(char, char))
+        index += 1
+
+    return "".join(result)
+
+
+def _compress_repeated_arabic_sounds(value: str) -> str:
+    return re.sub(r"([اوي])\1+", r"\1", value)
+
+
+def _dedupe_preserve_order(values: Iterable[str]) -> List[str]:
+    result: List[str] = []
+    seen: Set[str] = set()
+    for value in values:
+        if value and value not in seen:
+            result.append(value)
+            seen.add(value)
+    return result
 
 
 def _package_aliases(package_name: str) -> Set[str]:

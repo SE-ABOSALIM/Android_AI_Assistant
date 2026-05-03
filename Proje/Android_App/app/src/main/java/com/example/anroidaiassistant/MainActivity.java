@@ -277,7 +277,7 @@ public class MainActivity extends AppCompatActivity {
         btnSpeak.setEnabled(false);
         tvResult.setText("Uygulama listesi gonderiliyor...");
 
-        appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(this, apiService, sessionId, (success, message) -> runOnUiThread(() -> {
+        appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(this, apiService, sessionId, selectedLanguage, (success, message) -> runOnUiThread(() -> {
             if (isFinishing() || isDestroyed()) {
                 return;
             }

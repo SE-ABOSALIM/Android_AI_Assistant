@@ -31,6 +31,7 @@ public final class AppCatalogSyncer {
             Context context,
             ApiService apiService,
             String sessionId,
+            String language,
             SyncCallback callback
     ) {
         if (context == null || apiService == null || !hasText(sessionId)) {
@@ -40,7 +41,7 @@ public final class AppCatalogSyncer {
 
         List<AppCatalogEntry> apps = collectLaunchableApps(context);
         String catalogVersion = buildCatalogVersion(apps);
-        AppCatalogRequest request = new AppCatalogRequest(sessionId, catalogVersion, apps);
+        AppCatalogRequest request = new AppCatalogRequest(sessionId, language, catalogVersion, apps);
 
         Call<AppCatalogResponse> call = apiService.syncAppCatalog(request);
         call.enqueue(new Callback<AppCatalogResponse>() {
