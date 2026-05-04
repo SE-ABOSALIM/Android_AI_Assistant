@@ -50,6 +50,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final int RESTART_DELAY_SLOW_MS = 800;
     private static final long DEFAULT_GESTURE_DURATION_MS = 350L;
     private static final long DEFAULT_SCROLL_DURATION_MS = 650L;
+    private static final long PHOTO_CAPTURE_ACTIVE_CAMERA_DELAY_MS = 150L;
     private static final long PHOTO_CAPTURE_START_DELAY_MS = 1800L;
     private static final long PHOTO_CAPTURE_RETRY_DELAY_MS = 700L;
     private static final int MAX_PHOTO_CAPTURE_ATTEMPTS = 8;
@@ -888,6 +889,15 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public boolean capturePhoto() {
+        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+        if (isCameraWindow(rootNode)) {
+            if (clickCameraShutter(rootNode)) {
+                return true;
+            }
+            schedulePhotoCaptureAttempt(1, PHOTO_CAPTURE_ACTIVE_CAMERA_DELAY_MS);
+            return true;
+        }
+
         try {
             Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -897,6 +907,42 @@ public class MyAccessibilityService extends AccessibilityService {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private boolean isCameraWindow(AccessibilityNodeInfo rootNode) {
+        return rootNode != null
+                && (isCameraPackage(rootNode.getPackageName()) || hasLikelyCameraShutter(rootNode));
+    }
+
+    private boolean isCameraPackage(CharSequence packageName) {
+        if (packageName == null) {
+            return false;
+        }
+
+        String normalizedPackageName = normalizeKeywordText(packageName.toString());
+        return normalizedPackageName.contains("camera")
+                || normalizedPackageName.contains("kamera")
+                || normalizedPackageName.contains("googlecamera")
+                || normalizedPackageName.contains("snapcam");
+    }
+
+    private boolean hasLikelyCameraShutter(AccessibilityNodeInfo node) {
+        if (node == null) {
+            return false;
+        }
+
+        if (containsLikelyShutterKeyword(node.getViewIdResourceName())
+                || containsLikelyShutterKeyword(node.getContentDescription())) {
+            return true;
+        }
+
+        for (int i = 0; i < node.getChildCount(); i++) {
+            if (hasLikelyCameraShutter(node.getChild(i))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void schedulePhotoCaptureAttempt(int attempt, long delayMillis) {
@@ -968,6 +1014,22 @@ public class MyAccessibilityService extends AccessibilityService {
                 || normalizedValue.contains("deklansor")
                 || normalizedValue.contains("foto")
                 || normalizedValue.contains("cek");
+    }
+
+    private boolean containsLikelyShutterKeyword(CharSequence value) {
+        if (value == null) {
+            return false;
+        }
+
+        String normalizedValue = normalizeKeywordText(value.toString());
+        return normalizedValue.contains("shutter")
+                || normalizedValue.contains("capture")
+                || normalizedValue.contains("camera_button")
+                || normalizedValue.contains("shutter_button")
+                || normalizedValue.contains("capture_button")
+                || normalizedValue.contains("button_capture")
+                || normalizedValue.contains("normal_center_button")
+                || normalizedValue.contains("deklansor");
     }
 
     private String normalizeKeywordText(String value) {
