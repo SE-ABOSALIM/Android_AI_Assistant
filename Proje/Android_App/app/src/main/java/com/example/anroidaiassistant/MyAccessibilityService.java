@@ -453,7 +453,7 @@ public class MyAccessibilityService extends AccessibilityService {
             ImageView icon = new ImageView(this);
             icon.setImageDrawable(choice.icon);
             icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(36), dp(36));
+            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
             iconParams.setMargins(0, 0, dp(12), 0);
             row.addView(icon, iconParams);
         }
