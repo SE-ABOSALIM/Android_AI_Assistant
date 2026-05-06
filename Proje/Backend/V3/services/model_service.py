@@ -1,4 +1,5 @@
 import json
+from threading import RLock
 from typing import Any, Dict, List, Optional, Tuple
 
 from V3.config import MAX_LENGTH, MODEL_DIR, SUPPORTED_INTENTS
@@ -9,6 +10,8 @@ _device = None
 _model = None
 _tokenizer = None
 _label_to_target_json: Optional[Dict[str, Dict[str, Any]]] = None
+_model_load_lock = RLock()
+_label_mapping_lock = RLock()
 
 
 def label_to_json(label: str) -> Dict[str, Any]:
@@ -130,16 +133,22 @@ def _get_model_bundle() -> Tuple[Any, Any, Any, Any]:
 
         return torch, _tokenizer, _model, _device
 
-    import torch
-    from transformers import AutoModelForSequenceClassification, AutoTokenizer
+    with _model_load_lock:
+        if _model is not None and _tokenizer is not None and _device is not None:
+            import torch
 
-    _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    _tokenizer = _load_tokenizer(AutoTokenizer)
-    _model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
-    _model.to(_device)
-    _model.eval()
+            return torch, _tokenizer, _model, _device
 
-    return torch, _tokenizer, _model, _device
+        import torch
+        from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+        _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        _tokenizer = _load_tokenizer(AutoTokenizer)
+        _model = AutoModelForSequenceClassification.from_pretrained(MODEL_DIR)
+        _model.to(_device)
+        _model.eval()
+
+        return torch, _tokenizer, _model, _device
 
 
 def _load_tokenizer(auto_tokenizer):
@@ -155,14 +164,18 @@ def _load_label_mapping() -> Dict[str, Dict[str, Any]]:
     if _label_to_target_json is not None:
         return _label_to_target_json
 
-    label_json_path = MODEL_DIR / "label_to_target_json.json"
-    if label_json_path.exists():
-        with open(label_json_path, "r", encoding="utf-8") as f:
-            _label_to_target_json = json.load(f)
-    else:
-        _label_to_target_json = {}
+    with _label_mapping_lock:
+        if _label_to_target_json is not None:
+            return _label_to_target_json
 
-    return _label_to_target_json
+        label_json_path = MODEL_DIR / "label_to_target_json.json"
+        if label_json_path.exists():
+            with open(label_json_path, "r", encoding="utf-8") as f:
+                _label_to_target_json = json.load(f)
+        else:
+            _label_to_target_json = {}
+
+        return _label_to_target_json
 
 
 def _only_supported_intents(model_json: Dict[str, Any]) -> Dict[str, Any]:

@@ -2,6 +2,7 @@ import re
 import time
 import unicodedata
 from dataclasses import dataclass
+from threading import RLock
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 from V3.resources.transliteration import ARABIC_TO_LATIN_TRANSLITERATION
@@ -63,6 +64,7 @@ class AppMatchResolution:
 
 
 _catalogs: Dict[str, Dict[str, object]] = {}
+_catalog_lock = RLock()
 
 
 def save_app_catalog(
@@ -71,8 +73,6 @@ def save_app_catalog(
     apps: Iterable[object],
     language: Optional[str] = None,
 ) -> Dict[str, object]:
-    _cleanup_expired_catalogs()
-
     entries: List[AppCatalogEntryRecord] = []
     include_arabic_phonetic_aliases = _is_arabic_language(language)
 
@@ -102,7 +102,8 @@ def save_app_catalog(
 
     version = catalog_version or _build_catalog_version(entries)
     now = time.monotonic()
-    _catalogs[session_id] = {
+    session_key = str(session_id)
+    catalog = {
         "catalog_version": version,
         "language": str(language).strip().upper() if _has_text(language) else None,
         "apps": entries,
@@ -110,10 +111,14 @@ def save_app_catalog(
         "created_at": now,
         "last_seen": now,
     }
-    _prune_oldest_catalogs()
+
+    with _catalog_lock:
+        _cleanup_expired_catalogs_locked()
+        _catalogs[session_key] = catalog
+        _prune_oldest_catalogs_locked()
 
     return {
-        "session_id": session_id,
+        "session_id": session_key,
         "catalog_version": version,
         "app_count": len(entries),
     }
@@ -141,12 +146,14 @@ def delete_app_catalog(session_id: Optional[str]) -> bool:
     if not _has_text(session_id):
         return False
 
-    return _catalogs.pop(str(session_id), None) is not None
+    with _catalog_lock:
+        return _catalogs.pop(str(session_id), None) is not None
 
 
 def catalog_count() -> int:
-    _cleanup_expired_catalogs()
-    return len(_catalogs)
+    with _catalog_lock:
+        _cleanup_expired_catalogs_locked()
+        return len(_catalogs)
 
 
 def resolve_app_match(session_id: Optional[str], candidate: str) -> AppMatchResolution:
@@ -868,18 +875,24 @@ def _arabic_to_latin(value: str) -> str:
 
 
 def _get_catalog(session_id: Optional[str]) -> Optional[Dict[str, object]]:
-    _cleanup_expired_catalogs()
     if not _has_text(session_id):
         return None
 
-    catalog = _catalogs.get(str(session_id))
-    if catalog:
-        catalog["last_seen"] = time.monotonic()
+    with _catalog_lock:
+        _cleanup_expired_catalogs_locked()
+        catalog = _catalogs.get(str(session_id))
+        if catalog:
+            catalog["last_seen"] = time.monotonic()
 
-    return catalog
+        return catalog
 
 
 def _cleanup_expired_catalogs() -> None:
+    with _catalog_lock:
+        _cleanup_expired_catalogs_locked()
+
+
+def _cleanup_expired_catalogs_locked() -> None:
     if not _catalogs:
         return
 
@@ -895,6 +908,11 @@ def _cleanup_expired_catalogs() -> None:
 
 
 def _prune_oldest_catalogs() -> None:
+    with _catalog_lock:
+        _prune_oldest_catalogs_locked()
+
+
+def _prune_oldest_catalogs_locked() -> None:
     overflow = len(_catalogs) - MAX_APP_CATALOG_SESSIONS
     if overflow <= 0:
         return
