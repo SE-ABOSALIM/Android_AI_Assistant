@@ -4,6 +4,14 @@ import unicodedata
 from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Set, Tuple
 
+from V3.resources.transliteration import ARABIC_TO_LATIN_TRANSLITERATION
+from V3.resources.app_aliases import BRAND_ALIAS_GROUPS
+from V3.resources.arabic_phonetic import (
+    ARABIC_PHONETIC_SPECIAL_ALIASES,
+    LATIN_TO_ARABIC_CHAR_MAP,
+    LATIN_TO_ARABIC_CHUNK_MAP,
+)
+
 APP_CATALOG_TTL_SECONDS = 2 * 60 * 60
 MAX_APP_CATALOG_SESSIONS = 64
 AMBIGUOUS_SCORE_MARGIN = 0.03
@@ -16,377 +24,6 @@ MIN_NGRAM_MATCH_RATIO = 0.25
 MAX_ARABIC_PHONETIC_ALIASES = 12
 MAX_ARABIC_PHONETIC_TOKENS = 6
 MAX_ARABIC_PHONETIC_TOKEN_VARIANTS = 3
-
-BRAND_ALIAS_GROUPS = [
-
-    # GLOBAL SOCIAL / MESSAGING / GOOGLE / AI
-    ("youtube", "you tube", "yt", "يوتيوب", "يوتوب", "يوتيب"),
-    ("instagram", "insta", "ig", "انستغرام", "انستقرام", "انستا"),
-    ("whatsapp", "whats app", "واتساب", "واتس اب", "واتسآب"),
-    ("telegram", "تلجرام", "تليجرام", "تيليجرام"),
-    ("tiktok", "tik tok", "تيك توك", "تيكتوك"),
-    ("facebook", "fb", "فيسبوك", "فيس بوك"),
-    ("messenger", "facebook messenger", "ماسنجر", "مسنجر"),
-    ("snapchat", "snap chat", "snap", "سناب شات", "سناب"),
-    ("x", "twitter", "تويتر", "اكس", "إكس"),
-    ("threads", "ثريدز", "ثريد"),
-    ("reddit", "ريديت"),
-    ("discord", "ديسكورد"),
-    ("linkedin", "linked in", "لينكد ان", "لينكدإن"),
-    ("pinterest", "بنترست", "بينترست"),
-    ("gmail", "google mail", "جي ميل", "جيميل"),
-    ("google chrome", "chrome", "كروم", "جوجل كروم", "غوغل كروم"),
-    ("google maps", "maps", "خرائط", "خرائط جوجل", "خرائط غوغل"),
-    ("google drive", "drive", "درايف", "جوجل درايف"),
-    ("google photos", "photos", "صور جوجل", "جوجل فوتوز"),
-    ("google translate", "translate", "ترجمة جوجل", "مترجم جوجل"),
-    ("chatgpt", "chat gpt", "gpt", "شات جي بي تي", "تشات جي بي تي", "شات جبت"),
-    ("gemini", "google gemini", "جيميني", "جمني"),
-    ("copilot", "microsoft copilot", "كوبايلوت", "كو بايلوت"),
-    ("zoom", "زووم"),
-    ("google meet", "meet", "جوجل ميت", "غوغل ميت"),
-    ("skype", "سكايب"),
-    ("signal", "سيجنال", "سيغنال"),
-    ("viber", "فايبر"),
-    ("microsoft teams", "teams", "تيمز", "مايكروسوفت تيمز"),
-    ("slack", "سلاك"),
-    ("notion", "نوشن", "نوتشن"),
-    ("canva", "كانفا"),
-    ("capcut", "cap cut", "كاب كت", "كاب كات"),
-    ("kinemaster", "kine master", "كين ماستر", "كاين ماستر"),
-    ("inshot", "in shot", "ان شوت", "إن شوت"),
-    ("picsart", "pics art", "بيكس ارت", "بيكس آرت"),
-    ("adobe lightroom", "lightroom", "لايت روم", "لايتروم"),
-    ("photoshop express", "adobe photoshop express", "فوتوشوب", "فوتوشوب اكسبريس"),
-    ("snapseed", "snap seed", "سناب سيد", "سنابسيد"),
-    ("vsco", "فيسكو", "فسكو"),
-    ("vn video editor", "vn editor", "vn", "في ان", "في إن"),
-    ("filmora", "filmorago", "filmora go", "فيلمورا", "فيلمورا جو"),
-    ("powerdirector", "power director", "باور دايركتور"),
-    ("spotify", "سبوتيفاي", "سبوتفي"),
-    ("netflix", "نتفلكس", "نيتفليكس", "نتفليكس"),
-    ("prime video", "amazon prime video", "برايم فيديو"),
-    ("disney plus", "disney+", "ديزني بلس"),
-    ("twitch", "تويتش"),
-    ("soundcloud", "ساوند كلاود"),
-    ("shazam", "شازام"),
-    ("duolingo", "دوولينجو", "دولينجو"),
-
-    # GLOBAL SHOPPING / FOOD / TRAVEL
-    ("amazon", "amazon shopping", "امازون", "أمازون"),
-    ("temu", "تيمو", "تيمو شوبينغ"),
-    ("shein", "شي ان", "شي إن", "شين"),
-    ("aliexpress", "ali express", "علي اكسبريس", "علي إكسبريس"),
-    ("ebay", "ايباي", "إيباي"),
-    ("etsy", "اتسي", "إتسي"),
-    ("uber", "اوبر", "أوبر"),
-    ("uber eats", "ubereats", "اوبر ايتس", "أوبر إيتس"),
-    ("bolt", "بولت"),
-    ("booking", "booking.com", "بوكينج", "بوكنق"),
-    ("airbnb", "air bnb", "اير بي ان بي", "إير بي إن بي"),
-    ("tripadvisor", "trip advisor", "تريب ادفايزر"),
-    ("google wallet", "wallet", "محفظة جوجل"),
-    ("apple pay", "ابل باي", "آبل باي"),
-    ("paypal", "pay pal", "باي بال"),
-    ("revolut", "ريفولوت"),
-    ("wise", "transferwise", "وايز"),
-
-    # GLOBAL GAMES
-    ("clash of clans", "coc", "كلاش اوف كلانس", "كلاش أوف كلانس", "كلاش كلانس", "كلاش العشائر"),
-    ("clash royale", "cr", "كلاش رويال", "كلاش رويالز"),
-    ("brawl stars", "براول ستارز", "برول ستارز"),
-    ("pubg mobile", "pubg", "ببجي", "بوبجي", "ببجي موبايل"),
-    ("call of duty mobile", "cod mobile", "كول اوف ديوتي", "كول أوف ديوتي", "كود موبايل"),
-    ("free fire", "فري فاير"),
-    ("roblox", "روبلوكس", "روبلكس"),
-    ("minecraft", "ماين كرافت", "ماينكرافت"),
-    ("fortnite", "فورت نايت", "فورتنايت"),
-    ("subway surfers", "صب واي سيرفرز", "سب واي سيرفرز"),
-    ("candy crush", "كاندي كراش"),
-    ("among us", "امونج اس", "أمونغ آس"),
-    ("pokemon go", "بوكيمون جو"),
-    ("genshin impact", "جينشن امباكت", "قنشن امباكت"),
-    ("league of legends", "lol", "ليج اوف ليجندز"),
-    ("wild rift", "وايلد ريفت"),
-    ("fifa mobile", "fc mobile", "فيفا موبايل", "اف سي موبايل"),
-    ("efootball", "pes", "اي فوتبول", "بيس"),
-    ("8 ball pool", "ايت بول بول", "ثمانية بول"),
-
-    # USA / ENGLISH-SPEAKING
-    ("chase", "chase bank", "تشيس", "بنك تشيس"),
-    ("bank of america", "boa", "بنك اوف امريكا", "بنك أوف أميركا"),
-    ("wells fargo", "ويلز فارغو", "ويلز فارجو"),
-    ("citibank", "citi", "سيتي بنك", "سيتي"),
-    ("capital one", "كابيتال ون"),
-    ("us bank", "u.s. bank", "يو اس بنك"),
-    ("pnc bank", "pnc", "بي ان سي بنك"),
-    ("truist", "تروست", "ترويست"),
-    ("american express", "amex", "امريكان اكسبرس", "أمريكان إكسبريس"),
-    ("discover", "ديسكفر"),
-    ("venmo", "فينمو"),
-    ("cash app", "كاش اب", "كاش آب"),
-    ("zelle", "زيل", "زيلّي"),
-    ("robinhood", "روبن هود"),
-    ("coinbase", "كوين بيس"),
-    ("walmart", "وول مارت", "والمارت"),
-    ("target", "تارغت", "تارجت"),
-    ("best buy", "بست باي"),
-    ("costco", "كوستكو"),
-    ("doordash", "door dash", "دور داش"),
-    ("grubhub", "grub hub", "جرب هب"),
-    ("instacart", "انستا كارت"),
-    ("lyft", "ليفت"),
-    ("hulu", "هولو"),
-    ("peacock", "بيكوك"),
-    ("paramount plus", "paramount+", "باراماونت بلس"),
-
-    # UK
-    ("barclays", "باركليز"),
-    ("hsbc", "اتش اس بي سي", "إتش إس بي سي"),
-    ("lloyds bank", "lloyds", "لويدز بنك"),
-    ("natwest", "نات ويست"),
-    ("halifax", "هاليفاكس"),
-    ("monzo", "مونزو"),
-    ("starling bank", "starling", "ستارلينغ بنك"),
-    ("tesco", "تيسكو"),
-    ("sainsburys", "sainsbury's", "سينزبريز"),
-    ("asda", "اسدا", "أسدا"),
-    ("deliveroo", "دليفرو"),
-    ("just eat", "جست ايت"),
-    ("bbc iplayer", "iplayer", "بي بي سي اي بلاير"),
-
-    # CANADA
-    ("rbc", "royal bank of canada", "ار بي سي", "رويال بنك اوف كندا"),
-    ("td bank", "td canada trust", "تي دي بنك"),
-    ("scotiabank", "scotia", "سكوشيا بنك"),
-    ("bmo", "bank of montreal", "بي ام او", "بنك مونتريال"),
-    ("cibc", "سي اي بي سي"),
-    ("interac", "انتراك", "إنترآك"),
-    ("tangerine", "تانجرين"),
-    ("wealthsimple", "ويلث سمبل"),
-    ("tim hortons", "تيم هورتنز"),
-    ("skip the dishes", "سكيب ذا ديشز"),
-
-    # TURKEY
-    ("ziraat bankasi", "ziraat", "ziraat bank", "زراعت بنك", "بنك زراعت"),
-    ("is bankasi", "is bank", "turkiye is bankasi", "iş bankası", "ايش بنك", "بنك ايش"),
-    ("garanti bbva", "garanti", "غارانتي", "بنك غارانتي"),
-    ("akbank", "اك بنك", "أك بنك"),
-    ("yapi kredi", "yapı kredi", "يابي كريدي"),
-    ("denizbank", "deniz bank", "دنيز بنك", "دينيز بنك"),
-    ("vakifbank", "vakıfbank", "وقف بنك", "فاكيف بنك"),
-    ("halkbank", "halk bank", "هالك بنك"),
-    ("qnb finansbank", "finansbank", "كي ان بي فينانس بنك"),
-    ("teb", "turk ekonomi bankasi", "تي اي بي"),
-    ("papara", "بابارا"),
-    ("ininal", "اينينال"),
-    ("paycell", "بايسل", "باي سيل"),
-    ("trendyol", "ترنديول"),
-    ("hepsiburada", "hepsi burada", "هبسي بورادا"),
-    ("n11", "n eleven", "ان 11", "إن 11"),
-    ("getir", "جتير", "غتير"),
-    ("yemeksepeti", "yemek sepeti", "يمك سبتي", "يَمَك سَبَتي"),
-    ("migros", "ميغروس"),
-    ("a101", "a 101", "اي 101"),
-    ("bim", "بيم"),
-    ("sok market", "şok", "شوك ماركت"),
-    ("ciceksepeti", "çiçek sepeti", "تشيشك سبتي"),
-    ("sahibinden", "صاحبندن", "صاحيبندن"),
-    ("dolap", "دولاب"),
-    ("letgo", "let go", "ليت جو"),
-    ("pttavm", "ptt avm", "بي تي تي اي في ام"),
-    ("turkcell", "ترك سل", "توركسل"),
-    ("vodafone", "فودافون"),
-    ("turk telekom", "türk telekom", "ترك تيليكوم"),
-    ("bein connect", "بي ان كونكت"),
-    ("exxen", "اكسن", "إكسن"),
-    ("gain", "غين", "غاين"),
-    ("blutv", "blue tv", "بلو تي في"),
-    ("mhrs", "ام اتش ار اس"),
-    ("e devlet", "edevlet", "e-devlet", "اي دولت", "إي دولت"),
-
-    # SAUDI ARABIA
-    ("al rajhi bank", "rajhi", "مصرف الراجحي", "الراجحي"),
-    ("alinma bank", "بنك الانماء", "الانماء"),
-    ("riyad bank", "بنك الرياض", "الرياض بنك"),
-    ("saudi national bank", "snb", "البنك الاهلي السعودي", "الاهلي السعودي"),
-    ("sabb", "ساب", "البنك السعودي البريطاني"),
-    ("albilad bank", "bank albilad", "بنك البلاد", "البلاد"),
-    ("stc pay", "اس تي سي باي", "stc باي", "اس تي سي"),
-    ("urpay", "ur pay", "يور باي"),
-    ("mada pay", "مدى باي"),
-    ("absher", "أبشر", "ابشر"),
-    ("nafath", "نفاذ"),
-    ("tawakkalna", "توكلنا"),
-    ("sehhaty", "صحتي"),
-    ("najm", "نجم"),
-    ("ejar", "إيجار", "ايجار"),
-    ("hungerstation", "hunger station", "هنقرستيشن", "هنقر ستيشن"),
-    ("jahez", "جاهز"),
-    ("mrsool", "مرسول"),
-    ("noon", "نون"),
-    ("jarir", "jarir bookstore", "جرير", "مكتبة جرير"),
-    ("extra", "extra stores", "اكسترا", "إكسترا"),
-    ("nahdi", "nahdi pharmacy", "النهدي", "صيدلية النهدي"),
-    ("almosafer", "المسافر"),
-    ("haraj", "حراج"),
-
-    # UAE
-    ("emirates nbd", "بنك الإمارات دبي الوطني", "الإمارات دبي الوطني"),
-    ("adcb", "abu dhabi commercial bank", "بنك أبوظبي التجاري", "ابوظبي التجاري"),
-    ("fab", "first abu dhabi bank", "بنك أبوظبي الأول", "ابوظبي الاول"),
-    ("mashreq", "mashreq bank", "المشرق", "بنك المشرق"),
-    ("dubai islamic bank", "dib", "بنك دبي الإسلامي", "دبي الإسلامي"),
-    ("careem", "كريم"),
-    ("talabat", "طلبات"),
-    ("noon uae", "نون الامارات", "نون الإمارات"),
-    ("dubizzle", "دوبيزل"),
-    ("bayut", "بيوت"),
-    ("etisalat", "اتصالات"),
-    ("du", "دو"),
-    ("botim", "بوتيم"),
-    ("payit", "pay it", "باي ات", "باي إت"),
-    ("smiles", "سمايلز"),
-    ("carrefour", "كارفور"),
-
-    # EGYPT
-    ("instapay", "انستا باي", "إنستا باي"),
-    ("vodafone cash", "فودافون كاش"),
-    ("fawry", "فوري"),
-    ("meeza", "ميزة"),
-    ("banque misr", "بنك مصر"),
-    ("national bank of egypt", "nbe", "البنك الاهلي المصري", "الأهلي المصري"),
-    ("cib egypt", "commercial international bank", "سي اي بي", "البنك التجاري الدولي"),
-    ("qnb alahli", "qnb الأهلي", "كي يو ان بي الاهلي"),
-    ("talabat egypt", "طلبات مصر"),
-    ("elmenus", "المنيوز", "المنيوز"),
-    ("jumia", "جوميا"),
-    ("olx egypt", "olx", "او ال اكس", "أو إل إكس"),
-    ("shahid", "شاهد", "شاهد vip", "شاهد في اي بي"),
-    ("watch it", "watchit", "واتش ات", "واتش إت"),
-
-    # KUWAIT / QATAR / BAHRAIN / OMAN / JORDAN / IRAQ / LEBANON
-    ("kfh", "kuwait finance house", "بيت التمويل الكويتي", "بيتك"),
-    ("nbk", "national bank of kuwait", "بنك الكويت الوطني", "الوطني"),
-    ("knet", "كي نت"),
-    ("carriage", "كاريج"),
-    ("snoonu", "سنونو"),
-    ("qnb", "qatar national bank", "بنك قطر الوطني"),
-    ("ooredoo", "اوريدو", "أوريدو"),
-    ("bbk", "bank of bahrain and kuwait", "بنك البحرين والكويت"),
-    ("benefitpay", "benefit pay", "بنفت باي"),
-    ("bank muscat", "بنك مسقط"),
-    ("omantel", "عمانتل"),
-    ("zain", "زين"),
-    ("orange", "اورنج", "أورنج"),
-    ("umniah", "امنية", "أمنية"),
-    ("zain cash", "زين كاش"),
-    ("jawaker", "جواكر"),
-    ("toters", "توترز"),
-    ("touch", "تاتش"),
-    ("alfa", "الفا", "ألفا"),
-
-    # ARABIC / MENA MEDIA & COMMON
-    ("anghami", "انغامي", "أنغامي"),
-    ("osn", "او اس ان", "أو إس إن"),
-    ("yango", "يانغو", "يانجو"),
-    ("imo", "ايمو", "إيمو"),
-    ("truecaller", "true caller", "تروكولر", "ترو كولر"),
-
-    ("istanbulkart", "istanbul kart", "İstanbulkart", "istanbul card", "اسطنبول كارت", "إسطنبول كارت", "كرت اسطنبول"),
-    ("otobusum nerede", "otobüsüm nerede", "iett otobusum nerede", "iett", "اوتوبوسوم نيرده", "أوتوبوسوم نيرده", "ايتت"),
-    ("iett", "i e t t", "iett mobil", "ايتت", "اي اي تي تي"),
-    ("ulasim istanbul", "ulaşım istanbul", "metro istanbul", "مترو اسطنبول", "مواصلات اسطنبول"),
-    ("moovit", "موفيت", "موڤيت"),
-    ("bitaksi", "bi taksi", "بي تاكسي"),
-    ("marti", "martı", "مارتي"),
-    ("obilet", "o bilet", "او بيليت", "أوبيليت"),
-    ("obilet", "otobus bileti", "otobüs bileti", "bus ticket", "تذكرة باص"),
-
-    # ISLAM / QURAN / PRAYER APPS
-    ("quran", "koran", "kuran", "kur'an", "qur'an", "القران", "القرآن", "قران", "قرآن", "مصحف"),
-    ("holy quran", "the holy quran", "kuran-i kerim", "kuranı kerim", "القران الكريم", "القرآن الكريم", "المصحف الشريف"),
-    ("quran majeed", "kuran mecid", "قرآن مجيد", "قران مجيد"),
-
-    # MICROSOFT 365 MOBILE
-    ("microsoft word", "word", "وورد", "مايكروسوفت وورد"),
-    ("microsoft excel", "excel", "اكسل", "إكسل", "مايكروسوفت اكسل"),
-    ("microsoft powerpoint", "powerpoint", "power point", "باوربوينت", "باور بوينت"),
-    ("microsoft outlook", "outlook", "اوتلوك", "آوتلوك"),
-    ("microsoft onedrive", "onedrive", "one drive", "ون درايف", "وان درايف"),
-    ("microsoft onenote", "onenote", "one note", "ون نوت", "وان نوت"),
-    (
-        "microsoft authenticator",
-        "authenticator",
-        "authenticator app",
-        "autenticator",
-        "authentikator",
-        "autentikator",
-        "otantikator",
-        "otentikator",
-        "otantikatör",
-        "otentikatör",
-        "kimlik dogrulayici",
-        "kimlik doğrulayıcı",
-        "اوثنتيكيتور",
-        "المصادق",
-    ),
-
-    # DEVELOPER / WORK MOBILE APPS
-    ("github", "git hub", "جيت هب", "غيت هب", "جيتهاب"),
-    ("gitlab", "git lab", "جيت لاب", "غيت لاب"),
-    ("camscanner", "cam scanner", "كام سكانر"),
-
-    # TURKEY EXTRA POPULAR SHOPPING / MARKET
-    ("lc waikiki", "lcw", "ال سي وايكيكي"),
-    ("defacto", "de facto", "ديفاكتو"),
-    ("koton", "كوتون"),
-    ("mavi", "مافي"),
-    ("flo", "فلو"),
-    ("gratis", "غراتيس"),
-
-    # CRYPTO APPS
-    ("binance", "بينانس", "باينانس"),
-    ("coinbase", "كوين بيس", "كوينبيس"),
-    ("kucoin", "كو كوين", "كوكوين"),
-    ("kraken", "كراكن"),
-    ("okx", "او كي اكس", "اوكي اكس"),
-    ("bybit", "باي بيت", "بايبت"),
-    ("gate io", "gateio", "غيت اي او"),
-    ("crypto com", "crypto.com", "كريبتو كوم"),
-    ("trust wallet", "trustwallet", "تراست والت", "محفظة تراست"),
-    ("metamask", "meta mask", "ميتا ماسك"),
-    ("blockchain", "blockchain wallet", "بلوكتشين", "محفظة بلوكتشين"),
-    ("exodus", "اكسودس"),
-    ("phantom", "فانتوم"),
-    ("bitpanda", "بيت باندا"),
-    ("rain", "رين", "rain crypto"),
-    ("bitlo", "بيتلو"),
-    ("paribu", "بارibu", "باربو"),
-    ("btcturk", "btc turk", "بي تي سي تورك"),
-    ("nexo", "نيكسو"),
-    ("ledger live", "ledger", "ليدجر"),
-    ("safe pal", "safepal", "سيف بال"),
-
-    # VPN APPS
-    ("turbo vpn", "توربو vpn", "توربو في بي ان"),
-    ("vpn proxy master", "proxy master", "في بي ان بروكسي ماستر"),
-    ("super vpn", "سوبر vpn", "سوبر في بي ان"),
-    ("secure vpn", "سيكيور vpn", "سيكيور في بي ان"),
-    ("expressvpn", "express vpn", "اكسبريس vpn", "اكسبريس في بي ان"),
-    ("nordvpn", "nord vpn", "نورد vpn", "نورد في بي ان"),
-    ("surfshark", "سيرف شارك", "سيرفشارك"),
-    ("hotspot shield", "hotspot", "هوت سبوت شيلد"),
-    ("proton vpn", "protonvpn", "بروتون vpn"),
-    ("windscribe", "ويندسكرايب"),
-    ("tunnelbear", "tunnel bear", "تانل بير"),
-    ("hola vpn", "hola", "هولا vpn"),
-    ("betternet", "better net", "بيتر نت"),
-    ("psiphon", "سايفون", "psiphon vpn"),
-    ("1.1.1.1", "warp", "cloudflare vpn", "وارب", "كلاودفلير vpn"),
-    ("bingx", "bing x", "بينغ اكس", "بينج اكس", "بينغكس", "بينجكس"),
-    ("bip", "bi p", "bip uygulamasi", "bip app", "بيپ", "بيب", "بي بي"),
-]
 
 BRAND_ALIAS_REPLACEMENTS: List[Tuple[str, str]] = []
 for group in BRAND_ALIAS_GROUPS:
@@ -772,47 +409,10 @@ def _latin_token_to_arabic_phonetic_variants(token: str) -> List[str]:
     if not normalized:
         return []
 
-    special_aliases = {
-        "app": ["اب", "آب"],
-        "apps": ["ابس", "آبس"],
-        "bank": ["بنك"],
-        "business": ["بزنس"],
-        "bus": ["باص", "بس"],
-        "chat": ["شات", "تشات"],
-        "cup": ["كاب", "كب", "كوب"],
-        "flow": ["فلو"],
-        "flowq": ["فلو كيو", "فلوكيو", "فلوكي"],
-        "game": ["جيم"],
-        "games": ["جيمز"],
-        "go": ["جو", "غو"],
-        "hero": ["هيرو"],
-        "heroes": ["هيروز", "هيروس"],
-        "job": ["جوب"],
-        "key": ["كي"],
-        "keyboard": ["كيبورد"],
-        "lite": ["لايت"],
-        "max": ["ماكس"],
-        "mobile": ["موبايل"],
-        "music": ["ميوزك"],
-        "pay": ["باي"],
-        "photo": ["فوتو"],
-        "photos": ["فوتوز"],
-        "plus": ["بلس"],
-        "point": ["بوينت"],
-        "power": ["باور"],
-        "pro": ["برو"],
-        "q": ["كيو", "كي"],
-        "queue": ["كيو"],
-        "search": ["سيرتش"],
-        "shop": ["شوب"],
-        "swift": ["سويفت"],
-        "tv": ["تي في"],
-        "video": ["فيديو"],
-        "vpn": ["في بي ان"],
-    }
+
 
     variants: List[str] = []
-    variants.extend(special_aliases.get(normalized, []))
+    variants.extend(ARABIC_PHONETIC_SPECIAL_ALIASES.get(normalized, []))
 
     general = _latin_token_to_arabic_phonetic(normalized)
     if general:
@@ -825,65 +425,8 @@ def _latin_token_to_arabic_phonetic_variants(token: str) -> List[str]:
 
 
 def _latin_token_to_arabic_phonetic(token: str) -> str:
-    chunks = {
-        "tion": "شن",
-        "sion": "شن",
-        "tch": "تش",
-        "igh": "اي",
-        "eigh": "اي",
-        "air": "ير",
-        "are": "ير",
-        "ear": "ير",
-        "eer": "ير",
-        "er": "ر",
-        "ir": "ير",
-        "ur": "ر",
-        "sh": "ش",
-        "ch": "تش",
-        "th": "ث",
-        "ph": "ف",
-        "ck": "ك",
-        "qu": "كيو",
-        "kh": "خ",
-        "oo": "و",
-        "ee": "ي",
-        "ea": "ي",
-        "ie": "ي",
-        "ai": "اي",
-        "ay": "اي",
-        "oa": "و",
-        "ow": "او",
-        "ou": "او",
-        "oi": "وي",
-        "oy": "وي",
-    }
-    chars = {
-        "a": "ا",
-        "b": "ب",
-        "d": "د",
-        "e": "ي",
-        "f": "ف",
-        "g": "ج",
-        "h": "ه",
-        "i": "ي",
-        "j": "ج",
-        "k": "ك",
-        "l": "ل",
-        "m": "م",
-        "n": "ن",
-        "o": "و",
-        "p": "ب",
-        "q": "ك",
-        "r": "ر",
-        "s": "س",
-        "t": "ت",
-        "u": "و",
-        "v": "ف",
-        "w": "و",
-        "x": "كس",
-        "y": "ي",
-        "z": "ز",
-    }
+
+
 
     result: List[str] = []
     index = 0
@@ -896,8 +439,8 @@ def _latin_token_to_arabic_phonetic(token: str) -> str:
         matched = False
         for size in (4, 3, 2):
             chunk = token[index:index + size]
-            if chunk in chunks:
-                result.append(chunks[chunk])
+            if chunk in LATIN_TO_ARABIC_CHUNK_MAP:
+                result.append(LATIN_TO_ARABIC_CHUNK_MAP[chunk])
                 index += size
                 matched = True
                 break
@@ -909,7 +452,7 @@ def _latin_token_to_arabic_phonetic(token: str) -> str:
             next_char = token[index + 1:index + 2]
             result.append("س" if next_char in {"e", "i", "y"} else "ك")
         else:
-            result.append(chars.get(char, char))
+            result.append(LATIN_TO_ARABIC_CHAR_MAP.get(char, char))
         index += 1
 
     return "".join(result)
@@ -1081,101 +624,10 @@ def _expand_spelled_text_variants(text: str) -> Set[str]:
 def _spelled_token_to_letters(tokens: List[str], index: int) -> Tuple[List[str], int]:
     token = tokens[index]
 
-    if token in {"duble", "double", "cift", "çift"} and index + 1 < len(tokens):
-        next_token = tokens[index + 1]
-        if next_token in {"ve", "v", "u", "yu", "you"}:
-            return ["w"], 2
-
-    if token in {"dabilyu", "dabiliyu", "dabulyu", "doubleyou", "doubleu"}:
-        return ["w"], 1
-
     if len(token) == 1 and token.isalnum():
         return [token], 1
 
-    letter = _spelled_letter_name_to_letter(token)
-    if letter:
-        return letter, 1
-
     return [], 1
-
-
-def _spelled_letter_name_to_letter(token: str) -> List[str]:
-    mapping = {
-        "a": ["a"],
-        "ah": ["a"],
-        "b": ["b"],
-        "be": ["b"],
-        "bee": ["b"],
-        "c": ["c"],
-        "ce": ["c"],
-        "cee": ["c"],
-        "d": ["d"],
-        "de": ["d"],
-        "dee": ["d"],
-        "e": ["e"],
-        "f": ["f"],
-        "fe": ["f"],
-        "ef": ["f"],
-        "g": ["g"],
-        "ge": ["g"],
-        "h": ["h"],
-        "he": ["h"],
-        "aitch": ["h"],
-        "i": ["i"],
-        "ii": ["i"],
-        "j": ["j"],
-        "je": ["j"],
-        "jay": ["j"],
-        "k": ["k"],
-        "ka": ["k"],
-        "key": ["k"],
-        "l": ["l"],
-        "le": ["l"],
-        "el": ["l"],
-        "m": ["m"],
-        "me": ["m"],
-        "em": ["m"],
-        "n": ["n"],
-        "ne": ["n"],
-        "en": ["n"],
-        "o": ["o"],
-        "oh": ["o"],
-        "p": ["p"],
-        "pe": ["p"],
-        "pee": ["p"],
-        "q": ["q"],
-        "ku": ["q"],
-        "queue": ["q"],
-        "r": ["r"],
-        "re": ["r"],
-        "ar": ["r"],
-        "s": ["s"],
-        "se": ["s"],
-        "es": ["s"],
-        "t": ["t"],
-        "te": ["t"],
-        "tee": ["t"],
-        "u": ["u"],
-        "yu": ["u"],
-        "you": ["u"],
-        "v": ["v"],
-        "ve": ["v", "w"],
-        "vee": ["v"],
-        "w": ["w"],
-        "we": ["w"],
-        "x": ["x"],
-        "iks": ["x"],
-        "ex": ["x"],
-        "y": ["y"],
-        "ye": ["y"],
-        "why": ["y"],
-        "z": ["z"],
-        "ze": ["z"],
-        "zet": ["z"],
-        "zed": ["z"],
-        "zee": ["z"],
-    }
-    return mapping.get(token, [])
 
 
 def _brand_alias_replacements() -> List[Tuple[str, str]]:
@@ -1266,44 +718,7 @@ def _split_compound_words(value: str) -> str:
 
 
 def _arabic_to_latin(value: str) -> str:
-    transliteration = {
-        "ا": "a",
-        "أ": "a",
-        "إ": "i",
-        "آ": "a",
-        "ب": "b",
-        "ت": "t",
-        "ث": "th",
-        "ج": "j",
-        "ح": "h",
-        "خ": "kh",
-        "د": "d",
-        "ذ": "th",
-        "ر": "r",
-        "ز": "z",
-        "س": "s",
-        "ش": "sh",
-        "ص": "s",
-        "ض": "d",
-        "ط": "t",
-        "ظ": "z",
-        "ع": "a",
-        "غ": "gh",
-        "ف": "f",
-        "ق": "q",
-        "ك": "k",
-        "ل": "l",
-        "م": "m",
-        "ن": "n",
-        "ه": "h",
-        "ة": "h",
-        "و": "w",
-        "ؤ": "w",
-        "ي": "y",
-        "ى": "a",
-        "ئ": "y",
-    }
-    return _normalize_words("".join(transliteration.get(ch, ch) for ch in str(value)))
+    return _normalize_words("".join(ARABIC_TO_LATIN_TRANSLITERATION.get(ch, ch) for ch in str(value)))
 
 
 def _get_catalog(session_id: Optional[str]) -> Optional[Dict[str, object]]:
