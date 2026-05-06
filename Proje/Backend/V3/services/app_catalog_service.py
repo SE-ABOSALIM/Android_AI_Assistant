@@ -185,6 +185,9 @@ def resolve_app_match(session_id: Optional[str], candidate: str) -> AppMatchReso
         return AppMatchResolution(None, [], suggested_matches)
 
     matches = _top_matches(matches, len(matches))
+    generic_label_matches = _generic_label_token_matches(entries, candidate_variants)
+    if len(generic_label_matches) > 1:
+        return AppMatchResolution(None, generic_label_matches[:MAX_AMBIGUOUS_MATCHES], suggested_matches)
 
     best_match = matches[0]
     ambiguous_matches = [
@@ -214,6 +217,55 @@ def _top_matches(matches: List[AppMatch], limit: int) -> List[AppMatch]:
     matches = _dedupe_matches(matches)
     matches.sort(key=lambda match: (-match.score, match.label.casefold(), match.package_name))
     return matches[:limit]
+
+
+def _generic_label_token_matches(
+    entries: List[AppCatalogEntryRecord],
+    candidate_variants: List[Tuple[str, str]],
+) -> List[AppMatch]:
+    for token in _single_token_candidate_values(candidate_variants):
+        exact_label_matches: List[AppMatch] = []
+        containing_label_matches: List[AppMatch] = []
+
+        for app in entries:
+            label_normalized = _normalize_words(_split_compound_words(app.label))
+            label_compact = label_normalized.replace(" ", "")
+            label_tokens = _fast_tokens(label_normalized)
+
+            if token == label_compact:
+                exact_label_matches.append(AppMatch(app.label, app.package_name, 1.0))
+            elif token in label_tokens:
+                containing_label_matches.append(AppMatch(app.label, app.package_name, 0.96))
+
+        exact_label_matches = _top_matches(exact_label_matches, MAX_AMBIGUOUS_MATCHES)
+        if len(exact_label_matches) > 1:
+            return exact_label_matches
+
+        if exact_label_matches:
+            continue
+
+        containing_label_matches = _top_matches(containing_label_matches, MAX_AMBIGUOUS_MATCHES)
+        if len(containing_label_matches) > 1:
+            return containing_label_matches
+
+    return []
+
+
+def _single_token_candidate_values(candidate_variants: List[Tuple[str, str]]) -> List[str]:
+    tokens: List[str] = []
+    seen: Set[str] = set()
+
+    for candidate_normalized, candidate_compact in candidate_variants:
+        if (
+            candidate_normalized
+            and candidate_normalized == candidate_compact
+            and len(candidate_normalized) >= 3
+            and candidate_normalized not in seen
+        ):
+            tokens.append(candidate_normalized)
+            seen.add(candidate_normalized)
+
+    return tokens
 
 
 def _build_catalog_search_index(entries: List[AppCatalogEntryRecord]) -> Dict[str, Dict[str, Set[int]]]:

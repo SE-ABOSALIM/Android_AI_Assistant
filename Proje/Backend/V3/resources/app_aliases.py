@@ -297,7 +297,6 @@ BRAND_ALIAS_GROUPS = [
     ("microsoft onedrive", "onedrive", "one drive", "ون درايف", "وان درايف"),
     ("microsoft onenote", "onenote", "one note", "ون نوت", "وان نوت"),
     (
-        "microsoft authenticator",
         "authenticator",
         "authenticator app",
         "autenticator",
@@ -310,7 +309,7 @@ BRAND_ALIAS_GROUPS = [
         "kimlik dogrulayici",
         "kimlik doğrulayıcı",
         "اوثنتيكيتور",
-        "المصادق",
+        "نطبيق المصادقة",
     ),
 
     # DEVELOPER / WORK MOBILE APPS
