@@ -52,37 +52,92 @@ def set_seed(seed: int):
         torch.cuda.manual_seed_all(seed)
 
 
-def normalize_param(value) -> str:
-    if pd.isna(value):
-        return "none"
+def is_missing(value) -> bool:
+    if value is None:
+        return True
+    if isinstance(value, float) and pd.isna(value):
+        return True
+    return False
 
-    value = str(value).strip().lower()
 
-    if value in ["", "nan", "none", "null", "{}"]:
-        return "none"
-
+def clean_parameter_value(value):
+    if is_missing(value):
+        return None
+    if isinstance(value, str):
+        value = value.strip()
+        return value if value else None
     return value
 
 
-def make_label_key(row) -> str:
-    intent = str(row["intent"]).strip().upper()
-    param = normalize_param(row["parameters"])
-    return f"{intent}__{param}"
+def parse_target_json(raw_value, expected_intent: str, row_number: int) -> Dict[str, Any]:
+    if is_missing(raw_value):
+        raise ValueError(f"Row {row_number}: target_json is empty.")
+
+    try:
+        target = json.loads(str(raw_value).strip())
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Row {row_number}: invalid target_json: {exc}") from exc
+
+    if not isinstance(target, dict):
+        raise ValueError(f"Row {row_number}: target_json must be a JSON object.")
+
+    intent = str(target.get("intent", "")).strip().upper()
+    if not intent:
+        raise ValueError(f"Row {row_number}: target_json.intent is empty.")
+
+    if intent != expected_intent:
+        raise ValueError(
+            f"Row {row_number}: intent column ({expected_intent}) does not match "
+            f"target_json.intent ({intent})."
+        )
+
+    raw_parameters = target.get("parameters") or {}
+    if not isinstance(raw_parameters, dict):
+        raise ValueError(f"Row {row_number}: target_json.parameters must be an object.")
+
+    parameters = {}
+    for key, value in raw_parameters.items():
+        clean_key = str(key).strip()
+        clean_value = clean_parameter_value(value)
+        if clean_key and clean_value is not None:
+            parameters[clean_key] = clean_value
+
+    return {
+        "intent": intent,
+        "parameters": dict(sorted(parameters.items())),
+    }
 
 
-def label_to_target_json(label_key: str) -> Dict[str, Any]:
-    intent, param = label_key.split("__", 1)
+def parameter_label_key(parameters: Dict[str, Any]) -> str:
+    if not parameters:
+        return "none"
 
-    if param == "none":
-        return {"intent": intent, "parameters": {}}
+    parts = []
+    for key, value in sorted(parameters.items()):
+        if isinstance(value, (dict, list)):
+            value_text = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        else:
+            value_text = str(value)
+        parts.append(f"{key}={value_text}")
 
-    if intent in ["SCROLL_SCREEN", "SWIPE_GESTURE"]:
-        return {"intent": intent, "parameters": {"direction": param}}
+    return "|".join(parts)
 
-    if intent == "ADJUST_VOLUME":
-        return {"intent": intent, "parameters": {"volume_action": param}}
 
-    return {"intent": intent, "parameters": {}}
+def make_label_key(target: Dict[str, Any]) -> str:
+    return f"{target['intent']}__{parameter_label_key(target.get('parameters') or {})}"
+
+
+def build_label_target_map(targets):
+    label_to_json = {}
+
+    for target in targets:
+        label = make_label_key(target)
+        existing_target = label_to_json.get(label)
+        if existing_target is not None and existing_target != target:
+            raise ValueError(f"Label collision for {label}: {existing_target} vs {target}")
+        label_to_json[label] = target
+
+    return label_to_json
 
 
 def load_data(data_path: str, sheet: str):
@@ -95,11 +150,10 @@ def load_data(data_path: str, sheet: str):
 
     df = df.copy()
 
-    df["text"] = df["text"].astype(str).str.strip()
-    df["lang"] = df["lang"].astype(str).str.upper().str.strip()
-    df["split"] = df["split"].astype(str).str.lower().str.strip()
-    df["intent"] = df["intent"].astype(str).str.upper().str.strip()
-    df["parameters"] = df["parameters"].apply(normalize_param)
+    df["text"] = df["text"].fillna("").astype(str).str.strip()
+    df["lang"] = df["lang"].fillna("").astype(str).str.upper().str.strip()
+    df["split"] = df["split"].fillna("").astype(str).str.lower().str.strip()
+    df["intent"] = df["intent"].fillna("").astype(str).str.upper().str.strip()
 
     df = df[
         (df["text"] != "")
@@ -111,8 +165,22 @@ def load_data(data_path: str, sheet: str):
     if df.empty:
         raise ValueError("Dataset is empty after cleaning.")
 
+    targets = []
+    label_keys = []
+
+    for row_index, row in df.iterrows():
+        target = parse_target_json(
+            row["target_json"],
+            expected_intent=row["intent"],
+            row_number=int(row_index) + 2,
+        )
+        targets.append(target)
+        label_keys.append(make_label_key(target))
+
+    label_to_json = build_label_target_map(targets)
+
     df["source_text"] = "[" + df["lang"] + "] " + df["text"]
-    df["label_key"] = df.apply(make_label_key, axis=1)
+    df["label_key"] = label_keys
 
     labels = sorted(df["label_key"].unique().tolist())
     label2id = {label: idx for idx, label in enumerate(labels)}
@@ -128,10 +196,10 @@ def load_data(data_path: str, sheet: str):
     print("\nLabel counts:")
     print(df["label_key"].value_counts())
 
-    return df, label2id, id2label, labels
+    return df, label2id, id2label, labels, label_to_json
 
 
-def save_label_files(label2id, id2label, labels, output_dir):
+def save_label_files(label2id, id2label, labels, label_to_json, output_dir):
     os.makedirs(output_dir, exist_ok=True)
 
     with open(os.path.join(output_dir, "label2id.json"), "w", encoding="utf-8") as f:
@@ -140,13 +208,8 @@ def save_label_files(label2id, id2label, labels, output_dir):
     with open(os.path.join(output_dir, "id2label.json"), "w", encoding="utf-8") as f:
         json.dump({str(k): v for k, v in id2label.items()}, f, ensure_ascii=False, indent=2)
 
-    label_to_json = {
-        label: label_to_target_json(label)
-        for label in labels
-    }
-
     with open(os.path.join(output_dir, "label_to_target_json.json"), "w", encoding="utf-8") as f:
-        json.dump(label_to_json, f, ensure_ascii=False, indent=2)
+        json.dump({label: label_to_json[label] for label in labels}, f, ensure_ascii=False, indent=2)
 
 
 def build_dataset_dict(df: pd.DataFrame) -> DatasetDict:
@@ -273,10 +336,10 @@ def save_predictions_csv(trainer, tokenized_split, raw_df, id2label, output_dir,
 def train(args):
     set_seed(args.seed)
 
-    df, label2id, id2label, labels = load_data(args.data, args.sheet)
+    df, label2id, id2label, labels, label_to_json = load_data(args.data, args.sheet)
 
     os.makedirs(args.output, exist_ok=True)
-    save_label_files(label2id, id2label, labels, args.output)
+    save_label_files(label2id, id2label, labels, label_to_json, args.output)
 
     print(f"\nLoading base model: {args.base_model}")
 
@@ -394,11 +457,15 @@ def train(args):
 
     # Critical sanity test
     sanity_examples = [
-        ("[TR] alt tarafa in", "SCROLL_SCREEN__down"),
-        ("[TR] aşağı kaydır", "SCROLL_SCREEN__down"),
-        ("[EN] Swipe left", "SWIPE_GESTURE__left"),
+        ("[TR] alt tarafa in", "SCROLL_SCREEN__direction=down"),
+        ("[TR] aşağı kaydır", "SCROLL_SCREEN__direction=down"),
+        ("[EN] Swipe left", "SWIPE_GESTURE__direction=left"),
         ("[EN] Open whatsapp", "OPEN_APP__none"),
         ("[EN] set a timer for 11 minutes", "SET_TIMER__none"),
+        ("[EN] turn on Wi-Fi", "SET_WIFI__state=on"),
+        ("[TR] sessiz modu aç", "SET_SOUND_MODE__sound_mode=silent"),
+        ("[EN] set an alarm for monday 7 am", "SET_ALARM__period=am"),
+        ("[TR] ön kamerayla fotoğraf çek", "TAKE_PHOTO__camera=front"),
     ]
 
     print("\nSanity checks:")
@@ -406,6 +473,12 @@ def train(args):
     device = model.device
 
     for source_text, expected_label in sanity_examples:
+        if expected_label not in label2id:
+            print(f"{source_text}")
+            print(f"  expected: {expected_label}")
+            print("  skipped: expected label is not present in this dataset")
+            continue
+
         inputs = tokenizer(
             source_text,
             return_tensors="pt",
