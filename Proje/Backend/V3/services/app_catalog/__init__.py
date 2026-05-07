@@ -1,8 +1,6 @@
 
-from V3.services.app_catalog import (
-    AppCatalogEntryRecord,
-    AppMatch,
-    AppMatchResolution,
+from V3.services.app_catalog.models import AppCatalogEntryRecord, AppMatch, AppMatchResolution
+from V3.services.app_catalog.service import (
     catalog_count,
     delete_app_catalog,
     find_app_match,
