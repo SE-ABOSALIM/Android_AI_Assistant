@@ -51,4 +51,5 @@ class FinalResponse(BaseModel):
     confidence: float
     threshold: float
     raw_label: str
+    processing_time_ms: float = 0.0
     top_predictions: List[Dict[str, Any]] = Field(default_factory=list)

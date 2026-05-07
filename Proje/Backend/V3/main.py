@@ -1,3 +1,5 @@
+import time
+
 from fastapi import FastAPI
 
 from V3.config import MODEL_DIR
@@ -21,14 +23,24 @@ def root():
 
 @app.post("/predict", response_model=FinalResponse)
 def predict(request: PredictRequest):
-    return predict_command(
+    started_at = time.perf_counter()
+    response = predict_command(
         text=request.text,
         language=request.language,
         text_alternatives=request.text_alternatives,
         session_id=request.session_id,
         catalog_version=request.catalog_version,
     )
-
+    response["processing_time_ms"] = round((time.perf_counter() - started_at) * 1000, 2)
+    print(
+        "[predict] "
+        f"{response['processing_time_ms']:.2f} ms | "
+        f"language={request.language.upper()} | "
+        f"intent={response.get('intent')} | "
+        f"accepted={response.get('accepted')}",
+        flush=True,
+    )
+    return response
 
 @app.post("/app-catalog", response_model=AppCatalogResponse)
 def app_catalog(request: AppCatalogRequest):
