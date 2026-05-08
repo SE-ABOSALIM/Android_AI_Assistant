@@ -1,0 +1,167 @@
+{
+  "ADJUST_BRIGHTNESS": [
+    { "text": "ekran daha loş olsun", "language": "TR" },
+    { "text": "brighten the display", "language": "EN" },
+    { "text": "اجعل الشاشة أقل إضاءة", "language": "AR" }
+  ],
+  "ADJUST_VOLUME": [
+    { "text": "sesi aç", "language": "TR" },
+    { "text": "increase the volume", "language": "EN" },
+    { "text": "ارفع مستوى الصوت", "language": "AR" }
+  ],
+  "CALL_CONTACT": [
+    { "text": "Ahmet'i ara", "language": "TR" },
+    { "text": "call John", "language": "EN" },
+    { "text": "اتصل بـ أحمد", "language": "AR" }
+  ],
+  "CLEAR_TEXT": [
+    { "text": "metni temizle", "language": "TR" },
+    { "text": "clear text", "language": "EN" },
+    { "text": "امسح النص", "language": "AR" }
+  ],
+  "CLICK_ITEM": [
+    { "text": "gönder butonuna tıkla", "language": "TR" },
+    { "text": "tap send button", "language": "EN" },
+    { "text": "اضغط على زر الإرسال", "language": "AR" }
+  ],
+  "CLOSE_APP": [
+    { "text": "uygulamayı kapat", "language": "TR" },
+    { "text": "close the app", "language": "EN" },
+    { "text": "أغلق التطبيق", "language": "AR" }
+  ],
+  "DOUBLE_TAP": [
+    { "text": "ekrana çift tıkla", "language": "TR" },
+    { "text": "double tap the screen", "language": "EN" },
+    { "text": "اضغط مرتين على الشاشة", "language": "AR" }
+  ],
+  "GO_BACK": [
+    { "text": "geri git", "language": "TR" },
+    { "text": "go back", "language": "EN" },
+    { "text": "ارجع", "language": "AR" }
+  ],
+  "GO_HOME": [
+    { "text": "ana ekrana dön", "language": "TR" },
+    { "text": "go to home screen", "language": "EN" },
+    { "text": "اذهب إلى الشاشة الرئيسية", "language": "AR" }
+  ],
+  "HOLD_SCREEN": [
+    { "text": "ekrana basılı tut", "language": "TR" },
+    { "text": "long press the screen", "language": "EN" },
+    { "text": "اضغط مطولا على الشاشة", "language": "AR" }
+  ],
+  "OPEN_APP": [
+    { "text": "WhatsApp aç", "language": "TR" },
+    { "text": "open WhatsApp", "language": "EN" },
+    { "text": "افتح واتساب", "language": "AR" }
+  ],
+  "OPEN_APP_INFO": [
+    { "text": "bingx hakkında sayfasını aç", "language": "TR" },
+    { "text": "open app info for bingx", "language": "EN" },
+    { "text": "اعرض تفاصيل تطبيق bingx", "language": "AR" }
+  ],
+  "OPEN_NOTIFICATIONS": [
+    { "text": "bildirimleri aç", "language": "TR" },
+    { "text": "open notifications", "language": "EN" },
+    { "text": "افتح الإشعارات", "language": "AR" }
+  ],
+  "SCROLL_SCREEN": [
+    { "text": "aşağı kaydır", "language": "TR" },
+    { "text": "scroll down", "language": "EN" },
+    { "text": "مرر للأسفل", "language": "AR" }
+  ],
+  "SEARCH_QUERY": [
+    { "text": "hava durumu ara", "language": "TR" },
+    { "text": "search for weather", "language": "EN" },
+    { "text": "ابحث عن الطقس", "language": "AR" }
+  ],
+  "SET_ALARM": [
+    { "text": "saat 7'ye alarm kur", "language": "TR" },
+    { "text": "set an alarm for 7 am", "language": "EN" },
+    { "text": "اضبط منبها للساعة 7 صباحا", "language": "AR" }
+  ],
+  "SET_BLUETOOTH": [
+    { "text": "Bluetooth aç", "language": "TR" },
+    { "text": "turn on Bluetooth", "language": "EN" },
+    { "text": "شغل البلوتوث", "language": "AR" }
+  ],
+  "SET_FLASHLIGHT": [
+    { "text": "fener aç", "language": "TR" },
+    { "text": "turn on flashlight", "language": "EN" },
+    { "text": "شغل المصباح", "language": "AR" }
+  ],
+  "SET_KEYBOARD": [
+    { "text": "klavyeyi aç", "language": "TR" },
+    { "text": "open the keyboard", "language": "EN" },
+    { "text": "افتح لوحة المفاتيح", "language": "AR" }
+  ],
+  "SET_LOCATION": [
+    { "text": "konum aç", "language": "TR" },
+    { "text": "turn on location", "language": "EN" },
+    { "text": "شغل الموقع", "language": "AR" }
+  ],
+  "SET_MOBILE_DATA": [
+    { "text": "mobil veri aç", "language": "TR" },
+    { "text": "turn on mobile data", "language": "EN" },
+    { "text": "شغل بيانات الهاتف", "language": "AR" }
+  ],
+  "SET_MOBILE_HOTSPOT": [
+    { "text": "mobil erişim noktası aç", "language": "TR" },
+    { "text": "turn on mobile hotspot", "language": "EN" },
+    { "text": "شغل نقطة الاتصال", "language": "AR" }
+  ],
+  "SET_SOUND_MODE": [
+    { "text": "telefonu sessiz moda al", "language": "TR" },
+    { "text": "set sound mode to normal", "language": "EN" },
+    { "text": "اجعل وضع الصوت عاديا", "language": "AR" }
+  ],
+  "SET_TIMER": [
+    { "text": "10 dakikalık zamanlayıcı kur", "language": "TR" },
+    { "text": "set a timer for 10 minutes", "language": "EN" },
+    { "text": "اضبط مؤقتا لمدة 10 دقائق", "language": "AR" }
+  ],
+  "SET_WIFI": [
+    { "text": "Wi-Fi aç", "language": "TR" },
+    { "text": "turn on Wi-Fi", "language": "EN" },
+    { "text": "شغل الواي فاي", "language": "AR" }
+  ],
+  "SHOW_RECENTS": [
+    { "text": "son uygulamaları aç", "language": "TR" },
+    { "text": "show recent apps", "language": "EN" },
+    { "text": "أظهر التطبيقات الأخيرة", "language": "AR" }
+  ],
+  "STOP_LISTENING": [
+    { "text": "dinlemeyi bırak", "language": "TR" },
+    { "text": "stop listening", "language": "EN" },
+    { "text": "توقف عن الاستماع", "language": "AR" }
+  ],
+  "SWIPE_GESTURE": [
+    { "text": "sola kaydır", "language": "TR" },
+    { "text": "swipe left", "language": "EN" },
+    { "text": "اسحب لليسار", "language": "AR" }
+  ],
+  "TAKE_PHOTO": [
+    { "text": "fotoğraf çek", "language": "TR" },
+    { "text": "take a photo", "language": "EN" },
+    { "text": "التقط صورة", "language": "AR" }
+  ],
+  "TAKE_SCREENSHOT": [
+    { "text": "ekran görüntüsü al", "language": "TR" },
+    { "text": "take a screenshot", "language": "EN" },
+    { "text": "التقط لقطة شاشة", "language": "AR" }
+  ],
+  "UNINSTALL_APP": [
+    { "text": "bingx sil", "language": "TR" },
+    { "text": "delete bingx", "language": "EN" },
+    { "text": "أزل bingx", "language": "AR" }
+  ],
+  "UNKNOWN_COMMAND": [
+    { "text": "merhaba ne haber", "language": "TR" },
+    { "text": "hello how are you", "language": "EN" },
+    { "text": "مرحبا كيف حالك", "language": "AR" }
+  ],
+  "WRITE_TEXT": [
+    { "text": "merhaba yaz", "language": "TR" },
+    { "text": "type hello", "language": "EN" },
+    { "text": "اكتب مرحبا", "language": "AR" }
+  ]
+}
