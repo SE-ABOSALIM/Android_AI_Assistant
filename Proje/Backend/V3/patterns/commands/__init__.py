@@ -22,7 +22,7 @@ from V3.patterns.commands.navigation import (
 from V3.patterns.commands.system_settings import SOUND_MODE_PATTERNS, STATE_INTENT_PATTERNS
 from V3.patterns.commands.text_controls import CLEAR_TEXT_PATTERNS, DOUBLE_TAP_PATTERNS, HOLD_SCREEN_PATTERNS
 from V3.patterns.commands.timer import TIMER_ACTION_PATTERNS, TIMER_KEYWORDS
-from V3.patterns.commands.volume import VOLUME_PATTERNS
+from V3.patterns.commands.volume import VOLUME_LEVEL_PATTERNS, VOLUME_PATTERNS
 
 __all__ = [
     "AMBIGUOUS_PATTERNS",
@@ -56,4 +56,5 @@ __all__ = [
     "TIMER_ACTION_PATTERNS",
     "TIMER_KEYWORDS",
     "VOLUME_PATTERNS",
+    "VOLUME_LEVEL_PATTERNS",
 ]

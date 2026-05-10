@@ -174,8 +174,8 @@ public class CommandExecutor {
         if (containsSlot(missingSlots, "duration_value") || containsSlot(missingSlots, "duration_unit")) {
             return "How long should I set the timer for?";
         }
-        if (containsSlot(missingSlots, "volume_action")) {
-            return "Should I increase, decrease, mute, or unmute the volume?";
+        if (containsSlot(missingSlots, "volume_action") || containsSlot(missingSlots, "volume_level")) {
+            return "Should I increase, decrease, mute, unmute, or set the volume level?";
         }
         if (containsSlot(missingSlots, "contact_name")) {
             return "Who should I call?";
@@ -187,6 +187,11 @@ public class CommandExecutor {
         for (String missingSlot : missingSlots) {
             if (slot.equalsIgnoreCase(missingSlot)) {
                 return true;
+            }
+            for (String part : missingSlot.split("\\|")) {
+                if (slot.equalsIgnoreCase(part.trim())) {
+                    return true;
+                }
             }
         }
         return false;
@@ -562,14 +567,20 @@ public class CommandExecutor {
 
     private void handleVolume(Map<String, Object> parameters) {
         String volumeAction = normalizeDirection(getStringParam(parameters, "volume_action"));
-        if (!hasText(volumeAction)) {
-            showMessage("Should I increase, decrease, mute, or unmute the volume?");
+        String volumeLevel = normalizeVolumeLevel(getStringParam(parameters, "volume_level"));
+        if (!hasText(volumeAction) && !hasText(volumeLevel)) {
+            showMessage("Should I increase, decrease, mute, unmute, or set the volume level?");
             return;
         }
 
         AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         if (audioManager == null) {
             showMessage("Volume control is unavailable");
+            return;
+        }
+
+        if (hasText(volumeLevel)) {
+            setVolumeLevel(audioManager, volumeLevel);
             return;
         }
 
@@ -606,6 +617,32 @@ public class CommandExecutor {
                 showMessage("Volume action not supported");
                 break;
         }
+    }
+
+    private void setVolumeLevel(AudioManager audioManager, String volumeLevel) {
+        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int targetVolume;
+
+        switch (volumeLevel) {
+            case "low":
+                targetVolume = Math.max(1, Math.round(maxVolume * 0.25f));
+                break;
+            case "medium":
+                targetVolume = Math.max(1, Math.round(maxVolume * 0.50f));
+                break;
+            case "max":
+                targetVolume = maxVolume;
+                break;
+            default:
+                showMessage("Volume level not supported");
+                return;
+        }
+
+        audioManager.setStreamVolume(
+                AudioManager.STREAM_MUSIC,
+                Math.min(targetVolume, maxVolume),
+                AudioManager.FLAG_SHOW_UI
+        );
     }
 
     private void handleCallContact(Map<String, Object> parameters) {
@@ -1141,6 +1178,18 @@ public class CommandExecutor {
             return "";
         }
         return direction.trim().toLowerCase(Locale.US);
+    }
+
+    private String normalizeVolumeLevel(String volumeLevel) {
+        if (volumeLevel == null) {
+            return "";
+        }
+
+        String normalized = volumeLevel.trim().toLowerCase(Locale.US);
+        if ("high".equals(normalized) || "maximum".equals(normalized)) {
+            return "max";
+        }
+        return normalized;
     }
 
     private String normalizeText(String text) {

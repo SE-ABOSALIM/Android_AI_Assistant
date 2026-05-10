@@ -75,7 +75,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         threshold=0.55,
         one_of=(("volume_action", "volume_level"),),
         android_supported=True,
-        android_one_of=(("volume_action",),),
+        android_one_of=(("volume_action", "volume_level"),),
     ),
     "CALL_CONTACT": _contract(
         "CALL_CONTACT",

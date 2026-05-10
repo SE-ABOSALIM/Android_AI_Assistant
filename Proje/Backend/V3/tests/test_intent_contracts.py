@@ -29,6 +29,18 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(result["intent"], "ADJUST_BRIGHTNESS")
         self.assertEqual(result["parameters"], {"brightness": "increase"})
 
+    def test_label_to_json_preserves_max_volume_level(self):
+        result = label_to_json("ADJUST_VOLUME__volume_level=max")
+
+        self.assertEqual(result["intent"], "ADJUST_VOLUME")
+        self.assertEqual(result["parameters"], {"volume_level": "max"})
+
+    def test_label_to_json_normalizes_high_volume_level_to_max(self):
+        result = label_to_json("ADJUST_VOLUME__volume_level=high")
+
+        self.assertEqual(result["intent"], "ADJUST_VOLUME")
+        self.assertEqual(result["parameters"], {"volume_level": "max"})
+
     def test_unknown_command_is_distinct_from_unsupported_intent(self):
         unknown = _validate("UNKNOWN_COMMAND")
         unsupported = _validate("FUTURE_INTENT")
@@ -64,13 +76,13 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(accepted["accepted"])
         self.assertTrue(accepted["android_supported"])
 
-    def test_parameter_group_allows_volume_level_but_marks_android_unsupported(self):
+    def test_parameter_group_allows_volume_level_and_marks_android_supported(self):
         backend_supported = _validate("ADJUST_VOLUME", {"volume_level": "max"})
         android_supported = _validate("ADJUST_VOLUME", {"volume_action": "increase"})
 
         self.assertTrue(backend_supported["accepted"])
         self.assertTrue(backend_supported["backend_supported"])
-        self.assertFalse(backend_supported["android_supported"])
+        self.assertTrue(backend_supported["android_supported"])
         self.assertTrue(android_supported["accepted"])
         self.assertTrue(android_supported["android_supported"])
 

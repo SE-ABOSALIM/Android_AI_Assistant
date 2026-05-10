@@ -190,8 +190,21 @@ def _load_label_mapping() -> Dict[str, Dict[str, Any]]:
 def _normalize_model_json(model_json: Dict[str, Any]) -> Dict[str, Any]:
     intent = model_json.get("intent", "UNKNOWN_COMMAND")
     parameters = model_json.get("parameters") or {}
+    normalized_intent = str(intent or "UNKNOWN_COMMAND").upper()
+    normalized_parameters = parameters if isinstance(parameters, dict) else {}
+
+    if normalized_intent == "ADJUST_VOLUME":
+        normalized_parameters = _normalize_volume_parameters(normalized_parameters)
 
     return {
-        "intent": str(intent or "UNKNOWN_COMMAND").upper(),
-        "parameters": parameters if isinstance(parameters, dict) else {},
+        "intent": normalized_intent,
+        "parameters": normalized_parameters,
     }
+
+
+def _normalize_volume_parameters(parameters: Dict[str, Any]) -> Dict[str, Any]:
+    normalized = dict(parameters)
+    volume_level = normalized.get("volume_level")
+    if isinstance(volume_level, str) and volume_level.strip().casefold() in {"high", "maximum"}:
+        normalized["volume_level"] = "max"
+    return normalized

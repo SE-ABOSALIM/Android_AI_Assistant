@@ -24,6 +24,20 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"volume_action": "increase"})
         self.assertEqual(result["rule_matched"], "volume_increase")
 
+    def test_volume_level_rule(self):
+        result = rule_based_command("set volume max", "EN")
+
+        self.assertEqual(result["intent"], "ADJUST_VOLUME")
+        self.assertEqual(result["parameters"], {"volume_level": "max"})
+        self.assertEqual(result["rule_matched"], "volume_level_max")
+
+    def test_turkish_volume_level_rule(self):
+        result = rule_based_command("sesi orta yap", "TR")
+
+        self.assertEqual(result["intent"], "ADJUST_VOLUME")
+        self.assertEqual(result["parameters"], {"volume_level": "medium"})
+        self.assertEqual(result["rule_matched"], "volume_level_medium")
+
     def test_navigation_rule(self):
         result = rule_based_command("go to home screen", "EN")
 
