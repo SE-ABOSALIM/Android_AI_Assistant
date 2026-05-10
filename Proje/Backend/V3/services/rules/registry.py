@@ -1,6 +1,7 @@
 from typing import Callable, List, Optional
 
 from V3.services.rules.context import RuleContext
+from V3.services.rules.apps import app_command
 from V3.services.rules.display import display_command
 from V3.services.rules.gestures import gesture_command
 from V3.services.rules.navigation import navigation_command
@@ -20,5 +21,6 @@ RULE_HANDLERS: List[RuleHandler] = [
     navigation_command,
     system_settings_command,
     text_control_command,
+    app_command,
     timer_command,
 ]

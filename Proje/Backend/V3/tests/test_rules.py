@@ -82,6 +82,33 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"sound_mode": "silent"})
         self.assertEqual(result["rule_matched"], "sound_mode_silent")
 
+    def test_open_app_rule_for_spelled_turkish_app_name(self):
+        result = rule_based_command("c e p t e aç", "TR")
+
+        self.assertEqual(result["intent"], "OPEN_APP")
+        self.assertEqual(result["parameters"], {"app_name": "c e p t e"})
+        self.assertEqual(result["rule_matched"], "open_app")
+
+    def test_open_app_rule_for_english_open_prefix(self):
+        result = rule_based_command("open offline games", "EN")
+
+        self.assertEqual(result["intent"], "OPEN_APP")
+        self.assertEqual(result["parameters"], {"app_name": "offline games"})
+        self.assertEqual(result["rule_matched"], "open_app")
+
+    def test_open_app_rule_for_english_open_suffix(self):
+        result = rule_based_command("slug it out open", "EN")
+
+        self.assertEqual(result["intent"], "OPEN_APP")
+        self.assertEqual(result["parameters"], {"app_name": "slug it out"})
+        self.assertEqual(result["rule_matched"], "open_app")
+
+    def test_specific_open_commands_still_win_before_open_app_rule(self):
+        result = rule_based_command("open notifications", "EN")
+
+        self.assertEqual(result["intent"], "OPEN_NOTIFICATIONS")
+        self.assertEqual(result["rule_matched"], "open_notifications")
+
 
 if __name__ == "__main__":
     unittest.main()

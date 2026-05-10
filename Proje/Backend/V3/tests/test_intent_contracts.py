@@ -3,6 +3,7 @@ import unittest
 from V3.services.app_catalog_service import delete_app_catalog, save_app_catalog
 from V3.services.intent_registry import get_intent_contract, missing_required_parameters
 from V3.services.model_service import label_to_json
+from V3.services.predict_service import predict_command
 from V3.services.validator import validate_and_build_response
 
 
@@ -109,6 +110,36 @@ class IntentContractTests(unittest.TestCase):
             self.assertTrue(response["accepted"])
             self.assertTrue(response["android_supported"])
             self.assertEqual(response["parameters"]["app_package_name"], "com.whatsapp")
+        finally:
+            delete_app_catalog(session_id)
+
+    def test_predict_open_app_rule_bypasses_model_for_spelled_app_name(self):
+        session_id = "unit-test-spelled-app"
+        try:
+            result = save_app_catalog(
+                session_id=session_id,
+                catalog_version="v1",
+                language="TR",
+                apps=[
+                    {
+                        "label": "Cepte Var",
+                        "package_name": "com.ceptevar",
+                        "aliases": [],
+                    }
+                ],
+            )
+
+            response = predict_command(
+                text="c e p t e aç",
+                language="TR",
+                session_id=session_id,
+                catalog_version=result["catalog_version"],
+            )
+
+            self.assertTrue(response["accepted"])
+            self.assertEqual(response["intent"], "OPEN_APP")
+            self.assertEqual(response["raw_label"], "RULE::open_app")
+            self.assertEqual(response["parameters"]["app_package_name"], "com.ceptevar")
         finally:
             delete_app_catalog(session_id)
 
