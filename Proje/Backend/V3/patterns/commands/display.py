@@ -1,0 +1,28 @@
+BRIGHTNESS_PATTERNS = {
+    "increase": [
+        "increase brightness",
+        "brightness up",
+        "brighten display",
+        "brighten the display",
+        "make screen brighter",
+        "raise brightness",
+        "parlakligi yukselt",
+        "parlakligi artir",
+        "ekran parlakligini artir",
+        "ekran parlakligini yukselt",
+        "parlakligi ac",
+    ],
+    "decrease": [
+        "decrease brightness",
+        "brightness down",
+        "lower brightness",
+        "dim display",
+        "dim the display",
+        "make screen darker",
+        "parlakligi azalt",
+        "parlakligi dusur",
+        "ekran parlakligini azalt",
+        "ekran daha los olsun",
+        "ekrani karart",
+    ],
+}

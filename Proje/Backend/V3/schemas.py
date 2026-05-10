@@ -43,6 +43,9 @@ class FinalResponse(BaseModel):
     language: str
     intent: str
     parameters: Dict[str, Any]
+    backend_supported: bool = False
+    android_supported: bool = False
+    parameter_contract: Dict[str, Any] = Field(default_factory=dict)
     accepted: bool
     missing_slots: List[str]
     error_code: Optional[str]

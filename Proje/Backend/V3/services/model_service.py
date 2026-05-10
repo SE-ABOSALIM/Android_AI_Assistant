@@ -2,7 +2,7 @@ import json
 from threading import RLock
 from typing import Any, Dict, List, Optional, Tuple
 
-from V3.config import MAX_LENGTH, MODEL_DIR, SUPPORTED_INTENTS
+from V3.config import MAX_LENGTH, MODEL_DIR
 from V3.services.text_utils import normalize_text
 
 
@@ -28,10 +28,10 @@ def label_to_json(label: str) -> Dict[str, Any]:
     label_mapping = _load_label_mapping()
 
     if label in label_mapping:
-        return _only_supported_intents(label_mapping[label])
+        return _normalize_model_json(label_mapping[label])
 
     if "__" not in label:
-        return _only_supported_intents({
+        return _normalize_model_json({
             "intent": label,
             "parameters": {},
         })
@@ -39,13 +39,22 @@ def label_to_json(label: str) -> Dict[str, Any]:
     intent, param = label.split("__", 1)
 
     if param == "none":
-        return _only_supported_intents({
+        return _normalize_model_json({
             "intent": intent,
             "parameters": {},
         })
 
+    if "=" in param:
+        key, value = param.split("=", 1)
+        return _normalize_model_json({
+            "intent": intent,
+            "parameters": {
+                key: value,
+            },
+        })
+
     if intent in ["SCROLL_SCREEN", "SWIPE_GESTURE"]:
-        return _only_supported_intents({
+        return _normalize_model_json({
             "intent": intent,
             "parameters": {
                 "direction": param,
@@ -53,14 +62,14 @@ def label_to_json(label: str) -> Dict[str, Any]:
         })
 
     if intent == "ADJUST_VOLUME":
-        return _only_supported_intents({
+        return _normalize_model_json({
             "intent": intent,
             "parameters": {
                 "volume_action": param,
             },
         })
 
-    return _only_supported_intents({
+    return _normalize_model_json({
         "intent": intent,
         "parameters": {},
     })
@@ -178,13 +187,11 @@ def _load_label_mapping() -> Dict[str, Dict[str, Any]]:
         return _label_to_target_json
 
 
-def _only_supported_intents(model_json: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize_model_json(model_json: Dict[str, Any]) -> Dict[str, Any]:
     intent = model_json.get("intent", "UNKNOWN_COMMAND")
-
-    if intent == "UNKNOWN_COMMAND" or intent in SUPPORTED_INTENTS:
-        return model_json
+    parameters = model_json.get("parameters") or {}
 
     return {
-        "intent": "UNKNOWN_COMMAND",
-        "parameters": {},
+        "intent": str(intent or "UNKNOWN_COMMAND").upper(),
+        "parameters": parameters if isinstance(parameters, dict) else {},
     }

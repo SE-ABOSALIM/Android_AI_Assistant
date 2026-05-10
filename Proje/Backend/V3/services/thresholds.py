@@ -1,5 +1,5 @@
-from V3.config import DEFAULT_CONFIDENCE_THRESHOLD, INTENT_THRESHOLDS
+from V3.services.intent_registry import get_threshold as _get_registered_threshold
 
 
 def get_threshold(intent: str) -> float:
-    return INTENT_THRESHOLDS.get(intent, DEFAULT_CONFIDENCE_THRESHOLD)
+    return _get_registered_threshold(intent)
