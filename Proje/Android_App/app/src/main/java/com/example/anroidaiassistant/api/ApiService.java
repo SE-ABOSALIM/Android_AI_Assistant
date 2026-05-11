@@ -1,4 +1,9 @@
-package com.example.anroidaiassistant;
+package com.example.anroidaiassistant.api;
+
+import com.example.anroidaiassistant.api.dto.AppCatalogRequest;
+import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
+import com.example.anroidaiassistant.api.dto.PredictRequest;
+import com.example.anroidaiassistant.api.dto.PredictResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;

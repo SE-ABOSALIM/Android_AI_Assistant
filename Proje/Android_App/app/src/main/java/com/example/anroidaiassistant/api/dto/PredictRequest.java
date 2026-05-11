@@ -1,4 +1,6 @@
-package com.example.anroidaiassistant;
+package com.example.anroidaiassistant.api.dto;
+
+import com.example.anroidaiassistant.session.AssistantSession;
 
 import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;

@@ -1,4 +1,4 @@
-package com.example.anroidaiassistant;
+package com.example.anroidaiassistant.session;
 
 import java.util.UUID;
 

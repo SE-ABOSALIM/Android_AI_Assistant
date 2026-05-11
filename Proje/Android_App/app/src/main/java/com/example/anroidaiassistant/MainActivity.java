@@ -1,5 +1,12 @@
 package com.example.anroidaiassistant;
 
+import com.example.anroidaiassistant.api.ApiService;
+import com.example.anroidaiassistant.api.RetrofitClient;
+import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
+import com.example.anroidaiassistant.api.dto.PredictRequest;
+import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.session.AssistantSession;
+
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;

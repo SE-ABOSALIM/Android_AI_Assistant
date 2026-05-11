@@ -1,5 +1,12 @@
 package com.example.anroidaiassistant;
 
+import com.example.anroidaiassistant.api.ApiService;
+import com.example.anroidaiassistant.api.RetrofitClient;
+import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.util.ParameterReader;
+import com.example.anroidaiassistant.util.TextNormalizer;
+
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
@@ -1133,11 +1140,11 @@ public class CommandExecutor {
     }
 
     private String getStringParam(Map<String, Object> params, String key) {
-        return PredictResponse.getStringParam(params, key);
+        return ParameterReader.getStringParam(params, key);
     }
 
     private int getIntParam(Map<String, Object> params, String key) {
-        return PredictResponse.getIntParam(params, key);
+        return ParameterReader.getIntParam(params, key);
     }
 
     private String stringValue(Object value) {
@@ -1193,31 +1200,15 @@ public class CommandExecutor {
     }
 
     private String normalizeText(String text) {
-        if (text == null) {
-            return "";
-        }
-
-        String normalized = text.toLowerCase(Locale.US).trim();
-        normalized = normalized.replaceAll("[^\\p{L}\\p{Nd}\\s]", " ");
-        normalized = normalized.replaceAll("\\s+", " ").trim();
-        return normalized;
+        return TextNormalizer.normalizeText(text);
     }
 
     private String toAsciiTurkish(String text) {
-        return text
-                .replace('\u00e7', 'c')
-                .replace('\u011f', 'g')
-                .replace('\u0131', 'i')
-                .replace('\u00f6', 'o')
-                .replace('\u015f', 's')
-                .replace('\u00fc', 'u')
-                .replace('\u00e2', 'a')
-                .replace('\u00ee', 'i')
-                .replace('\u00fb', 'u');
+        return TextNormalizer.toAsciiTurkish(text);
     }
 
     private String normalizeAsciiText(String text) {
-        return toAsciiTurkish(normalizeText(text));
+        return TextNormalizer.normalizeAsciiText(text);
     }
 
     private String normalizeAppCandidate(String text) {
@@ -1532,7 +1523,7 @@ public class CommandExecutor {
     }
 
     private boolean hasText(String value) {
-        return value != null && !value.trim().isEmpty();
+        return TextNormalizer.hasText(value);
     }
 
     private static class AppMatch {

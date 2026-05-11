@@ -1,5 +1,11 @@
 package com.example.anroidaiassistant;
 
+import com.example.anroidaiassistant.api.ApiService;
+import com.example.anroidaiassistant.api.RetrofitClient;
+import com.example.anroidaiassistant.api.dto.PredictRequest;
+import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.session.AssistantSession;
+
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.content.Context;

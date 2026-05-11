@@ -1,4 +1,4 @@
-package com.example.anroidaiassistant;
+package com.example.anroidaiassistant.api.dto;
 
 import com.google.gson.annotations.SerializedName;
 
