@@ -1,9 +1,10 @@
 package com.example.anroidaiassistant;
 
-import com.example.anroidaiassistant.api.ApiService;
-import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
-import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.apps.AppOpenController;
+import com.example.anroidaiassistant.executor.CommandDispatcher;
+import com.example.anroidaiassistant.executor.CommandExecutionContext;
+import com.example.anroidaiassistant.executor.CommandHandlerRegistry;
 import com.example.anroidaiassistant.util.ParameterReader;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
@@ -13,20 +14,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
-import android.graphics.drawable.Drawable;
-import android.media.AudioManager;
 import android.net.Uri;
-import android.provider.AlarmClock;
 import android.provider.ContactsContract;
-import android.provider.MediaStore;
 import android.telecom.TelecomManager;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,10 +38,15 @@ public class CommandExecutor {
     private static final int CONTACT_CONTAINS_QUERY_PHRASE_SCORE = 93;
 
     private final Context context;
-    private int openAppFailureCount = 0;
+    private final CommandExecutionContext executionContext;
+    private final AppOpenController appOpenController;
+    private final CommandDispatcher commandDispatcher;
 
     public CommandExecutor(Context context) {
         this.context = context;
+        this.executionContext = new CommandExecutionContext(context, this::showMessage);
+        this.appOpenController = new AppOpenController();
+        this.commandDispatcher = CommandHandlerRegistry.createDefaultDispatcher(appOpenController);
     }
 
     public void executeCommand(PredictResponse response) {
@@ -84,11 +84,11 @@ public class CommandExecutor {
         }
 
         Map<String, Object> parameters = response.getParameters();
-        switch (intent) {
-            case "OPEN_APP":
-                handleOpenApp(parameters);
-                break;
+        if (commandDispatcher.dispatch(intent, parameters, executionContext)) {
+            return;
+        }
 
+        switch (intent) {
             case "SCROLL_SCREEN":
                 handleScroll(parameters);
                 break;
@@ -97,29 +97,10 @@ public class CommandExecutor {
                 handleSwipe(parameters);
                 break;
 
-            case "ADJUST_VOLUME":
-                handleVolume(parameters);
-                break;
-
             case "CALL_CONTACT":
                 handleCallContact(parameters);
                 break;
 
-            case "GO_HOME":
-                handleGoHome();
-                break;
-
-            case "SET_TIMER":
-                handleSetTimer(parameters);
-                break;
-
-            case "TAKE_PHOTO":
-                handleTakePhoto();
-                break;
-
-            case "STOP_LISTENING":
-                stopListening();
-                break;
 
             default:
                 showMessage("Unsupported intent: " + intent);
@@ -136,7 +117,7 @@ public class CommandExecutor {
         if (errorEquals(response, "APP_MATCH_AMBIGUOUS")
                 || errorEquals(response, "APP_NOT_IN_CATALOG")
                 || errorEquals(response, "APP_MATCH_NOT_FOUND")) {
-            if (handleBackendAppCandidates(response)) {
+            if (appOpenController.handleBackendAppCandidates(response, executionContext)) {
                 return;
             }
             showMessage(firstNonEmpty(response.getErrorMessage(), "App not found"));
@@ -204,334 +185,8 @@ public class CommandExecutor {
         return false;
     }
 
-    private void handleOpenApp(Map<String, Object> parameters) {
-        String appName = getStringParam(parameters, "app_name");
-        if (!hasText(appName)) {
-            showMessage("Which app should I open?");
-            return;
-        }
-
-        String packageName = getStringParam(parameters, "app_package_name");
-        if (hasText(packageName)) {
-            launchPackage(packageName, appName);
-            return;
-        }
-
-        List<AppMatch> matches = findAppMatches(appName);
-        if (matches.isEmpty()) {
-            onOpenAppFailure(appName);
-            return;
-        }
-
-        if (matches.size() == 1) {
-            launchPackage(matches.get(0).packageName, matches.get(0).label);
-            return;
-        }
-
-        showAppChoice(matches, appName);
-    }
-
     public void handleSpelledAppCandidate(String spokenText) {
-        if (!hasText(spokenText)) {
-            showMessage("Which app should I open?");
-            return;
-        }
-
-        List<AppMatch> matches = findSpelledAppMatches(spokenText);
-        if (matches.isEmpty()) {
-            onOpenAppFailure(spokenText);
-            return;
-        }
-
-        List<AppMatch> exactMatches = new ArrayList<>();
-        for (AppMatch match : matches) {
-            if (match.exact) {
-                exactMatches.add(match);
-            }
-        }
-
-        if (exactMatches.size() == 1) {
-            launchPackage(exactMatches.get(0).packageName, exactMatches.get(0).label);
-            return;
-        }
-
-        if (!exactMatches.isEmpty()) {
-            showAppChoice(exactMatches, spokenText);
-            return;
-        }
-
-        showAppChoice(matches, spokenText);
-    }
-
-    private boolean handleBackendAppCandidates(PredictResponse response) {
-        Map<String, Object> parameters = response.getParameters();
-        List<AppMatch> matches = getBackendAppMatchCandidates(parameters);
-        if (matches.isEmpty()) {
-            return false;
-        }
-
-        showAppChoice(matches, firstNonEmpty(getStringParam(parameters, "app_name"), "app"));
-        return true;
-    }
-
-    private List<AppMatch> getBackendAppMatchCandidates(Map<String, Object> parameters) {
-        if (parameters == null || !(parameters.get("app_match_candidates") instanceof List<?>)) {
-            return Collections.emptyList();
-        }
-
-        List<AppMatch> matches = new ArrayList<>();
-        for (Object rawCandidate : (List<?>) parameters.get("app_match_candidates")) {
-            if (!(rawCandidate instanceof Map<?, ?>)) {
-                continue;
-            }
-
-            Map<?, ?> candidate = (Map<?, ?>) rawCandidate;
-            String label = stringValue(candidate.get("label"));
-            String packageName = stringValue(candidate.get("package_name"));
-            if (!hasText(label) || !hasText(packageName)) {
-                continue;
-            }
-
-            matches.add(new AppMatch(
-                    label,
-                    packageName,
-                    floatValue(candidate.get("score"), 0.0f),
-                    false
-            ));
-        }
-
-        return matches;
-    }
-
-    private List<AppMatch> findAppMatches(String appName) {
-        return findAppMatches(appName, false);
-    }
-
-    private List<AppMatch> findAppMatches(String appName, boolean spelledCandidate) {
-        String candidateOriginalNormalized = normalizeText(appName);
-        String candidateAscii = normalizeAsciiText(appName);
-        String candidateCompact = normalizeAppCandidate(appName);
-        if (!hasText(candidateCompact)) {
-            return Collections.emptyList();
-        }
-
-        PackageManager packageManager = context.getPackageManager();
-        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        List<ResolveInfo> installedApps = packageManager.queryIntentActivities(mainIntent, 0);
-
-        Map<String, AppMatch> exactMatches = new LinkedHashMap<>();
-        List<AppMatch> fuzzyMatches = new ArrayList<>();
-        float threshold = minimumAcceptableScore(candidateCompact, spelledCandidate);
-
-        for (ResolveInfo app : installedApps) {
-            String packageName = app.activityInfo.packageName;
-            String label = app.loadLabel(packageManager).toString();
-            AppMatch match = scoreAppMatch(
-                    candidateCompact,
-                    candidateAscii,
-                    candidateOriginalNormalized,
-                    label,
-                    packageName
-            );
-
-            if (match.exact) {
-                exactMatches.put(packageName, match);
-            } else if (match.score >= threshold) {
-                fuzzyMatches.add(match);
-            }
-        }
-
-        if (!exactMatches.isEmpty()) {
-            return new ArrayList<>(exactMatches.values());
-        }
-
-        fuzzyMatches.sort(Comparator.comparing((AppMatch match) -> match.score).reversed());
-        return fuzzyMatches;
-    }
-
-    private List<AppMatch> findSpelledAppMatches(String spokenText) {
-        Map<String, AppMatch> matchesByPackage = new LinkedHashMap<>();
-
-        for (String candidate : joinSpelledCandidates(spokenText)) {
-            for (AppMatch match : findAppMatches(candidate, true)) {
-                AppMatch existing = matchesByPackage.get(match.packageName);
-                if (existing == null || match.score > existing.score || (match.exact && !existing.exact)) {
-                    matchesByPackage.put(match.packageName, match);
-                }
-            }
-        }
-
-        List<AppMatch> matches = new ArrayList<>(matchesByPackage.values());
-        matches.sort(Comparator.comparing((AppMatch match) -> match.score).reversed());
-        if (matches.size() > MAX_APP_CHOICES) {
-            return new ArrayList<>(matches.subList(0, MAX_APP_CHOICES));
-        }
-        return matches;
-    }
-
-    private AppMatch scoreAppMatch(
-            String candidateCompact,
-            String candidateAscii,
-            String candidateOriginalNormalized,
-            String appLabel,
-            String packageName
-    ) {
-        String labelOriginalNormalized = normalizeText(appLabel);
-        String labelAscii = normalizeAsciiText(appLabel);
-        String labelCompact = labelAscii.replace(" ", "");
-        String packageNormalized = normalizeText(packageName.replace('.', ' '));
-        String packageCompact = packageNormalized.replace(" ", "");
-
-        boolean exactLabelMatch = candidateCompact.equals(labelCompact);
-        boolean exactPackageMatch = candidateCompact.equals(packageCompact);
-        float score = exactLabelMatch ? 1.0f : (exactPackageMatch ? 0.98f : 0.0f);
-
-        if (!candidateAscii.contains(" ") && tokenize(labelAscii).contains(candidateAscii)) {
-            score = Math.max(score, 0.96f);
-        }
-        if (labelCompact.contains(candidateCompact) || candidateCompact.contains(labelCompact)) {
-            score = Math.max(score, 0.92f - lengthPenalty(candidateCompact, labelCompact));
-        }
-        if (packageCompact.contains(candidateCompact) || candidateCompact.contains(packageCompact)) {
-            score = Math.max(score, 0.82f - lengthPenalty(candidateCompact, packageCompact));
-        }
-
-        score = Math.max(score, levenshteinSimilarity(candidateCompact, labelCompact));
-        score = Math.max(score, levenshteinSimilarity(candidateCompact, packageCompact) * 0.84f);
-        score = Math.max(score, tokenOverlapScore(candidateAscii, labelAscii) * 0.90f);
-        score = Math.max(score, tokenOverlapScore(candidateOriginalNormalized, labelOriginalNormalized) * 0.86f);
-
-        return new AppMatch(appLabel, packageName, score, exactLabelMatch || exactPackageMatch);
-    }
-
-    private void showAppChoice(List<AppMatch> matches, String appName) {
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
-        if (service == null || !service.isContinuousListeningActive()) {
-            showMessage("Multiple apps match. Start listening and say the number.");
-            return;
-        }
-
-        int choiceCount = Math.min(matches.size(), MAX_APP_CHOICES);
-        List<MyAccessibilityService.NumberedChoice> choices = new ArrayList<>();
-        for (int i = 0; i < choiceCount; i++) {
-            AppMatch match = matches.get(i);
-            choices.add(new MyAccessibilityService.NumberedChoice(
-                    match.label,
-                    buildAppChoiceSubtitle(match.packageName),
-                    getAppIcon(match.packageName)
-            ));
-        }
-
-        service.startNumberSelection(
-                buildAppChoiceTitle(matches, appName),
-                choices,
-                new MyAccessibilityService.NumberSelectionCallback() {
-                    @Override
-                    public void onSelected(int selectedIndex) {
-                        AppMatch selectedMatch = matches.get(selectedIndex);
-                        launchPackage(selectedMatch.packageName, selectedMatch.label);
-                    }
-
-                    @Override
-                    public void onCancelled() {
-                        showMessage("App selection cancelled");
-                    }
-                }
-        );
-    }
-
-    private String buildAppChoiceTitle(List<AppMatch> matches, String appName) {
-        if (matches.size() == 1) {
-            return "Benzer uygulama bulundu: " + appName;
-        }
-        return "Birden fazla uygulama bulundu: " + appName;
-    }
-
-    private Drawable getAppIcon(String packageName) {
-        if (!hasText(packageName)) {
-            return null;
-        }
-
-        try {
-            return context.getPackageManager().getApplicationIcon(packageName);
-        } catch (Exception exception) {
-            Log.w(TAG, "Could not load app icon: " + packageName, exception);
-            return null;
-        }
-    }
-
-    private String buildAppChoiceSubtitle(String packageName) {
-        String source = inferReadableAppSource(packageName);
-        return hasText(source) ? source : "Installed app";
-    }
-
-    private String inferReadableAppSource(String packageName) {
-        if (!hasText(packageName)) {
-            return "";
-        }
-
-        String normalized = packageName.toLowerCase(Locale.US);
-        if (normalized.startsWith("com.google.") || normalized.contains(".google.")) {
-            return "Google";
-        }
-        if (normalized.startsWith("com.microsoft.")
-                || normalized.startsWith("com.azure.")
-                || normalized.contains(".microsoft.")
-                || normalized.contains(".azure.")) {
-            return "Microsoft";
-        }
-        if (normalized.startsWith("com.facebook.")
-                || normalized.startsWith("com.instagram.")
-                || normalized.startsWith("com.whatsapp.")) {
-            return "Meta";
-        }
-        if (normalized.startsWith("org.telegram.") || normalized.contains(".telegram.")) {
-            return "Telegram";
-        }
-        if (normalized.startsWith("com.spotify.")) {
-            return "Spotify";
-        }
-        if (normalized.startsWith("com.netflix.")) {
-            return "Netflix";
-        }
-        if (normalized.contains("turktelekom") || normalized.contains("turk.telekom")) {
-            return "Turk Telekom";
-        }
-        if (normalized.startsWith("com.android.")) {
-            return "System";
-        }
-        return "";
-    }
-
-    private void launchPackage(String packageName, String label) {
-        PackageManager packageManager = context.getPackageManager();
-        Intent intent = packageManager.getLaunchIntentForPackage(packageName);
-        if (intent == null) {
-            showMessage("App not found. Please spell the app name.");
-            return;
-        }
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            context.startActivity(intent);
-            openAppFailureCount = 0;
-        } catch (Exception exception) {
-            Log.e(TAG, "Failed to launch app: " + packageName, exception);
-            showMessage("Could not open " + firstNonEmpty(label, "app"));
-        }
-    }
-
-    private void onOpenAppFailure(String appCandidate) {
-        openAppFailureCount++;
-        showMessage("App not found. Please spell the app name.");
-
-        if (openAppFailureCount == 2 || openAppFailureCount == 3) {
-            MainActivity mainActivity = MainActivity.getInstance();
-            if (mainActivity != null) {
-                mainActivity.showSpellingSuggestionDialog();
-            }
-        }
+        appOpenController.handleSpelledAppCandidate(spokenText, executionContext);
     }
 
     private void handleScroll(Map<String, Object> parameters) {
@@ -570,86 +225,6 @@ public class CommandExecutor {
             showMessage("Swipe direction not supported");
         } else {
         }
-    }
-
-    private void handleVolume(Map<String, Object> parameters) {
-        String volumeAction = normalizeDirection(getStringParam(parameters, "volume_action"));
-        String volumeLevel = normalizeVolumeLevel(getStringParam(parameters, "volume_level"));
-        if (!hasText(volumeAction) && !hasText(volumeLevel)) {
-            showMessage("Should I increase, decrease, mute, unmute, or set the volume level?");
-            return;
-        }
-
-        AudioManager audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-        if (audioManager == null) {
-            showMessage("Volume control is unavailable");
-            return;
-        }
-
-        if (hasText(volumeLevel)) {
-            setVolumeLevel(audioManager, volumeLevel);
-            return;
-        }
-
-        switch (volumeAction) {
-            case "increase":
-                audioManager.adjustStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_RAISE,
-                        AudioManager.FLAG_SHOW_UI
-                );
-                break;
-            case "decrease":
-                audioManager.adjustStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_LOWER,
-                        AudioManager.FLAG_SHOW_UI
-                );
-                break;
-            case "mute":
-                audioManager.adjustStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_MUTE,
-                        AudioManager.FLAG_SHOW_UI
-                );
-                break;
-            case "unmute":
-                audioManager.adjustStreamVolume(
-                        AudioManager.STREAM_MUSIC,
-                        AudioManager.ADJUST_UNMUTE,
-                        AudioManager.FLAG_SHOW_UI
-                );
-                break;
-            default:
-                showMessage("Volume action not supported");
-                break;
-        }
-    }
-
-    private void setVolumeLevel(AudioManager audioManager, String volumeLevel) {
-        int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
-        int targetVolume;
-
-        switch (volumeLevel) {
-            case "low":
-                targetVolume = Math.max(1, Math.round(maxVolume * 0.25f));
-                break;
-            case "medium":
-                targetVolume = Math.max(1, Math.round(maxVolume * 0.50f));
-                break;
-            case "max":
-                targetVolume = maxVolume;
-                break;
-            default:
-                showMessage("Volume level not supported");
-                return;
-        }
-
-        audioManager.setStreamVolume(
-                AudioManager.STREAM_MUSIC,
-                Math.min(targetVolume, maxVolume),
-                AudioManager.FLAG_SHOW_UI
-        );
     }
 
     private void handleCallContact(Map<String, Object> parameters) {
@@ -1059,74 +634,6 @@ public class CommandExecutor {
         return null;
     }
 
-    private void handleGoHome() {
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
-        if (service == null) {
-            showMessage("Accessibility service is not connected");
-            return;
-        }
-        service.performHome();
-    }
-
-    private void handleSetTimer(Map<String, Object> parameters) {
-        int durationValue = getIntParam(parameters, "duration_value");
-        String durationUnit = getStringParam(parameters, "duration_unit");
-        int durationSeconds = getIntParam(parameters, "duration_seconds");
-
-        if (durationValue <= 0 || !hasText(durationUnit)) {
-            showMessage("How long should I set the timer for?");
-            return;
-        }
-
-        if (durationSeconds <= 0) {
-            showMessage("Timer duration is missing");
-            return;
-        }
-
-        Intent intent = new Intent(AlarmClock.ACTION_SET_TIMER)
-                .putExtra(AlarmClock.EXTRA_LENGTH, durationSeconds)
-                .putExtra(AlarmClock.EXTRA_SKIP_UI, false)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            context.startActivity(intent);
-        } catch (Exception exception) {
-            Log.e(TAG, "Failed to set timer", exception);
-            showMessage("Timer app is unavailable");
-        }
-    }
-
-    private void handleTakePhoto() {
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
-        if (service != null && service.capturePhoto()) {
-            return;
-        }
-
-        Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            context.startActivity(intent);
-        } catch (Exception exception) {
-            Log.e(TAG, "Failed to open camera", exception);
-            showMessage("Camera unavailable");
-        }
-    }
-
-    private void stopListening() {
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
-        if (service != null) {
-            service.stopContinuousListening();
-        } else {
-            String endedSessionId = AssistantSession.endSession();
-            ApiService apiService = RetrofitClient.getClient().create(ApiService.class);
-            AppCatalogSyncer.closeSession(apiService, endedSessionId);
-        }
-
-        MainActivity mainActivity = MainActivity.getInstance();
-        if (mainActivity != null) {
-            mainActivity.syncListeningUiState();
-        }
-    }
-
     private void showMessage(String message) {
         if (!hasText(message)) {
             return;
@@ -1143,25 +650,6 @@ public class CommandExecutor {
         return ParameterReader.getStringParam(params, key);
     }
 
-    private int getIntParam(Map<String, Object> params, String key) {
-        return ParameterReader.getIntParam(params, key);
-    }
-
-    private String stringValue(Object value) {
-        return value == null ? null : String.valueOf(value);
-    }
-
-    private float floatValue(Object value, float defaultValue) {
-        if (value instanceof Number) {
-            return ((Number) value).floatValue();
-        }
-
-        try {
-            return Float.parseFloat(String.valueOf(value));
-        } catch (Exception ignored) {
-            return defaultValue;
-        }
-    }
 
     private boolean looksLikePhoneNumber(String value) {
         if (!hasText(value) || !value.matches(".*\\d.*")) {
@@ -1187,278 +675,13 @@ public class CommandExecutor {
         return direction.trim().toLowerCase(Locale.US);
     }
 
-    private String normalizeVolumeLevel(String volumeLevel) {
-        if (volumeLevel == null) {
-            return "";
-        }
-
-        String normalized = volumeLevel.trim().toLowerCase(Locale.US);
-        if ("high".equals(normalized) || "maximum".equals(normalized)) {
-            return "max";
-        }
-        return normalized;
-    }
-
     private String normalizeText(String text) {
         return TextNormalizer.normalizeText(text);
     }
 
-    private String toAsciiTurkish(String text) {
-        return TextNormalizer.toAsciiTurkish(text);
-    }
 
     private String normalizeAsciiText(String text) {
         return TextNormalizer.normalizeAsciiText(text);
-    }
-
-    private String normalizeAppCandidate(String text) {
-        return normalizeAsciiText(text).replace(" ", "");
-    }
-
-    private List<String> joinSpelledCandidates(String text) {
-        LinkedHashSet<String> candidates = new LinkedHashSet<>();
-        if (!hasText(text)) {
-            return new ArrayList<>(candidates);
-        }
-
-        candidates.addAll(joinSpelledLetterNameCandidates(text));
-        candidates.add(normalizeAsciiText(text).replace(" ", ""));
-
-        candidates.remove(null);
-        candidates.remove("");
-        return new ArrayList<>(candidates);
-    }
-
-    private List<String> joinSpelledLetterNameCandidates(String text) {
-        String normalized = normalizeAsciiText(text);
-        if (!hasText(normalized)) {
-            return Collections.emptyList();
-        }
-
-        List<String> candidates = new ArrayList<>();
-        candidates.add("");
-        int matchedTokens = 0;
-        int totalTokens = 0;
-        String[] tokens = normalized.split(" ");
-        for (int i = 0; i < tokens.length; i++) {
-            String token = tokens[i];
-            if (!hasText(token)) {
-                continue;
-            }
-
-            totalTokens++;
-            SpelledLetterMatch spelledLetterMatch = spelledTokenToLetters(tokens, i);
-            List<Character> letters = spelledLetterMatch.letters;
-            if (spelledLetterMatch.consumedTokens > 1) {
-                i += spelledLetterMatch.consumedTokens - 1;
-                totalTokens += spelledLetterMatch.consumedTokens - 1;
-            }
-            if (letters.isEmpty()) {
-                if (token.length() == 1 && Character.isLetterOrDigit(token.charAt(0))) {
-                    letters = Collections.singletonList(token.charAt(0));
-                } else {
-                    continue;
-                }
-            }
-
-            List<String> nextCandidates = new ArrayList<>();
-            for (String candidate : candidates) {
-                for (Character letter : letters) {
-                    nextCandidates.add(candidate + letter);
-                }
-            }
-            candidates = nextCandidates;
-            matchedTokens++;
-        }
-
-        if (matchedTokens == 0 || matchedTokens < Math.max(1, totalTokens - 1)) {
-            return Collections.emptyList();
-        }
-
-        return candidates;
-    }
-
-    private SpelledLetterMatch spelledTokenToLetters(String[] tokens, int index) {
-        String token = tokens[index];
-
-        if (("duble".equals(token) || "double".equals(token) || "cift".equals(token))
-                && index + 1 < tokens.length
-                && ("ve".equals(tokens[index + 1]) || "v".equals(tokens[index + 1])
-                || "u".equals(tokens[index + 1]) || "yu".equals(tokens[index + 1])
-                || "you".equals(tokens[index + 1]))) {
-            return new SpelledLetterMatch(Collections.singletonList('w'), 2);
-        }
-
-        switch (token) {
-            case "a":
-            case "ah":
-                return new SpelledLetterMatch(Collections.singletonList('a'), 1);
-            case "b":
-            case "be":
-            case "bee":
-                return new SpelledLetterMatch(Collections.singletonList('b'), 1);
-            case "c":
-            case "ce":
-            case "cee":
-                return new SpelledLetterMatch(Collections.singletonList('c'), 1);
-            case "d":
-            case "de":
-            case "dee":
-                return new SpelledLetterMatch(Collections.singletonList('d'), 1);
-            case "e":
-                return new SpelledLetterMatch(Collections.singletonList('e'), 1);
-            case "f":
-            case "fe":
-            case "ef":
-                return new SpelledLetterMatch(Collections.singletonList('f'), 1);
-            case "g":
-            case "ge":
-                return new SpelledLetterMatch(Collections.singletonList('g'), 1);
-            case "h":
-            case "he":
-            case "aitch":
-            case "eyc":
-                return new SpelledLetterMatch(Collections.singletonList('h'), 1);
-            case "i":
-            case "ii":
-                return new SpelledLetterMatch(Collections.singletonList('i'), 1);
-            case "j":
-            case "je":
-            case "jay":
-                return new SpelledLetterMatch(Collections.singletonList('j'), 1);
-            case "k":
-            case "ka":
-            case "key":
-                return new SpelledLetterMatch(Collections.singletonList('k'), 1);
-            case "l":
-            case "le":
-            case "el":
-                return new SpelledLetterMatch(Collections.singletonList('l'), 1);
-            case "m":
-            case "me":
-            case "em":
-                return new SpelledLetterMatch(Collections.singletonList('m'), 1);
-            case "n":
-            case "ne":
-            case "en":
-                return new SpelledLetterMatch(Collections.singletonList('n'), 1);
-            case "o":
-            case "oh":
-                return new SpelledLetterMatch(Collections.singletonList('o'), 1);
-            case "p":
-            case "pe":
-            case "pee":
-                return new SpelledLetterMatch(Collections.singletonList('p'), 1);
-            case "q":
-            case "ku":
-            case "queue":
-                return new SpelledLetterMatch(Collections.singletonList('q'), 1);
-            case "r":
-            case "re":
-            case "ar":
-                return new SpelledLetterMatch(Collections.singletonList('r'), 1);
-            case "s":
-            case "se":
-            case "es":
-                return new SpelledLetterMatch(Collections.singletonList('s'), 1);
-            case "t":
-            case "te":
-            case "tee":
-                return new SpelledLetterMatch(Collections.singletonList('t'), 1);
-            case "u":
-            case "yu":
-            case "you":
-                return new SpelledLetterMatch(Collections.singletonList('u'), 1);
-            case "v":
-            case "vee":
-                return new SpelledLetterMatch(Collections.singletonList('v'), 1);
-            case "ve":
-                List<Character> veCandidates = new ArrayList<>();
-                veCandidates.add('v');
-                veCandidates.add('w');
-                return new SpelledLetterMatch(veCandidates, 1);
-            case "w":
-            case "we":
-            case "dabilyu":
-            case "dabiliyu":
-            case "dabulyu":
-            case "doubleyou":
-            case "doubleu":
-                return new SpelledLetterMatch(Collections.singletonList('w'), 1);
-            case "x":
-            case "iks":
-            case "ex":
-                return new SpelledLetterMatch(Collections.singletonList('x'), 1);
-            case "y":
-            case "ye":
-            case "why":
-                return new SpelledLetterMatch(Collections.singletonList('y'), 1);
-            case "z":
-            case "ze":
-            case "zet":
-            case "zed":
-            case "zee":
-                return new SpelledLetterMatch(Collections.singletonList('z'), 1);
-            default:
-                return new SpelledLetterMatch(Collections.emptyList(), 1);
-        }
-    }
-
-    private float minimumAcceptableScore(String candidateCompact, boolean spelledCandidate) {
-        if (spelledCandidate) {
-            int length = candidateCompact.length();
-            if (length <= 4) {
-                return 0.80f;
-            }
-            if (length <= 7) {
-                return 0.76f;
-            }
-            return 0.72f;
-        }
-
-        int length = candidateCompact.length();
-        if (length <= 4) {
-            return 0.95f;
-        }
-        if (length <= 7) {
-            return 0.84f;
-        }
-        return 0.72f;
-    }
-
-    private float lengthPenalty(String left, String right) {
-        return Math.min(0.12f, Math.abs(left.length() - right.length()) * 0.01f);
-    }
-
-    private float tokenOverlapScore(String leftText, String rightText) {
-        Set<String> leftTokens = tokenize(leftText);
-        Set<String> rightTokens = tokenize(rightText);
-        if (leftTokens.isEmpty() || rightTokens.isEmpty()) {
-            return 0.0f;
-        }
-
-        int overlap = 0;
-        for (String token : leftTokens) {
-            if (rightTokens.contains(token)) {
-                overlap++;
-            }
-        }
-
-        return (2.0f * overlap) / (leftTokens.size() + rightTokens.size());
-    }
-
-    private Set<String> tokenize(String text) {
-        Set<String> tokens = new HashSet<>();
-        if (text == null || text.trim().isEmpty()) {
-            return tokens;
-        }
-
-        for (String token : normalizeText(text).split(" ")) {
-            if (!token.isEmpty()) {
-                tokens.add(token);
-            }
-        }
-        return tokens;
     }
 
     private float levenshteinSimilarity(String left, String right) {
@@ -1526,20 +749,6 @@ public class CommandExecutor {
         return TextNormalizer.hasText(value);
     }
 
-    private static class AppMatch {
-        private final String label;
-        private final String packageName;
-        private final float score;
-        private final boolean exact;
-
-        private AppMatch(String label, String packageName, float score, boolean exact) {
-            this.label = label;
-            this.packageName = packageName;
-            this.score = score;
-            this.exact = exact;
-        }
-    }
-
     private static class ContactPhoneMatch {
         private final String displayName;
         private final String phoneNumber;
@@ -1564,13 +773,4 @@ public class CommandExecutor {
         }
     }
 
-    private static class SpelledLetterMatch {
-        private final List<Character> letters;
-        private final int consumedTokens;
-
-        private SpelledLetterMatch(List<Character> letters, int consumedTokens) {
-            this.letters = letters;
-            this.consumedTokens = consumedTokens;
-        }
-    }
 }
