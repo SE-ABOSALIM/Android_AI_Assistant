@@ -4,46 +4,36 @@ import com.example.anroidaiassistant.api.ApiService;
 import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.selection.SelectionNumberParser;
+import com.example.anroidaiassistant.ui.ListeningOverlayController;
+import com.example.anroidaiassistant.ui.SelectionOverlayController;
+import com.example.anroidaiassistant.accessibility.AccessibilityActionController;
+import com.example.anroidaiassistant.accessibility.CameraCaptureController;
+import com.example.anroidaiassistant.accessibility.GestureController;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.GestureDescription;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.graphics.Path;
-import android.graphics.PixelFormat;
-import android.graphics.Rect;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.MediaStore;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.LayoutInflater;
-import android.view.View;
 import android.view.WindowManager;
-import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityEvent;
-import android.widget.LinearLayout;
-import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -54,12 +44,6 @@ public class MyAccessibilityService extends AccessibilityService {
     private static MyAccessibilityService instance;
     private static final int RESTART_DELAY_FAST_MS = 200;
     private static final int RESTART_DELAY_SLOW_MS = 800;
-    private static final long DEFAULT_GESTURE_DURATION_MS = 350L;
-    private static final long DEFAULT_SCROLL_DURATION_MS = 650L;
-    private static final long PHOTO_CAPTURE_ACTIVE_CAMERA_DELAY_MS = 150L;
-    private static final long PHOTO_CAPTURE_START_DELAY_MS = 1800L;
-    private static final long PHOTO_CAPTURE_RETRY_DELAY_MS = 700L;
-    private static final int MAX_PHOTO_CAPTURE_ATTEMPTS = 8;
     private static final int[] STREAMS_TO_MUTE = {
             AudioManager.STREAM_SYSTEM
     };
@@ -73,21 +57,23 @@ public class MyAccessibilityService extends AccessibilityService {
     private boolean areRecognizerSoundsMuted = false;
     private final Map<Integer, Boolean> streamMuteStateBeforeRecognizer = new HashMap<>();
     private final List<NumberedChoice> numberSelectionChoices = new ArrayList<>();
+    private final SelectionNumberParser selectionNumberParser = new SelectionNumberParser();
     private NumberSelectionCallback numberSelectionCallback;
     private String numberSelectionTitle;
     private String selectedLanguage = "TR";
     
     private ApiService apiService;
+    private Call<AppCatalogResponse> appCatalogSyncCall;
+    private PendingPrediction pendingPrediction;
     private CommandExecutor commandExecutor;
     private AudioManager audioManager;
+    private AccessibilityActionController accessibilityActionController;
+    private GestureController gestureController;
+    private CameraCaptureController cameraCaptureController;
 
     private WindowManager windowManager;
-    private View overlayView;
-    private TextView tvOverlayText;
-    private View selectionOverlayView;
-    private TextView tvSelectionTitle;
-    private LinearLayout selectionChoiceContainer;
-    private TextView tvSelectionHint;
+    private ListeningOverlayController listeningOverlayController;
+    private SelectionOverlayController selectionOverlayController;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable restartListeningRunnable = this::startListeningSession;
 
@@ -102,7 +88,22 @@ public class MyAccessibilityService extends AccessibilityService {
         
         apiService = RetrofitClient.getClient().create(ApiService.class);
         commandExecutor = new CommandExecutor(this);
+        accessibilityActionController = new AccessibilityActionController(this);
+        gestureController = new GestureController(this);
+        cameraCaptureController = new CameraCaptureController(this, mainHandler, gestureController);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        listeningOverlayController = new ListeningOverlayController(this, windowManager);
+        selectionOverlayController = new SelectionOverlayController(this, windowManager, new SelectionOverlayController.Listener() {
+            @Override
+            public void onChoiceSelected(int selectedIndex) {
+                completeNumberSelection(selectedIndex);
+            }
+
+            @Override
+            public void onSelectionCancelled() {
+                cancelNumberSelection();
+            }
+        });
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         
         setupSpeechRecognizer();
@@ -290,16 +291,16 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public void updateLanguage(String lang) {
-        this.selectedLanguage = lang;
+        this.selectedLanguage = lang == null || lang.trim().isEmpty() ? "TR" : lang.trim();
         if (speechRecognizerIntent == null) {
             return;
         }
 
-        if (lang.equals("TR")) {
+        if ("TR".equals(selectedLanguage)) {
             speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "tr-TR");
-        } else if (lang.equals("EN")) {
+        } else if ("EN".equals(selectedLanguage)) {
             speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "en-US");
-        } else if (lang.equals("AR")) {
+        } else if ("AR".equals(selectedLanguage)) {
             speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ar");
         }
     }
@@ -319,6 +320,7 @@ public class MyAccessibilityService extends AccessibilityService {
         isListening = false;
         isSpellAppMode = false;
         clearNumberSelection();
+        cancelAppCatalogSyncIfNeeded();
         closeCurrentBackendSession();
         mainHandler.removeCallbacks(restartListeningRunnable);
         setRecognizerSoundsMuted(false);
@@ -335,171 +337,32 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void showOverlay() {
-        if (overlayView == null) {
-            overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_layout, null);
-            tvOverlayText = overlayView.findViewById(R.id.tv_overlay_text);
-            
-            WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                    PixelFormat.TRANSLUCENT);
-            
-            params.gravity = Gravity.TOP | Gravity.START;
-            params.x = 20;
-            params.y = 100;
-            
-            windowManager.addView(overlayView, params);
+        if (listeningOverlayController != null) {
+            listeningOverlayController.show();
         }
     }
 
     private void hideOverlay() {
-        if (overlayView != null) {
-            windowManager.removeView(overlayView);
-            overlayView = null;
-            tvOverlayText = null;
+        if (listeningOverlayController != null) {
+            listeningOverlayController.hide();
         }
     }
 
-    private void showSelectionWindow(String warning) {
-        if (selectionOverlayView == null) {
-            selectionOverlayView = LayoutInflater.from(this).inflate(R.layout.selection_overlay_layout, null);
-            tvSelectionTitle = selectionOverlayView.findViewById(R.id.tv_selection_title);
-            selectionChoiceContainer = selectionOverlayView.findViewById(R.id.selection_choice_container);
-            tvSelectionHint = selectionOverlayView.findViewById(R.id.tv_selection_hint);
-            View selectionWindow = selectionOverlayView.findViewById(R.id.selection_window);
-
-            selectionOverlayView.setFocusable(true);
-            selectionOverlayView.setFocusableInTouchMode(true);
-            selectionOverlayView.setOnClickListener(view -> cancelNumberSelection());
-            selectionOverlayView.setOnKeyListener((view, keyCode, event) -> {
-                if (keyCode == KeyEvent.KEYCODE_BACK) {
-                    if (event.getAction() == KeyEvent.ACTION_UP) {
-                        cancelNumberSelection();
-                    }
-                    return true;
-                }
-                return false;
-            });
-
-            if (selectionWindow != null) {
-                selectionWindow.setOnClickListener(view -> {});
-            }
-
-            WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                    PixelFormat.TRANSLUCENT);
-
-            params.gravity = Gravity.CENTER;
-            windowManager.addView(selectionOverlayView, params);
-            selectionOverlayView.requestFocus();
+    private void showSelectionWindow() {
+        if (selectionOverlayController != null) {
+            selectionOverlayController.show(numberSelectionTitle, numberSelectionChoices);
         }
-
-        updateSelectionWindow(warning);
     }
 
     private void hideSelectionWindow() {
-        if (selectionOverlayView != null) {
-            windowManager.removeView(selectionOverlayView);
-            selectionOverlayView = null;
-            tvSelectionTitle = null;
-            selectionChoiceContainer = null;
-            tvSelectionHint = null;
+        if (selectionOverlayController != null) {
+            selectionOverlayController.hide();
         }
-    }
-
-    private void updateSelectionWindow(String warning) {
-        if (selectionOverlayView == null || selectionChoiceContainer == null) {
-            return;
-        }
-
-        tvSelectionTitle.setText(numberSelectionTitle == null ? "Choose" : numberSelectionTitle);
-        selectionChoiceContainer.removeAllViews();
-
-        for (int i = 0; i < numberSelectionChoices.size(); i++) {
-            NumberedChoice choice = numberSelectionChoices.get(i);
-            selectionChoiceContainer.addView(createSelectionRow(i, choice));
-        }
-
-        tvSelectionHint.setText("Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.");
-        tvSelectionHint.setTextColor(Color.parseColor("#B9C0CC"));
-    }
-
-    private View createSelectionRow(int index, NumberedChoice choice) {
-        LinearLayout row = new LinearLayout(this);
-        row.setOrientation(LinearLayout.HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        row.setPadding(dp(10), dp(8), dp(10), dp(8));
-        row.setClickable(true);
-        row.setOnClickListener(view -> completeNumberSelection(index));
-
-        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-        );
-        rowParams.setMargins(0, dp(6), 0, 0);
-        row.setLayoutParams(rowParams);
-
-        TextView number = new TextView(this);
-        number.setText(String.valueOf(index + 1));
-        number.setTextColor(Color.WHITE);
-        number.setTextSize(15);
-        number.setGravity(Gravity.CENTER);
-        number.setTypeface(number.getTypeface(), android.graphics.Typeface.BOLD);
-        number.setBackgroundResource(R.drawable.selection_number_background);
-        LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams(dp(34), dp(34));
-        numberParams.setMargins(0, 0, dp(12), 0);
-        row.addView(number, numberParams);
-
-        if (choice.icon != null) {
-            ImageView icon = new ImageView(this);
-            icon.setImageDrawable(choice.icon);
-            icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-            LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
-            iconParams.setMargins(0, 0, dp(12), 0);
-            row.addView(icon, iconParams);
-        }
-
-        LinearLayout textColumn = new LinearLayout(this);
-        textColumn.setOrientation(LinearLayout.VERTICAL);
-
-        TextView title = new TextView(this);
-        title.setText(choice.title);
-        title.setTextColor(Color.WHITE);
-        title.setTextSize(16);
-        title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
-        title.setSingleLine(false);
-        textColumn.addView(title);
-
-        if (choice.subtitle != null && !choice.subtitle.trim().isEmpty()) {
-            TextView subtitle = new TextView(this);
-            subtitle.setText(choice.subtitle);
-            subtitle.setTextColor(Color.parseColor("#B9C0CC"));
-            subtitle.setTextSize(13);
-            subtitle.setSingleLine(false);
-            textColumn.addView(subtitle);
-        }
-
-        row.addView(textColumn, new LinearLayout.LayoutParams(
-                0,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                1f
-        ));
-
-        return row;
-    }
-
-    private int dp(int value) {
-        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private void updateOverlayText(String text) {
-        if (tvOverlayText != null) {
-            tvOverlayText.setText(text);
+        if (listeningOverlayController != null) {
+            listeningOverlayController.updateText(text);
         }
     }
 
@@ -521,6 +384,60 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void sendPredictionRequest(String text, List<String> alternatives) {
+        if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
+            sendPredictionRequestWithCatalog(text, alternatives);
+            return;
+        }
+
+        pendingPrediction = new PendingPrediction(text, alternatives);
+        if (appCatalogSyncCall != null) {
+            updateOverlayText("Uygulama listesi gonderiliyor...");
+            return;
+        }
+
+        String previousSessionId = AssistantSession.getSessionId();
+        String sessionId = AssistantSession.startNewSession();
+        if (previousSessionId != null) {
+            AppCatalogSyncer.closeSession(apiService, previousSessionId);
+        }
+
+        updateOverlayText("Uygulama listesi gonderiliyor...");
+        appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(
+                this,
+                apiService,
+                sessionId,
+                selectedLanguage,
+                (success, message) -> mainHandler.post(() -> onAppCatalogSynced(sessionId, success, message))
+        );
+
+        if (appCatalogSyncCall == null) {
+            pendingPrediction = null;
+            closeCurrentBackendSession();
+            showRequestError("App catalog sync is unavailable");
+        }
+    }
+
+    private void onAppCatalogSynced(String sessionId, boolean success, String message) {
+        if (!sessionId.equals(AssistantSession.getSessionId())) {
+            return;
+        }
+
+        appCatalogSyncCall = null;
+        PendingPrediction prediction = pendingPrediction;
+        pendingPrediction = null;
+
+        if (!success) {
+            closeCurrentBackendSession();
+            showRequestError(message);
+            return;
+        }
+
+        if (prediction != null) {
+            sendPredictionRequestWithCatalog(prediction.text, prediction.alternatives);
+        }
+    }
+
+    private void sendPredictionRequestWithCatalog(String text, List<String> alternatives) {
         PredictRequest request = new PredictRequest(
                 text,
                 selectedLanguage,
@@ -586,6 +503,7 @@ public class MyAccessibilityService extends AccessibilityService {
         isListening = false;
         isSpellAppMode = false;
         clearNumberSelection();
+        cancelAppCatalogSyncIfNeeded();
         closeCurrentBackendSession();
         hideOverlay();
         setRecognizerSoundsMuted(false);
@@ -595,6 +513,14 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean isContinuousListeningActive() {
         return isListening;
+    }
+
+    private void cancelAppCatalogSyncIfNeeded() {
+        if (appCatalogSyncCall != null) {
+            appCatalogSyncCall.cancel();
+            appCatalogSyncCall = null;
+        }
+        pendingPrediction = null;
     }
 
     private void closeCurrentBackendSession() {
@@ -630,7 +556,7 @@ public class MyAccessibilityService extends AccessibilityService {
         numberSelectionChoices.clear();
         numberSelectionChoices.addAll(choices);
         hideOverlay();
-        showSelectionWindow(null);
+        showSelectionWindow();
         restartListeningForNumberSelection();
     }
 
@@ -650,9 +576,9 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void handleNumberSelectionResult(String spokenText) {
-        Integer selectedIndex = parseSelectionNumber(spokenText, numberSelectionChoices.size());
+        Integer selectedIndex = selectionNumberParser.parseSelectionNumber(spokenText, numberSelectionChoices.size());
         if (selectedIndex == null) {
-            if (isCancelSelection(spokenText)) {
+            if (selectionNumberParser.isCancelSelection(spokenText)) {
                 cancelNumberSelection();
                 return;
             }
@@ -683,165 +609,6 @@ public class MyAccessibilityService extends AccessibilityService {
         if (callback != null) {
             callback.onSelected(selectedIndex);
         }
-    }
-
-    private Integer parseSelectionNumber(String spokenText, int maxChoice) {
-        if (spokenText == null) {
-            return null;
-        }
-
-        String normalized = normalizeSelectionText(spokenText);
-        Matcher matcher = Pattern.compile("\\b\\d+\\b").matcher(normalized);
-        if (matcher.find()) {
-            return toSelectionIndex(matcher.group(), maxChoice);
-        }
-
-        for (String token : normalized.split(" ")) {
-            Integer value = selectionWordToNumber(token);
-            if (value != null) {
-                return toSelectionIndex(String.valueOf(value), maxChoice);
-            }
-        }
-
-        return null;
-    }
-
-    private Integer toSelectionIndex(String rawNumber, int maxChoice) {
-        try {
-            int number = Integer.parseInt(rawNumber);
-            if (number < 1 || number > maxChoice) {
-                return null;
-            }
-            return number - 1;
-        } catch (Exception ignored) {
-            return null;
-        }
-    }
-
-    private Integer selectionWordToNumber(String token) {
-        switch (token) {
-            case "bir":
-            case "birinci":
-            case "one":
-            case "first":
-            case "واحد":
-            case "واحده":
-            case "احد":
-            case "احدى":
-            case "اول":
-            case "اولى":
-            case "الاول":
-            case "الاولى":
-            case "wahid":
-            case "vahid":
-                return 1;
-            case "iki":
-            case "ikinci":
-            case "two":
-            case "second":
-            case "اثنين":
-            case "اثنان":
-            case "اتنين":
-            case "ثنين":
-            case "اثنتين":
-            case "اثنتان":
-            case "ثاني":
-            case "الثاني":
-            case "تاني":
-            case "isnan":
-            case "ithnan":
-            case "itnen":
-                return 2;
-            case "uc":
-            case "ucuncu":
-            case "three":
-            case "third":
-            case "ثلاثه":
-            case "ثلاثة":
-            case "ثلاث":
-            case "تلاته":
-            case "تلاتة":
-            case "ثالث":
-            case "الثالث":
-            case "talata":
-            case "thalatha":
-                return 3;
-            case "dort":
-            case "dorduncu":
-            case "four":
-            case "fourth":
-            case "اربعه":
-            case "اربعة":
-            case "اربع":
-            case "رابع":
-            case "الرابع":
-            case "arbaa":
-                return 4;
-            case "bes":
-            case "besinci":
-            case "five":
-            case "fifth":
-            case "خمسه":
-            case "خمسة":
-            case "خمس":
-            case "خامس":
-            case "الخامس":
-            case "khamsa":
-                return 5;
-            default:
-                return null;
-        }
-    }
-
-    private boolean isCancelSelection(String text) {
-        String normalized = normalizeSelectionText(text);
-        return normalized.contains("iptal")
-                || normalized.contains("cancel")
-                || normalized.contains("vazgec")
-                || normalized.contains("vaz gectim")
-                || normalized.contains("geri")
-                || normalized.contains("kapat")
-                || normalized.contains("cik")
-                || normalized.contains("cikis")
-                || normalized.contains("الغاء")
-                || normalized.contains("الغي")
-                || normalized.contains("خروج")
-                || normalized.contains("رجوع")
-                || normalized.contains("اقفل");
-    }
-
-    private String normalizeSelectionText(String text) {
-        return normalizeSelectionDigits(text).trim()
-                .toLowerCase(Locale.US)
-                .replace('\u0640', ' ')
-                .replace('\u0623', '\u0627')
-                .replace('\u0625', '\u0627')
-                .replace('\u0622', '\u0627')
-                .replace('\u00e7', 'c')
-                .replace('\u011f', 'g')
-                .replace('\u0131', 'i')
-                .replace('\u00f6', 'o')
-                .replace('\u015f', 's')
-                .replace('\u00fc', 'u')
-                .replaceAll("[\\u064B-\\u065F\\u0670]", "")
-                .replaceAll("[^\\p{L}0-9\\s]", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
-    }
-
-    private String normalizeSelectionDigits(String text) {
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < text.length(); i++) {
-            char ch = text.charAt(i);
-            if (ch >= '\u0660' && ch <= '\u0669') {
-                builder.append((char) ('0' + (ch - '\u0660')));
-            } else if (ch >= '\u06F0' && ch <= '\u06F9') {
-                builder.append((char) ('0' + (ch - '\u06F0')));
-            } else {
-                builder.append(ch);
-            }
-        }
-        return builder.toString();
     }
 
     private void clearNumberSelection() {
@@ -877,350 +644,62 @@ public class MyAccessibilityService extends AccessibilityService {
         void onCancelled();
     }
 
-    public void performHome() { performGlobalAction(GLOBAL_ACTION_HOME); }
-    public void performBack() { performGlobalAction(GLOBAL_ACTION_BACK); }
-    public void performRecents() { performGlobalAction(GLOBAL_ACTION_RECENTS); }
-    public void performNotifications() { performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS); }
+    private static final class PendingPrediction {
+        private final String text;
+        private final List<String> alternatives;
+
+        private PendingPrediction(String text, List<String> alternatives) {
+            this.text = text;
+            this.alternatives = alternatives == null ? null : new ArrayList<>(alternatives);
+        }
+    }
+    public void performHome() {
+        if (accessibilityActionController != null) {
+            accessibilityActionController.performHome();
+            return;
+        }
+        performGlobalAction(GLOBAL_ACTION_HOME);
+    }
+
+    public void performBack() {
+        if (accessibilityActionController != null) {
+            accessibilityActionController.performBack();
+            return;
+        }
+        performGlobalAction(GLOBAL_ACTION_BACK);
+    }
+
+    public void performRecents() {
+        if (accessibilityActionController != null) {
+            accessibilityActionController.performRecents();
+            return;
+        }
+        performGlobalAction(GLOBAL_ACTION_RECENTS);
+    }
+
+    public void performNotifications() {
+        if (accessibilityActionController != null) {
+            accessibilityActionController.performNotifications();
+            return;
+        }
+        performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
+    }
 
     public void clickNodeByText(String text) {
-        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        if (rootNode == null) return;
-        List<AccessibilityNodeInfo> nodes = rootNode.findAccessibilityNodeInfosByText(text);
-        for (AccessibilityNodeInfo node : nodes) {
-            if (node.isClickable()) {
-                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                return;
-            }
+        if (accessibilityActionController != null) {
+            accessibilityActionController.clickNodeByText(text);
         }
     }
 
     public boolean capturePhoto() {
-        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        if (isCameraWindow(rootNode)) {
-            if (clickCameraShutter(rootNode)) {
-                return true;
-            }
-            schedulePhotoCaptureAttempt(1, PHOTO_CAPTURE_ACTIVE_CAMERA_DELAY_MS);
-            return true;
-        }
-
-        try {
-            Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            startActivity(intent);
-            schedulePhotoCaptureAttempt(1, PHOTO_CAPTURE_START_DELAY_MS);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    private boolean isCameraWindow(AccessibilityNodeInfo rootNode) {
-        return rootNode != null
-                && (isCameraPackage(rootNode.getPackageName()) || hasLikelyCameraShutter(rootNode));
-    }
-
-    private boolean isCameraPackage(CharSequence packageName) {
-        if (packageName == null) {
-            return false;
-        }
-
-        String normalizedPackageName = normalizeKeywordText(packageName.toString());
-        return normalizedPackageName.contains("camera")
-                || normalizedPackageName.contains("kamera")
-                || normalizedPackageName.contains("googlecamera")
-                || normalizedPackageName.contains("snapcam");
-    }
-
-    private boolean hasLikelyCameraShutter(AccessibilityNodeInfo node) {
-        if (node == null) {
-            return false;
-        }
-
-        if (containsLikelyShutterKeyword(node.getViewIdResourceName())
-                || containsLikelyShutterKeyword(node.getContentDescription())) {
-            return true;
-        }
-
-        for (int i = 0; i < node.getChildCount(); i++) {
-            if (hasLikelyCameraShutter(node.getChild(i))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private void schedulePhotoCaptureAttempt(int attempt, long delayMillis) {
-        mainHandler.postDelayed(() -> tryCapturePhoto(attempt), delayMillis);
-    }
-
-    private void tryCapturePhoto(int attempt) {
-        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        if (rootNode != null && clickCameraShutter(rootNode)) {
-            return;
-        }
-
-        if (attempt < MAX_PHOTO_CAPTURE_ATTEMPTS) {
-            schedulePhotoCaptureAttempt(attempt + 1, PHOTO_CAPTURE_RETRY_DELAY_MS);
-            return;
-        }
-
-        tapByRatio(0.50f, 0.90f);
-    }
-
-    private boolean clickCameraShutter(AccessibilityNodeInfo node) {
-        if (node == null) {
-            return false;
-        }
-
-        if (isCameraShutterNode(node)) {
-            AccessibilityNodeInfo clickableNode = findClickableNode(node);
-            if (clickableNode != null && clickableNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-                return true;
-            }
-
-            if (tapNodeCenter(node)) {
-                return true;
-            }
-        }
-
-        for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo child = node.getChild(i);
-            if (child != null && clickCameraShutter(child)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private boolean isCameraShutterNode(AccessibilityNodeInfo node) {
-        return containsCameraKeyword(node.getViewIdResourceName())
-                || containsCameraKeyword(node.getText())
-                || containsCameraKeyword(node.getContentDescription());
-    }
-
-    private boolean containsCameraKeyword(CharSequence value) {
-        if (value == null) {
-            return false;
-        }
-
-        String normalizedValue = normalizeKeywordText(value.toString());
-        return normalizedValue.contains("shutter")
-                || normalizedValue.contains("capture")
-                || normalizedValue.contains("snap")
-                || normalizedValue.contains("take picture")
-                || normalizedValue.contains("take photo")
-                || normalizedValue.contains("camera_button")
-                || normalizedValue.contains("shutter_button")
-                || normalizedValue.contains("capture_button")
-                || normalizedValue.contains("button_capture")
-                || normalizedValue.contains("normal_center_button")
-                || normalizedValue.contains("deklansor")
-                || normalizedValue.contains("foto")
-                || normalizedValue.contains("cek");
-    }
-
-    private boolean containsLikelyShutterKeyword(CharSequence value) {
-        if (value == null) {
-            return false;
-        }
-
-        String normalizedValue = normalizeKeywordText(value.toString());
-        return normalizedValue.contains("shutter")
-                || normalizedValue.contains("capture")
-                || normalizedValue.contains("camera_button")
-                || normalizedValue.contains("shutter_button")
-                || normalizedValue.contains("capture_button")
-                || normalizedValue.contains("button_capture")
-                || normalizedValue.contains("normal_center_button")
-                || normalizedValue.contains("deklansor");
-    }
-
-    private String normalizeKeywordText(String value) {
-        return value.trim()
-                .toLowerCase(Locale.US)
-                .replace('\u00e7', 'c')
-                .replace('\u011f', 'g')
-                .replace('\u0131', 'i')
-                .replace('\u00f6', 'o')
-                .replace('\u015f', 's')
-                .replace('\u00fc', 'u');
-    }
-
-    private AccessibilityNodeInfo findClickableNode(AccessibilityNodeInfo node) {
-        AccessibilityNodeInfo current = node;
-        while (current != null) {
-            if (current.isClickable()) {
-                return current;
-            }
-            current = current.getParent();
-        }
-        return null;
-    }
-
-    private boolean tapNodeCenter(AccessibilityNodeInfo node) {
-        Rect bounds = new Rect();
-        node.getBoundsInScreen(bounds);
-        if (bounds.isEmpty()) {
-            return false;
-        }
-
-        return tap(bounds.centerX(), bounds.centerY());
+        return cameraCaptureController != null && cameraCaptureController.capturePhoto();
     }
 
     public boolean scroll(String direction) {
-        String normalizedDirection = normalizeDirection(direction);
-        if ("down".equals(normalizedDirection)) {
-            return scrollDown();
-        }
-        if ("up".equals(normalizedDirection)) {
-            return scrollUp();
-        }
-        return false;
-    }
-
-    private boolean scrollDown() {
-        if (scrollByRatio(0.52f, 0.82f, 0.52f, 0.16f)) {
-            return true;
-        }
-        return performScrollActionOnNodeTree(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD);
-    }
-
-    private boolean scrollUp() {
-        if (scrollByRatio(0.52f, 0.16f, 0.52f, 0.82f)) {
-            return true;
-        }
-        return performScrollActionOnNodeTree(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
-    }
-
-    private boolean performScrollActionOnNodeTree(int action) {
-        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-        return performScrollAction(rootNode, action);
-    }
-
-    private boolean performScrollAction(AccessibilityNodeInfo node, int action) {
-        if (node == null) {
-            return false;
-        }
-
-        if ((node.isScrollable() || supportsAction(node, action)) && node.performAction(action)) {
-            return true;
-        }
-
-        for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo child = node.getChild(i);
-            if (performScrollAction(child, action)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean supportsAction(AccessibilityNodeInfo node, int actionId) {
-        List<AccessibilityNodeInfo.AccessibilityAction> actions = node.getActionList();
-        if (actions == null) {
-            return false;
-        }
-
-        for (AccessibilityNodeInfo.AccessibilityAction action : actions) {
-            if (action != null && action.getId() == actionId) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean scrollByRatio(
-            float startXRatio,
-            float startYRatio,
-            float endXRatio,
-            float endYRatio
-    ) {
-        return swipeByRatio(
-                startXRatio,
-                startYRatio,
-                endXRatio,
-                endYRatio,
-                DEFAULT_SCROLL_DURATION_MS
-        );
+        return gestureController != null && gestureController.scroll(direction);
     }
 
     public boolean swipe(String direction) {
-        switch (normalizeDirection(direction)) {
-            case "left":
-                return swipeByRatio(0.85f, 0.5f, 0.15f, 0.5f, DEFAULT_GESTURE_DURATION_MS);
-            case "right":
-                return swipeByRatio(0.15f, 0.5f, 0.85f, 0.5f, DEFAULT_GESTURE_DURATION_MS);
-            default:
-                return false;
-        }
-    }
-
-    private String normalizeDirection(String direction) {
-        if (direction == null) {
-            return "";
-        }
-        return direction.trim().toLowerCase(Locale.US);
-    }
-
-    private boolean swipeByRatio(
-            float startXRatio,
-            float startYRatio,
-            float endXRatio,
-            float endYRatio,
-            long durationMillis
-    ) {
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        int width = displayMetrics.widthPixels;
-        int height = displayMetrics.heightPixels;
-
-        if (width <= 0 || height <= 0) {
-            return false;
-        }
-
-        int startX = clamp(Math.round(width * startXRatio), 1, width - 1);
-        int startY = clamp(Math.round(height * startYRatio), 1, height - 1);
-        int endX = clamp(Math.round(width * endXRatio), 1, width - 1);
-        int endY = clamp(Math.round(height * endYRatio), 1, height - 1);
-
-        return swipe(startX, startY, endX, endY, durationMillis);
-    }
-
-    private boolean tapByRatio(float xRatio, float yRatio) {
-        DisplayMetrics displayMetrics = getResources().getDisplayMetrics();
-        int width = displayMetrics.widthPixels;
-        int height = displayMetrics.heightPixels;
-
-        if (width <= 0 || height <= 0) {
-            return false;
-        }
-
-        int x = clamp(Math.round(width * xRatio), 1, width - 1);
-        int y = clamp(Math.round(height * yRatio), 1, height - 1);
-        return tap(x, y);
-    }
-
-    private int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(max, value));
-    }
-
-    private boolean tap(int x, int y) {
-        Path tapPath = new Path();
-        tapPath.moveTo(x, y);
-        GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
-        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(tapPath, 0, 60L));
-        return dispatchGesture(gestureBuilder.build(), null, null);
-    }
-
-    private boolean swipe(int startX, int startY, int endX, int endY, long durationMillis) {
-        Path swipePath = new Path();
-        swipePath.moveTo(startX, startY);
-        swipePath.lineTo(endX, endY);
-        GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
-        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(swipePath, 0, durationMillis));
-        boolean dispatched = dispatchGesture(gestureBuilder.build(), null, null);
-        return dispatched;
+        return gestureController != null && gestureController.swipe(direction);
     }
 }

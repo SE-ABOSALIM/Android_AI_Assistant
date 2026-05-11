@@ -58,7 +58,7 @@ public final class AppCatalogSyncer {
                 }
 
                 if (response.isSuccessful() && response.body() != null && response.body().isAccepted()) {
-                    AssistantSession.setCatalogVersion(response.body().getCatalogVersion());
+                    AssistantSession.setCatalogVersion(response.body().getCatalogVersion(), language);
                     notifyCallback(callback, true, "App catalog synced");
                     return;
                 }

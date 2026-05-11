@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.example.anroidaiassistant.apps.AppOpenController;
+
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -48,5 +50,34 @@ public class CommandDispatcherTest {
                 Collections.emptyMap(),
                 new CommandExecutionContext(null, null)
         ));
+    }
+    @Test
+    public void defaultRegistryDispatchesContactIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "CALL_CONTACT",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Who should I call?"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesScrollIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "SCROLL_SCREEN",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Which direction?"), messages);
     }
 }

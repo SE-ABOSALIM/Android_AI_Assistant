@@ -155,6 +155,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service != null) {
+            service.updateLanguage(selectedLanguage);
+        }
         refreshListeningUiState();
     }
 
@@ -170,11 +174,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkOverlayPermission() {
         if (!Settings.canDrawOverlays(this)) {
-            // Intent intent = new Intent(
-            //         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            //         Uri.parse("package:" + getPackageName())
-            // );
-            // startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
+            Toast.makeText(this, "Ekran ustu izin gerekli", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:" + getPackageName())
+            );
+            startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
         }
     }
 
@@ -203,6 +208,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void toggleListening() {
         if (isCatalogSyncInProgress) {
+            Toast.makeText(this, "Uygulama listesi gonderiliyor...", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -232,12 +238,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!isServiceListening) {
-            String sessionId = AssistantSession.startNewSession();
-            syncAppCatalogForSession(sessionId, () -> {
-                service.startContinuousListening();
-                isServiceListening = true;
-                refreshListeningUiState();
-            });
+            service.updateLanguage(selectedLanguage);
+            service.startContinuousListening();
+            isServiceListening = true;
+            refreshListeningUiState();
         } else {
             service.stopContinuousListening();
             isServiceListening = false;
@@ -270,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void ensureAppCatalogThen(Runnable onCatalogReady) {
-        if (AssistantSession.getSessionId() != null && AssistantSession.getCatalogVersion() != null) {
+        if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
             onCatalogReady.run();
             return;
         }

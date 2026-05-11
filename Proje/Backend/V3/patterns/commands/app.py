@@ -8,5 +8,5 @@ OPEN_APP_PATTERNS = [
 ]
 
 REJECT_APP_NAMES = {"app", "application", "uygulama"}
-ARABIC_OPEN_PATTERN = r"^Ø§ÙØªØ­\s+(.+)$"
+ARABIC_OPEN_PATTERN = r"^(?:\u0627\u0641\u062a\u062d|\u0627\u0641\u062a\u062d\u064a)\s+(.+)$"
 APP_SUFFIX_SEPARATORS = ("'", "â€™", "â€˜", "`", "Â´")
