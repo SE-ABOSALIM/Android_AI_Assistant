@@ -1,11 +1,16 @@
-CALL_CONTACT_PATTERNS = [
-    r"^call\s+(.+)$",
-    r"^phone\s+(.+)$",
-    r"^ring\s+(.+)$",
-    r"^(.+)\s+call$",
-    r"^(.+)\s+ara$",
-]
-
-ARABIC_CALL_PATTERNS = [
-    r"^\u0627\u062a\u0635\u0644\s+\u0628?(.+)$",
-]
+CALL_CONTACT_PATTERNS = {
+    "EN": [
+        r"^call\s+(.+)$",
+        r"^phone\s+(.+)$",
+        r"^ring\s+(.+)$",
+        r"^(.+)\s+call$",
+    ],
+    "TR": [
+        r"^(.+)\s+ara$",
+        r"^(.+)\s+telefon et$",
+    ],
+    "AR": [
+        r"^(?:اتصل|إتصل|اتصلي)\s+ب?(.+)$",
+        r"^كلم\s+(.+)$",
+    ],
+}

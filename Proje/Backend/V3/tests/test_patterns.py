@@ -7,7 +7,8 @@ from V3.patterns.commands.navigation import GO_BACK_PATTERNS as NAVIGATION_GO_BA
 class PatternFacadeTests(unittest.TestCase):
     def test_command_patterns_facade_exports_split_patterns(self):
         self.assertIs(GO_BACK_PATTERNS, NAVIGATION_GO_BACK_PATTERNS)
-        self.assertIn("geri git", GO_BACK_PATTERNS)
+        self.assertIn("geri git", GO_BACK_PATTERNS["TR"])
+        self.assertIn("ارجع", GO_BACK_PATTERNS["AR"])
 
 
 if __name__ == "__main__":

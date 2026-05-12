@@ -1,24 +1,19 @@
 import re
 from typing import Optional
 
-from V3.patterns.commands.contact import ARABIC_CALL_PATTERNS, CALL_CONTACT_PATTERNS
+from V3.patterns.commands.contact import CALL_CONTACT_PATTERNS
 from V3.services.extraction.common import clean_app_name
+from V3.services.language_patterns import language_key, patterns_for_language
 from V3.services.text_utils import normalize_text, normalized_lower
 
 
 def extract_contact_name(text: str, language: str) -> Optional[str]:
     original = normalize_text(text)
     normalized = normalized_lower(original)
+    match_text = original if language_key(language) == "AR" else normalized
 
-    for pattern in CALL_CONTACT_PATTERNS:
-        match = re.match(pattern, normalized, flags=re.IGNORECASE)
-        if match:
-            contact_name = _clean_contact_name(match.group(1))
-            if contact_name:
-                return contact_name
-
-    for pattern in ARABIC_CALL_PATTERNS:
-        match = re.match(pattern, original, flags=re.IGNORECASE)
+    for pattern in patterns_for_language(CALL_CONTACT_PATTERNS, language):
+        match = re.match(pattern, match_text, flags=re.IGNORECASE)
         if match:
             contact_name = _clean_contact_name(match.group(1))
             if contact_name:

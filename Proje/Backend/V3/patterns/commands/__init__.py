@@ -1,14 +1,38 @@
-from V3.patterns.commands.app import APP_SUFFIX_SEPARATORS, ARABIC_OPEN_PATTERN, OPEN_APP_PATTERNS, REJECT_APP_NAMES
-from V3.patterns.commands.arabic import ARABIC_PATTERNS
-from V3.patterns.commands.contact import ARABIC_CALL_PATTERNS, CALL_CONTACT_PATTERNS
 from V3.patterns.commands.display import BRIGHTNESS_PATTERNS
+from V3.patterns.commands.contact import CALL_CONTACT_PATTERNS
+from V3.patterns.commands.system_settings import (
+    SOUND_MODE_PATTERNS,
+    STATE_INTENT_PATTERNS
+)
+from V3.patterns.commands.timer import (
+    TIMER_ACTION_PATTERNS,
+    TIMER_KEYWORDS
+)
+from V3.patterns.commands.volume import (
+    VOLUME_LEVEL_PATTERNS,
+    VOLUME_PATTERNS
+)
+from V3.patterns.commands.guards import (
+    AMBIGUOUS_PATTERNS,
+    DEFERRED_PATTERNS,
+    NEGATION_PATTERNS
+)
+from V3.patterns.commands.text_controls import (
+    CLEAR_TEXT_PATTERNS,
+    DOUBLE_TAP_PATTERNS,
+    HOLD_SCREEN_PATTERNS
+)
 from V3.patterns.commands.gestures import (
     SCROLL_DOWN_PATTERNS,
     SCROLL_UP_PATTERNS,
     SWIPE_LEFT_PATTERNS,
     SWIPE_RIGHT_PATTERNS,
 )
-from V3.patterns.commands.guards import AMBIGUOUS_PATTERNS, DEFERRED_PATTERNS, NEGATION_PATTERNS
+from V3.patterns.commands.app import (
+    APP_SUFFIX_SEPARATORS,
+    OPEN_APP_PATTERNS,
+    REJECT_APP_NAMES
+)
 from V3.patterns.commands.navigation import (
     CLOSE_APP_PATTERNS,
     GO_BACK_PATTERNS,
@@ -19,17 +43,10 @@ from V3.patterns.commands.navigation import (
     TAKE_PHOTO_PATTERNS,
     TAKE_SCREENSHOT_PATTERNS,
 )
-from V3.patterns.commands.system_settings import SOUND_MODE_PATTERNS, STATE_INTENT_PATTERNS
-from V3.patterns.commands.text_controls import CLEAR_TEXT_PATTERNS, DOUBLE_TAP_PATTERNS, HOLD_SCREEN_PATTERNS
-from V3.patterns.commands.timer import TIMER_ACTION_PATTERNS, TIMER_KEYWORDS
-from V3.patterns.commands.volume import VOLUME_LEVEL_PATTERNS, VOLUME_PATTERNS
 
 __all__ = [
     "AMBIGUOUS_PATTERNS",
     "APP_SUFFIX_SEPARATORS",
-    "ARABIC_CALL_PATTERNS",
-    "ARABIC_OPEN_PATTERN",
-    "ARABIC_PATTERNS",
     "BRIGHTNESS_PATTERNS",
     "CALL_CONTACT_PATTERNS",
     "CLEAR_TEXT_PATTERNS",

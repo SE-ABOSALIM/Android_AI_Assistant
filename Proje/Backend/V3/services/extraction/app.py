@@ -1,27 +1,23 @@
 import re
 from typing import Optional
 
-from V3.patterns.commands.app import ARABIC_OPEN_PATTERN, OPEN_APP_PATTERNS, REJECT_APP_NAMES
+from V3.patterns.commands.app import OPEN_APP_PATTERNS, REJECT_APP_NAMES
 from V3.services.extraction.common import clean_app_name, extract_first_match
+from V3.services.language_patterns import language_key, patterns_for_language
 from V3.services.text_utils import normalize_text, normalized_lower
 
 
 def extract_app_name(text: str, language: str) -> Optional[str]:
     original = normalize_text(text)
     normalized = normalized_lower(original)
+    match_text = original if language_key(language) == "AR" else normalized
 
-    for pattern in OPEN_APP_PATTERNS:
-        match = re.match(pattern, normalized, flags=re.IGNORECASE)
+    for pattern in patterns_for_language(OPEN_APP_PATTERNS, language):
+        match = re.match(pattern, match_text, flags=re.IGNORECASE)
         if match:
             app_name = clean_app_name(match.group(1))
-            if app_name and app_name not in REJECT_APP_NAMES:
+            if app_name and normalized_lower(app_name) not in REJECT_APP_NAMES:
                 return app_name
-
-    arabic_match = re.match(ARABIC_OPEN_PATTERN, original, flags=re.IGNORECASE)
-    if arabic_match:
-        app_name = clean_app_name(arabic_match.group(1))
-        if app_name:
-            return app_name
 
     return None
 
@@ -58,6 +54,6 @@ def _valid_app_name(app_name: Optional[str]) -> Optional[str]:
         return None
 
     app_name = clean_app_name(app_name)
-    if app_name and app_name not in REJECT_APP_NAMES:
+    if app_name and normalized_lower(app_name) not in REJECT_APP_NAMES:
         return app_name
     return None

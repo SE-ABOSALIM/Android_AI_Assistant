@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 from V3.patterns.commands.system_settings import SOUND_MODE_PATTERNS, STATE_INTENT_PATTERNS
 from V3.services.rules.context import RuleContext
-from V3.services.rules.matching import matches_any
+from V3.services.rules.matching import matches_language_any
 from V3.services.rules.result import command, unknown
 
 
@@ -24,7 +24,7 @@ def _state_command(context: RuleContext) -> Optional[Dict[str, Any]]:
     matches = []
     for intent, state_patterns in STATE_INTENT_PATTERNS.items():
         for state, patterns in state_patterns.items():
-            if matches_any(context.normalized, patterns):
+            if matches_language_any(context.original, context.language, patterns):
                 matches.append((intent, state))
 
     if len(matches) > 1:
@@ -41,7 +41,7 @@ def _matched_sound_mode(context: RuleContext) -> Optional[str]:
     matched_modes = {
         mode
         for mode, patterns in SOUND_MODE_PATTERNS.items()
-        if matches_any(context.normalized, patterns)
+        if matches_language_any(context.original, context.language, patterns)
     }
 
     if len(matched_modes) > 1:

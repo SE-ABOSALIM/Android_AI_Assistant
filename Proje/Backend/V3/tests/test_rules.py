@@ -123,6 +123,79 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "OPEN_NOTIFICATIONS")
         self.assertEqual(result["rule_matched"], "open_notifications")
 
+    def test_arabic_scroll_rule(self):
+        result = rule_based_command("مرر للأسفل", "AR")
+
+        self.assertEqual(result["intent"], "SCROLL_SCREEN")
+        self.assertEqual(result["parameters"], {"direction": "down"})
+        self.assertEqual(result["rule_matched"], "scroll_down")
+
+    def test_arabic_navigation_rule(self):
+        result = rule_based_command("ارجع", "AR")
+
+        self.assertEqual(result["intent"], "GO_BACK")
+        self.assertEqual(result["rule_matched"], "go_back")
+
+    def test_arabic_brightness_rule(self):
+        result = rule_based_command("ارفع السطوع", "AR")
+
+        self.assertEqual(result["intent"], "ADJUST_BRIGHTNESS")
+        self.assertEqual(result["parameters"], {"brightness": "increase"})
+        self.assertEqual(result["rule_matched"], "brightness_increase")
+
+    def test_arabic_system_state_rule(self):
+        result = rule_based_command("شغل الواي فاي", "AR")
+
+        self.assertEqual(result["intent"], "SET_WIFI")
+        self.assertEqual(result["parameters"], {"state": "on"})
+        self.assertEqual(result["rule_matched"], "set_wifi_on")
+
+    def test_arabic_open_notifications_rule(self):
+        result = rule_based_command("افتح الإشعارات", "AR")
+
+        self.assertEqual(result["intent"], "OPEN_NOTIFICATIONS")
+        self.assertEqual(result["rule_matched"], "open_notifications")
+
+    def test_arabic_screenshot_rule(self):
+        result = rule_based_command("خذ لقطة شاشة", "AR")
+
+        self.assertEqual(result["intent"], "TAKE_SCREENSHOT")
+        self.assertEqual(result["rule_matched"], "take_screenshot")
+
+    def test_arabic_text_control_rule(self):
+        result = rule_based_command("امسح النص", "AR")
+
+        self.assertEqual(result["intent"], "CLEAR_TEXT")
+        self.assertEqual(result["rule_matched"], "clear_text")
+
+    def test_arabic_sound_mode_rule(self):
+        result = rule_based_command("فعل الوضع الصامت", "AR")
+
+        self.assertEqual(result["intent"], "SET_SOUND_MODE")
+        self.assertEqual(result["parameters"], {"sound_mode": "silent"})
+        self.assertEqual(result["rule_matched"], "sound_mode_silent")
+
+    def test_arabic_volume_level_rule(self):
+        result = rule_based_command("اجعل الصوت متوسط", "AR")
+
+        self.assertEqual(result["intent"], "ADJUST_VOLUME")
+        self.assertEqual(result["parameters"], {"volume_level": "medium"})
+        self.assertEqual(result["rule_matched"], "volume_level_medium")
+
+    def test_arabic_timer_rule(self):
+        result = rule_based_command("اضبط مؤقت خمس دقائق", "AR")
+
+        self.assertEqual(result["intent"], "SET_TIMER")
+        self.assertEqual(result["parameters"]["duration_seconds"], 300)
+        self.assertEqual(result["rule_matched"], "set_timer")
+
+    def test_arabic_open_app_rule(self):
+        result = rule_based_command("افتح كاب هيروس", "AR")
+
+        self.assertEqual(result["intent"], "OPEN_APP")
+        self.assertEqual(result["parameters"], {"app_name": "كاب هيروس"})
+        self.assertEqual(result["rule_matched"], "open_app")
+
 
 if __name__ == "__main__":
     unittest.main()
