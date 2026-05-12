@@ -31,6 +31,7 @@ from V3.patterns.commands.gestures import (
 from V3.patterns.commands.app import (
     APP_SUFFIX_SEPARATORS,
     OPEN_APP_PATTERNS,
+    OPEN_APP_REJECT_PATTERNS,
     REJECT_APP_NAMES
 )
 from V3.patterns.commands.navigation import (
@@ -58,6 +59,7 @@ __all__ = [
     "HOLD_SCREEN_PATTERNS",
     "NEGATION_PATTERNS",
     "OPEN_APP_PATTERNS",
+    "OPEN_APP_REJECT_PATTERNS",
     "OPEN_NOTIFICATIONS_PATTERNS",
     "REJECT_APP_NAMES",
     "SCROLL_DOWN_PATTERNS",

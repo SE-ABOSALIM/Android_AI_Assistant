@@ -15,12 +15,12 @@ RuleHandler = Callable[[RuleContext], Optional[dict]]
 
 
 RULE_HANDLERS: List[RuleHandler] = [
-    gesture_command,
     display_command,
+    system_settings_command,
     volume_command,
     navigation_command,
-    system_settings_command,
+    gesture_command,
     text_control_command,
-    app_command,
     timer_command,
+    app_command,
 ]

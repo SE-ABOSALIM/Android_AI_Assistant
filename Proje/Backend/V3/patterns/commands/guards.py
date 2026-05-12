@@ -10,7 +10,7 @@ NEGATION_PATTERNS = {
     "TR": [
         r"\byapma\b",
         r"\betme\b",
-        r"\bkaydirma\b",
+        r"\bkaydirma\b(?!\s+(?:yap|uygula|hareket))",
         r"\bacma\b",
         r"\bgitme\b",
         r"\bbaslatma\b",

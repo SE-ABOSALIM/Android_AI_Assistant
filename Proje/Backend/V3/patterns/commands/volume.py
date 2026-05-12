@@ -59,6 +59,8 @@ VOLUME_PATTERNS = {
             "ses seviyesini artir",
             "ses seviyesini yukselt",
             "sesi ac",
+            "sesini ac",
+            "aktif medya sesini ac",
         ],
         "AR": [
             "ارفع الصوت",
@@ -80,8 +82,6 @@ VOLUME_PATTERNS = {
         "TR": [
             "sesi kapat",
             "sesi sustur",
-            "sessize al",
-            "telefonu sessize al",
         ],
         "AR": [
             "اكتم الصوت",
@@ -102,6 +102,9 @@ VOLUME_PATTERNS = {
         "TR": [
             "sessizi kaldir",
             "sesi geri ac",
+            "sesi yeniden ac",
+            "medya sesini geri ac",
+            "ses cikisini geri ac",
             "telefonun sesini geri ac",
         ],
         "AR": [
@@ -109,6 +112,8 @@ VOLUME_PATTERNS = {
             "الغ كتم الصوت",
             "ارجع الصوت",
             "شغل الصوت مرة اخرى",
+            "شغل الصوت من جديد",
+            "افتح صوت الميديا من جديد",
         ],
     },
 }

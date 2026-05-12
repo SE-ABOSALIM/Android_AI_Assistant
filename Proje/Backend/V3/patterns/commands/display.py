@@ -14,6 +14,9 @@ BRIGHTNESS_PATTERNS = {
             "ekran parlakligini artir",
             "ekran parlakligini yukselt",
             "parlakligi ac",
+            "ekran isigini yukselt",
+            "ekran isigini ac",
+            "isigi biraz ac",
         ],
         "AR": [
             "ارفع السطوع",
@@ -38,6 +41,8 @@ BRIGHTNESS_PATTERNS = {
             "ekran parlakligini azalt",
             "ekran daha los olsun",
             "ekrani karart",
+            "ekran isigini dusur",
+            "ekran isigini kis",
         ],
         "AR": [
             "اخفض السطوع",

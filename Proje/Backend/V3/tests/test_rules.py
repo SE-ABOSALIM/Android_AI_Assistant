@@ -196,6 +196,39 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"app_name": "كاب هيروس"})
         self.assertEqual(result["rule_matched"], "open_app")
 
+    def test_app_info_rule_wins_before_open_app(self):
+        result = rule_based_command("open app info for chrome", "EN")
+
+        self.assertEqual(result["intent"], "OPEN_APP_INFO")
+        self.assertEqual(result["parameters"], {"app_name": "chrome"})
+        self.assertEqual(result["rule_matched"], "open_app_info")
+
+    def test_timer_rule_wins_before_start_app_rule(self):
+        result = rule_based_command("start timing 10 minutes", "EN")
+
+        self.assertEqual(result["intent"], "SET_TIMER")
+        self.assertEqual(result["parameters"]["duration_seconds"], 600)
+        self.assertEqual(result["rule_matched"], "set_timer")
+
+    def test_timer_digit_duration_does_not_count_article_twice(self):
+        result = rule_based_command("start a 5 minute countdown", "EN")
+
+        self.assertEqual(result["intent"], "SET_TIMER")
+        self.assertEqual(result["parameters"]["duration_seconds"], 300)
+        self.assertEqual(result["rule_matched"], "set_timer")
+
+    def test_system_command_wins_before_open_app_rule(self):
+        result = rule_based_command("mobil veriyi aç", "TR")
+
+        self.assertEqual(result["intent"], "SET_MOBILE_DATA")
+        self.assertEqual(result["parameters"], {"state": "on"})
+        self.assertEqual(result["rule_matched"], "set_mobile_data_on")
+
+    def test_open_app_rejects_text_delete_commands(self):
+        result = rule_based_command("delete what i wrote", "EN")
+
+        self.assertIsNone(result)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -61,7 +61,7 @@ def _extract_word_duration_components(text: str, include_implicit: bool) -> List
             continue
 
         added_component = False
-        value = _number_before_unit(tokens, previous_unit_index + 1, i)
+        value = _number_before_unit(tokens, previous_unit_index + 1, i, allow_article_number=include_implicit)
         if value is not None:
             component = _build_component(value, unit)
             if component:
@@ -90,9 +90,14 @@ def _extract_word_duration_components(text: str, include_implicit: bool) -> List
     return components
 
 
-def _number_before_unit(tokens: List[str], start_index: int, unit_index: int) -> Optional[float]:
+def _number_before_unit(
+    tokens: List[str],
+    start_index: int,
+    unit_index: int,
+    allow_article_number: bool = True,
+) -> Optional[float]:
     for start in range(max(start_index, unit_index - 5), unit_index):
-        value = _words_to_number(tokens[start:unit_index])
+        value = _words_to_number(tokens[start:unit_index], allow_article_number=allow_article_number)
         if value is not None:
             return value
 
@@ -186,7 +191,7 @@ def _normalize_number_token(token: str) -> str:
     return token
 
 
-def _words_to_number(tokens: Iterable[str]) -> Optional[float]:
+def _words_to_number(tokens: Iterable[str], allow_article_number: bool = True) -> Optional[float]:
     total = 0.0
     current = 0.0
     seen_number = False
@@ -199,7 +204,7 @@ def _words_to_number(tokens: Iterable[str]) -> Optional[float]:
 
     for token in normalized_tokens:
         if token in {"a", "an"}:
-            if len(meaningful_tokens) == 1:
+            if allow_article_number and len(meaningful_tokens) == 1:
                 current += 1
                 seen_number = True
             continue
