@@ -25,6 +25,10 @@ from V3.app_catalog.text_normalization import (
 )
 
 
+PARTIAL_APP_NAME_SCORE = 0.97
+PARTIAL_APP_NAME_CONTAINS_SCORE = 0.94
+
+
 def resolve_app_match(session_id: Optional[str], candidate: str) -> AppMatchResolution:
     if not _has_text(session_id) or not _has_text(candidate):
         return AppMatchResolution(None, [], [])
@@ -41,11 +45,14 @@ def resolve_app_match(session_id: Optional[str], candidate: str) -> AppMatchReso
     matches: List[AppMatch] = []
     suggested_matches: List[AppMatch] = []
 
+    entries = catalog["apps"]
+    partial_label_matches = _partial_label_matches(entries, candidate_variants)
     candidate_entry_indexes = _candidate_entry_indexes(catalog, candidate_variants)
     if not candidate_entry_indexes:
+        if partial_label_matches:
+            return _resolution_from_partial_matches(partial_label_matches, suggested_matches)
         return AppMatchResolution(None, [], [])
 
-    entries = catalog["apps"]
     for app_index in candidate_entry_indexes:
         app = entries[app_index]
         score = _score_candidate(candidate_variants, app)
@@ -56,6 +63,9 @@ def resolve_app_match(session_id: Optional[str], candidate: str) -> AppMatchReso
             suggested_matches.append(app_match)
 
     suggested_matches = _top_matches(suggested_matches, MAX_SUGGESTED_MATCHES)
+
+    if partial_label_matches:
+        return _resolution_from_partial_matches(partial_label_matches, suggested_matches)
 
     if not matches:
         return AppMatchResolution(None, [], suggested_matches)
@@ -121,6 +131,59 @@ def _generic_label_token_matches(
             return containing_label_matches
 
     return []
+
+def _partial_label_matches(
+    entries: List[AppCatalogEntryRecord],
+    candidate_variants: List[Tuple[str, str]],
+) -> List[AppMatch]:
+    for token in _single_token_candidate_values(candidate_variants):
+        exact_matches: List[AppMatch] = []
+        prefix_matches: List[AppMatch] = []
+        containing_matches: List[AppMatch] = []
+
+        for app in entries:
+            display_alias_compacts = _display_alias_compacts(app)
+            if token in display_alias_compacts:
+                exact_matches.append(AppMatch(app.label, app.package_name, 1.0))
+            elif any(alias_compact.startswith(token) for alias_compact in display_alias_compacts):
+                prefix_matches.append(AppMatch(app.label, app.package_name, PARTIAL_APP_NAME_SCORE))
+            elif any(token in alias_compact for alias_compact in display_alias_compacts):
+                containing_matches.append(AppMatch(app.label, app.package_name, PARTIAL_APP_NAME_CONTAINS_SCORE))
+
+        exact_matches = _top_matches(exact_matches, MAX_AMBIGUOUS_MATCHES)
+        if exact_matches:
+            return exact_matches
+
+        prefix_matches = _top_matches(prefix_matches, MAX_AMBIGUOUS_MATCHES)
+        if prefix_matches:
+            return prefix_matches
+
+        containing_matches = _top_matches(containing_matches, MAX_AMBIGUOUS_MATCHES)
+        if containing_matches:
+            return containing_matches
+
+    return []
+
+def _display_alias_compacts(app: AppCatalogEntryRecord) -> Set[str]:
+    compacts: Set[str] = set()
+
+    for alias in [app.label, *app.aliases]:
+        for raw_alias in [str(alias), _split_compound_words(str(alias))]:
+            normalized = _normalize_words(raw_alias)
+            compact = normalized.replace(" ", "")
+            if compact:
+                compacts.add(compact)
+
+    return compacts
+
+def _resolution_from_partial_matches(
+    matches: List[AppMatch],
+    suggested_matches: List[AppMatch],
+) -> AppMatchResolution:
+    if len(matches) == 1:
+        return AppMatchResolution(matches[0], [], suggested_matches)
+
+    return AppMatchResolution(None, matches[:MAX_AMBIGUOUS_MATCHES], suggested_matches)
 
 def _single_token_candidate_values(candidate_variants: List[Tuple[str, str]]) -> List[str]:
     tokens: List[str] = []
