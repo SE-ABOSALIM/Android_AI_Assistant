@@ -3,7 +3,7 @@ from threading import RLock
 from typing import Any, Dict, List, Optional, Tuple
 
 from V3.config import MAX_LENGTH, MODEL_DIR
-from V3.services.text_utils import normalize_text
+from V3.utils.text import normalize_text
 
 
 _device = None

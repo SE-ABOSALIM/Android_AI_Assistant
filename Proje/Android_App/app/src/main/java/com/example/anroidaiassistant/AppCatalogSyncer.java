@@ -16,9 +16,7 @@ import android.util.Log;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -111,29 +109,11 @@ public final class AppCatalogSyncer {
             if (!hasText(packageName) || !hasText(label)) {
                 continue;
             }
-            apps.add(new AppCatalogEntry(label, packageName, buildAliases(label, packageName)));
+            apps.add(new AppCatalogEntry(label, packageName, Collections.emptyList()));
         }
 
         apps.sort(Comparator.comparing(AppCatalogEntry::getPackageName));
         return apps;
-    }
-
-    private static List<String> buildAliases(String label, String packageName) {
-        Set<String> aliases = new LinkedHashSet<>();
-        addAlias(aliases, label);
-        addAlias(aliases, normalizeAsciiText(label));
-        addAlias(aliases, normalizeAsciiText(label).replace(" ", ""));
-
-        String packageTail = packageName.substring(packageName.lastIndexOf('.') + 1);
-        addAlias(aliases, packageTail);
-        addAlias(aliases, normalizeAsciiText(packageTail));
-        return new ArrayList<>(aliases);
-    }
-
-    private static void addAlias(Set<String> aliases, String alias) {
-        if (hasText(alias)) {
-            aliases.add(alias.trim());
-        }
     }
 
     private static String buildCatalogVersion(List<AppCatalogEntry> apps) {
@@ -143,18 +123,6 @@ public final class AppCatalogSyncer {
         }
         Collections.sort(parts);
         return apps.size() + "-" + Integer.toHexString(parts.toString().hashCode());
-    }
-
-    private static String normalizeText(String text) {
-        return TextNormalizer.normalizeText(text);
-    }
-
-    private static String toAsciiTurkish(String text) {
-        return TextNormalizer.toAsciiTurkish(text);
-    }
-
-    private static String normalizeAsciiText(String text) {
-        return TextNormalizer.normalizeAsciiText(text);
     }
 
     private static void notifyCallback(SyncCallback callback, boolean success, String message) {

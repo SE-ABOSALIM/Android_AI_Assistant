@@ -1,10 +1,10 @@
 import unittest
 
 from V3.services.app_catalog_service import delete_app_catalog, save_app_catalog
-from V3.services.intent_registry import get_intent_contract, missing_required_parameters
+from V3.intents.registry import get_intent_contract, missing_required_parameters
 from V3.services.model_service import label_to_json
 from V3.services.predict_service import predict_command
-from V3.services.validator import validate_and_build_response
+from V3.services.validation_service import validate_and_build_response
 
 
 def _validate(intent, parameters=None, text="test command", confidence=0.99, **kwargs):

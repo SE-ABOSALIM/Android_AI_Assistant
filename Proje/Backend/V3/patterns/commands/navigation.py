@@ -17,7 +17,7 @@ GO_HOME_PATTERNS = {
         "ana sayfaya git",
         "ana sayfayi ac",
         "ev ekranini ac",
-        "masaustune git",
+        "masa ustune git",
     ],
     "AR": [
         "اذهب للشاشة الرئيسية",
