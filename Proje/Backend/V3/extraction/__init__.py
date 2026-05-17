@@ -1,4 +1,4 @@
-from V3.extraction.app import extract_app_name, extract_app_name_for_intent
+from V3.extraction.app import extract_open_app_name, extract_app_name_for_intent
 from V3.extraction.contact import extract_contact_name
 from V3.extraction.text import (
     extract_alarm_text,
@@ -10,7 +10,7 @@ from V3.extraction.timer import extract_timer
 
 __all__ = [
     "extract_alarm_text",
-    "extract_app_name",
+    "extract_open_app_name",
     "extract_app_name_for_intent",
     "extract_click_target",
     "extract_contact_name",

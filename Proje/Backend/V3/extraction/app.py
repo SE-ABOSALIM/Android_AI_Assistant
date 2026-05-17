@@ -24,7 +24,7 @@ from V3.patterns.extraction.app import (
 )
 
 
-def extract_app_name(text: str, language: str) -> Optional[str]:
+def extract_open_app_name(text: str, language: str) -> Optional[str]:
     original = normalize_text(text)
     normalized = normalized_lower(original)
     match_text = original if language_key(language) == "AR" else normalized
@@ -44,7 +44,7 @@ def extract_app_name(text: str, language: str) -> Optional[str]:
 
 def extract_app_name_for_intent(text: str, language: str, intent: str) -> Optional[str]:
     if intent == "OPEN_APP":
-        return extract_app_name(text, language)
+        return extract_open_app_name(text, language)
 
     original = normalize_text(text)
     normalized = normalized_lower(original)
