@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 from V3.patterns.commands.system_settings import SOUND_MODE_PATTERNS, STATE_INTENT_PATTERNS
 from V3.rule_engine.context import RuleContext
-from V3.rule_engine.matching import matches_language_any
+from V3.rule_engine.matching import matched_language_keys, resolve_group_match
 from V3.rule_engine.result import command, unknown
 
 
@@ -23,9 +23,8 @@ def system_settings_command(context: RuleContext) -> Optional[Dict[str, Any]]:
 def _state_command(context: RuleContext) -> Optional[Dict[str, Any]]:
     matches = []
     for intent, state_patterns in STATE_INTENT_PATTERNS.items():
-        for state, patterns in state_patterns.items():
-            if matches_language_any(context.original, context.language, patterns):
-                matches.append((intent, state))
+        for state in matched_language_keys(context.original, context.language, state_patterns):
+            matches.append((intent, state))
 
     if len(matches) > 1:
         return unknown("ambiguous_system_setting")
@@ -38,13 +37,8 @@ def _state_command(context: RuleContext) -> Optional[Dict[str, Any]]:
 
 
 def _matched_sound_mode(context: RuleContext) -> Optional[str]:
-    matched_modes = {
-        mode
-        for mode, patterns in SOUND_MODE_PATTERNS.items()
-        if matches_language_any(context.original, context.language, patterns)
-    }
-
-    if len(matched_modes) > 1:
+    sound_mode_match = resolve_group_match(context.original, context.language, SOUND_MODE_PATTERNS)
+    if sound_mode_match.ambiguous:
         return "ambiguous"
 
-    return next(iter(matched_modes), None)
+    return sound_mode_match.matched_key

@@ -123,6 +123,30 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "OPEN_NOTIFICATIONS")
         self.assertEqual(result["rule_matched"], "open_notifications")
 
+    def test_screenshot_rule_wins_before_open_app_rule(self):
+        result = rule_based_command("take screenshot", "EN")
+
+        self.assertEqual(result["intent"], "TAKE_SCREENSHOT")
+        self.assertEqual(result["rule_matched"], "take_screenshot")
+
+    def test_show_recents_rule_wins_before_open_app_rule(self):
+        result = rule_based_command("open recent apps", "EN")
+
+        self.assertEqual(result["intent"], "SHOW_RECENTS")
+        self.assertEqual(result["rule_matched"], "show_recents")
+
+    def test_app_switcher_rule_wins_before_open_app_rule(self):
+        result = rule_based_command("open app switcher", "EN")
+
+        self.assertEqual(result["intent"], "SHOW_RECENTS")
+        self.assertEqual(result["rule_matched"], "show_recents")
+
+    def test_stop_listening_rule_is_not_blocked_by_guard(self):
+        result = rule_based_command("stop listening", "EN")
+
+        self.assertEqual(result["intent"], "STOP_LISTENING")
+        self.assertEqual(result["rule_matched"], "stop_listening")
+
     def test_arabic_scroll_rule(self):
         result = rule_based_command("مرر للأسفل", "AR")
 
@@ -209,6 +233,20 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "SET_TIMER")
         self.assertEqual(result["parameters"]["duration_seconds"], 600)
         self.assertEqual(result["rule_matched"], "set_timer")
+
+    def test_timer_rule_wins_before_open_app_for_timer_text(self):
+        result = rule_based_command("set timer for 10 minutes", "EN")
+
+        self.assertEqual(result["intent"], "SET_TIMER")
+        self.assertEqual(result["parameters"]["duration_seconds"], 600)
+        self.assertEqual(result["rule_matched"], "set_timer")
+
+    def test_volume_level_wins_before_volume_action(self):
+        result = rule_based_command("set volume high", "EN")
+
+        self.assertEqual(result["intent"], "ADJUST_VOLUME")
+        self.assertEqual(result["parameters"], {"volume_level": "max"})
+        self.assertEqual(result["rule_matched"], "volume_level_max")
 
     def test_timer_digit_duration_does_not_count_article_twice(self):
         result = rule_based_command("start a 5 minute countdown", "EN")

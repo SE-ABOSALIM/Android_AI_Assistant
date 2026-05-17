@@ -14,6 +14,9 @@ from V3.rule_engine.volume import volume_command
 RuleHandler = Callable[[RuleContext], Optional[dict]]
 
 
+# Handler order is part of rule behavior: specific device/system commands must
+# run before the broad app opener so phrases like "open notifications" are not
+# interpreted as app names.
 RULE_HANDLERS: List[RuleHandler] = [
     display_command,
     system_settings_command,

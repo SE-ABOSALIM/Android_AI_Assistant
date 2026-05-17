@@ -7,21 +7,16 @@ from V3.patterns.commands.gestures import (
     SWIPE_RIGHT_PATTERNS,
 )
 from V3.rule_engine.context import RuleContext
-from V3.rule_engine.matching import matches_language_any
-from V3.rule_engine.result import command
+from V3.rule_engine.pattern_rules import PatternRule, match_first_pattern_rule
+
+
+GESTURE_RULES = [
+    PatternRule("SCROLL_SCREEN", "scroll_down", SCROLL_DOWN_PATTERNS, {"direction": "down"}),
+    PatternRule("SCROLL_SCREEN", "scroll_up", SCROLL_UP_PATTERNS, {"direction": "up"}),
+    PatternRule("SWIPE_GESTURE", "swipe_left", SWIPE_LEFT_PATTERNS, {"direction": "left"}),
+    PatternRule("SWIPE_GESTURE", "swipe_right", SWIPE_RIGHT_PATTERNS, {"direction": "right"}),
+]
 
 
 def gesture_command(context: RuleContext) -> Optional[Dict[str, Any]]:
-    if matches_language_any(context.original, context.language, SCROLL_DOWN_PATTERNS):
-        return command("SCROLL_SCREEN", "scroll_down", {"direction": "down"})
-
-    if matches_language_any(context.original, context.language, SCROLL_UP_PATTERNS):
-        return command("SCROLL_SCREEN", "scroll_up", {"direction": "up"})
-
-    if matches_language_any(context.original, context.language, SWIPE_LEFT_PATTERNS):
-        return command("SWIPE_GESTURE", "swipe_left", {"direction": "left"})
-
-    if matches_language_any(context.original, context.language, SWIPE_RIGHT_PATTERNS):
-        return command("SWIPE_GESTURE", "swipe_right", {"direction": "right"})
-
-    return None
+    return match_first_pattern_rule(context, GESTURE_RULES)

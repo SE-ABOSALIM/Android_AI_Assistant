@@ -11,33 +11,20 @@ from V3.patterns.commands.navigation import (
     TAKE_SCREENSHOT_PATTERNS,
 )
 from V3.rule_engine.context import RuleContext
-from V3.rule_engine.matching import matches_language_any
-from V3.rule_engine.result import command
+from V3.rule_engine.pattern_rules import PatternRule, match_first_pattern_rule
+
+
+NAVIGATION_RULES = [
+    PatternRule("GO_HOME", "go_home", GO_HOME_PATTERNS),
+    PatternRule("GO_BACK", "go_back", GO_BACK_PATTERNS),
+    PatternRule("OPEN_NOTIFICATIONS", "open_notifications", OPEN_NOTIFICATIONS_PATTERNS),
+    PatternRule("SHOW_RECENTS", "show_recents", SHOW_RECENTS_PATTERNS),
+    PatternRule("CLOSE_APP", "close_app", CLOSE_APP_PATTERNS),
+    PatternRule("TAKE_SCREENSHOT", "take_screenshot", TAKE_SCREENSHOT_PATTERNS),
+    PatternRule("TAKE_PHOTO", "take_photo", TAKE_PHOTO_PATTERNS),
+    PatternRule("STOP_LISTENING", "stop_listening", STOP_LISTENING_PATTERNS),
+]
 
 
 def navigation_command(context: RuleContext) -> Optional[Dict[str, Any]]:
-    if matches_language_any(context.original, context.language, GO_HOME_PATTERNS):
-        return command("GO_HOME", "go_home")
-
-    if matches_language_any(context.original, context.language, GO_BACK_PATTERNS):
-        return command("GO_BACK", "go_back")
-
-    if matches_language_any(context.original, context.language, OPEN_NOTIFICATIONS_PATTERNS):
-        return command("OPEN_NOTIFICATIONS", "open_notifications")
-
-    if matches_language_any(context.original, context.language, SHOW_RECENTS_PATTERNS):
-        return command("SHOW_RECENTS", "show_recents")
-
-    if matches_language_any(context.original, context.language, CLOSE_APP_PATTERNS):
-        return command("CLOSE_APP", "close_app")
-
-    if matches_language_any(context.original, context.language, TAKE_SCREENSHOT_PATTERNS):
-        return command("TAKE_SCREENSHOT", "take_screenshot")
-
-    if matches_language_any(context.original, context.language, TAKE_PHOTO_PATTERNS):
-        return command("TAKE_PHOTO", "take_photo")
-
-    if matches_language_any(context.original, context.language, STOP_LISTENING_PATTERNS):
-        return command("STOP_LISTENING", "stop_listening")
-
-    return None
+    return match_first_pattern_rule(context, NAVIGATION_RULES)
