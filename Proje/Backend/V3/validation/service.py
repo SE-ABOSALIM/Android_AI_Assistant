@@ -5,7 +5,6 @@ from V3.intents.registry import get_threshold
 from V3.validation.context import ValidationContext
 from V3.validation.enrichers import INTENT_ENRICHERS
 from V3.validation.response import build_response
-from V3.validation.utils import dedupe_strings
 
 
 def validate_and_build_response(
@@ -95,7 +94,7 @@ def validate_and_build_response(
 
     if context.error_code is None:
         context.missing_slots.extend(missing_required_parameters(contract, context.parameters))
-        context.missing_slots = dedupe_strings(context.missing_slots)
+        context.missing_slots = _dedupe_strings(context.missing_slots)
 
     accepted = context.error_code is None and not context.missing_slots
     error_code = context.error_code
@@ -121,3 +120,12 @@ def validate_and_build_response(
         top_predictions=top_predictions,
         contract=contract,
     )
+
+def _dedupe_strings(values: List[str]) -> List[str]:
+    result = []
+    seen = set()
+    for value in values:
+        if value not in seen:
+            result.append(value)
+            seen.add(value)
+    return result
