@@ -24,27 +24,9 @@ from V3.patterns.extraction.app import (
 )
 
 
-def extract_open_app_name(text: str, language: str) -> Optional[str]:
-    original = normalize_text(text)
-    normalized = normalized_lower(original)
-    match_text = original if language_key(language) == "AR" else normalized
-
-    if _is_rejected_open_app_text(normalized, language):
-        return None
-
-    for pattern in patterns_for_language(OPEN_APP_PATTERNS, language):
-        match = re.match(pattern, match_text, flags=re.IGNORECASE)
-        if match:
-            app_name = clean_app_name(match.group(1))
-            if app_name and not _is_rejected_app_name(app_name, language):
-                return app_name
-
-    return None
-
-
 def extract_app_name_for_intent(text: str, language: str, intent: str) -> Optional[str]:
     if intent == "OPEN_APP":
-        return extract_open_app_name(text, language)
+        return _extract_open_app_name(text, language)
 
     original = normalize_text(text)
     normalized = normalized_lower(original)
@@ -63,6 +45,24 @@ def extract_app_name_for_intent(text: str, language: str, intent: str) -> Option
             patterns_for_language(UNINSTALL_APP_NAME_PATTERNS, language),
         )
         return _valid_app_name(app_name, language)
+
+    return None
+
+
+def _extract_open_app_name(text: str, language: str) -> Optional[str]:
+    original = normalize_text(text)
+    normalized = normalized_lower(original)
+    match_text = original if language_key(language) == "AR" else normalized
+
+    if _is_rejected_open_app_text(normalized, language):
+        return None
+
+    for pattern in patterns_for_language(OPEN_APP_PATTERNS, language):
+        match = re.match(pattern, match_text, flags=re.IGNORECASE)
+        if match:
+            app_name = clean_app_name(match.group(1))
+            if app_name and not _is_rejected_app_name(app_name, language):
+                return app_name
 
     return None
 

@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 from V3.rule_engine.context import RuleContext
 from V3.rule_engine.guards import guard_command
-from V3.rule_engine.registry import RULE_HANDLERS
+from V3.rule_engine.pipline import RULE_HANDLERS
 from V3.utils.text import normalize_text, normalized_lower
 
 

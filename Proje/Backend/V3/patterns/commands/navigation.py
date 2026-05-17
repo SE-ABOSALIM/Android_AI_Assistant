@@ -195,20 +195,14 @@ STOP_LISTENING_PATTERNS = {
         "stop listening",
         "cancel that",
         "stop assistant",
-        "never mind",
-        "do not continue",
     ],
     "TR": [
         "dinlemeyi birak",
-        "beni dinleme",
         "asistani durdur",
-        "devam etme",
     ],
     "AR": [
         "توقف عن الاستماع",
         "اوقف الاستماع",
-        "توقف",
-        "الغ الامر",
         "اوقف المساعد",
     ],
 }
