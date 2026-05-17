@@ -22,7 +22,12 @@ V3/
 |-- rule_engine/
 |-- services/
 |   |-- app_catalog_service.py
-|   |-- model_service.py
+|   |-- model_service/
+|   |   |-- __init__.py
+|   |   |-- inference.py
+|   |   |-- labels.py
+|   |   |-- normalization.py
+|   |   `-- runtime.py
 |   |-- predict_service.py
 |   |-- rule_service.py
 |   `-- validation_service.py

@@ -1,6 +1,6 @@
 # Android AI Assistant Project Context
 
-Last updated: 2026-05-13
+Last updated: 2026-05-17
 
 This file is the persistent project context for future Codex sessions. Read this
 before making backend or Android changes.
@@ -39,13 +39,16 @@ Prediction flow:
 
 2. `rule_engine/`
    - Modular rule-based command handling.
-   - `registry.py` defines handler order.
+   - `pipeline.py` defines handler order.
+   - `matching.py` centralizes phrase, regex, and grouped ambiguity matching.
+   - `pattern_rules.py` is used by simple table-driven rule modules.
    - Used for open-ended or deterministic commands such as `go back`,
      `geri git`, `open WhatsApp`, `parlakligi yukselt`, volume commands, etc.
 
-3. `services/model_service.py`
+3. `services/model_service/`
    - Lazy-loads the local Hugging Face model from `models/result_model/`.
    - Converts labels into `{intent, parameters}`.
+   - Model labels must use `INTENT__none` or `INTENT__parameter=value`.
    - Keeps unsupported model intents as their real intent instead of masking
      them as `UNKNOWN_COMMAND`.
 
@@ -64,6 +67,7 @@ Prediction flow:
 
 6. `extraction/`
    - Parameter extraction modules split by domain.
+   - Timer duration extraction lives under `extraction/timer/`.
    - Keep parameter extraction split by domain.
 
 7. `patterns/commands/`
@@ -102,7 +106,16 @@ Prediction flow:
   - `volume_level = low`
   - `volume_level = medium`
   - `volume_level = max`
-  - legacy `high` or `maximum` may normalize to `max` as fallback.
+- Refactored rule engine matching:
+  - grouped ambiguity matching is centralized in `rule_engine/matching.py`
+  - simple rule modules use table-driven `PatternRule` definitions
+  - handler order is defined in `rule_engine/pipeline.py`
+- Refactored model service into `services/model_service/`:
+  - `runtime.py` handles model/tokenizer/device loading
+  - `inference.py` runs model prediction
+  - `labels.py` decodes model labels
+  - `normalization.py` performs minimal model output normalization
+- Standardized model labels on `INTENT__none` and `INTENT__parameter=value`.
 
 ## New Intent Integration Workflow
 
