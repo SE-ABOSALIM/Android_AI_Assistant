@@ -35,11 +35,14 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(result["intent"], "ADJUST_VOLUME")
         self.assertEqual(result["parameters"], {"volume_level": "max"})
 
-    def test_label_to_json_normalizes_high_volume_level_to_max(self):
-        result = label_to_json("ADJUST_VOLUME__volume_level=high")
+    def test_label_to_json_decodes_key_value_parameters(self):
+        scroll = label_to_json("SCROLL_SCREEN__direction=down")
+        swipe = label_to_json("SWIPE_GESTURE__direction=left")
+        volume = label_to_json("ADJUST_VOLUME__volume_action=increase")
 
-        self.assertEqual(result["intent"], "ADJUST_VOLUME")
-        self.assertEqual(result["parameters"], {"volume_level": "max"})
+        self.assertEqual(scroll["parameters"], {"direction": "down"})
+        self.assertEqual(swipe["parameters"], {"direction": "left"})
+        self.assertEqual(volume["parameters"], {"volume_action": "increase"})
 
     def test_unknown_command_is_distinct_from_unsupported_intent(self):
         unknown = _validate("UNKNOWN_COMMAND")

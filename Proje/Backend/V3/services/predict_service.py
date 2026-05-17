@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from V3.services.model_service import predict_model_debug
+from V3.services.model_service import predict_model
 from V3.rule_engine.service import rule_based_command
 from V3.validation.service import validate_and_build_response
 
@@ -35,7 +35,7 @@ def predict_command(
             catalog_version=catalog_version,
         )
 
-    model_result = predict_model_debug(
+    model_result = predict_model(
         text=text,
         language=language,
     )
