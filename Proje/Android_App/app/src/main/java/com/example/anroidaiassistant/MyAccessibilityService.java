@@ -29,6 +29,7 @@ import android.util.Log;
 import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
+import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +45,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private static MyAccessibilityService instance;
     private static final int RESTART_DELAY_FAST_MS = 200;
     private static final int RESTART_DELAY_SLOW_MS = 800;
+    private static final int CLOSE_APP_SECOND_BACK_DELAY_MS = 500;
     private static final int[] STREAMS_TO_MUTE = {
             AudioManager.STREAM_SYSTEM
     };
@@ -669,6 +671,17 @@ public class MyAccessibilityService extends AccessibilityService {
         performGlobalAction(GLOBAL_ACTION_BACK);
     }
 
+    public void performCloseApp() {
+        String initialPackageName = getActivePackageName();
+        performBack();
+        mainHandler.postDelayed(() -> {
+            String currentPackageName = getActivePackageName();
+            if (initialPackageName == null || initialPackageName.equals(currentPackageName)) {
+                performBack();
+            }
+        }, CLOSE_APP_SECOND_BACK_DELAY_MS);
+    }
+
     public void performRecents() {
         if (accessibilityActionController != null) {
             accessibilityActionController.performRecents();
@@ -701,5 +714,13 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean swipe(String direction) {
         return gestureController != null && gestureController.swipe(direction);
+    }
+
+    private String getActivePackageName() {
+        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+        if (rootNode == null || rootNode.getPackageName() == null) {
+            return null;
+        }
+        return rootNode.getPackageName().toString();
     }
 }

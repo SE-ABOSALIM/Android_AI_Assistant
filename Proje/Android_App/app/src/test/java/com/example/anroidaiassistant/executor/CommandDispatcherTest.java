@@ -80,4 +80,19 @@ public class CommandDispatcherTest {
         assertTrue(dispatched);
         assertEquals(Collections.singletonList("Which direction?"), messages);
     }
+
+    @Test
+    public void defaultRegistryDispatchesCloseAppIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "CLOSE_APP",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Accessibility service is not connected"), messages);
+    }
 }

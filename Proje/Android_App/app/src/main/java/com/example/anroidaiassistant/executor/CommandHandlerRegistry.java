@@ -24,6 +24,7 @@ public final class CommandHandlerRegistry {
                 new SwipeCommandHandler(),
                 new NavigationCommandHandler("GO_HOME", NavigationCommandHandler.Action.HOME),
                 new NavigationCommandHandler("GO_BACK", NavigationCommandHandler.Action.BACK),
+                new NavigationCommandHandler("CLOSE_APP", NavigationCommandHandler.Action.CLOSE_APP),
                 new NavigationCommandHandler("SHOW_RECENTS", NavigationCommandHandler.Action.RECENTS),
                 new NavigationCommandHandler("OPEN_NOTIFICATIONS", NavigationCommandHandler.Action.NOTIFICATIONS),
                 new TimerCommandHandler(),

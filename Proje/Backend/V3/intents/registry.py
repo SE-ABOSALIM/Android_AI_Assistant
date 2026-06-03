@@ -94,7 +94,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "CLOSE_APP": _contract(
         "CLOSE_APP",
-        threshold=0.55
+        threshold=0.55,
+        android_supported=True
     ),
     "DOUBLE_TAP": _contract(
         "DOUBLE_TAP",
@@ -102,7 +103,9 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "GO_BACK": _contract(
         "GO_BACK",
-        threshold=0.60),
+        threshold=0.60,
+        android_supported=True
+    ),
     "GO_HOME": _contract(
         "GO_HOME",
         threshold=0.60,
@@ -136,7 +139,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "OPEN_NOTIFICATIONS": _contract(
         "OPEN_NOTIFICATIONS",
-        threshold=0.55
+        threshold=0.55,
+        android_supported=True
     ),
     "SCROLL_SCREEN": _contract(
         "SCROLL_SCREEN",
@@ -205,7 +209,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SHOW_RECENTS": _contract(
         "SHOW_RECENTS",
-        threshold=0.55
+        threshold=0.55,
+        android_supported=True
     ),
     "STOP_LISTENING": _contract(
         "STOP_LISTENING",

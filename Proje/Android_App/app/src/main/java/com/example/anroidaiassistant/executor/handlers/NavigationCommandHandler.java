@@ -10,6 +10,7 @@ public final class NavigationCommandHandler implements CommandHandler {
     public enum Action {
         HOME,
         BACK,
+        CLOSE_APP,
         RECENTS,
         NOTIFICATIONS
     }
@@ -41,6 +42,9 @@ public final class NavigationCommandHandler implements CommandHandler {
                 break;
             case BACK:
                 service.performBack();
+                break;
+            case CLOSE_APP:
+                service.performCloseApp();
                 break;
             case RECENTS:
                 service.performRecents();

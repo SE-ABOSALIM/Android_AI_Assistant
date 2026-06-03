@@ -79,6 +79,15 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(accepted["accepted"])
         self.assertTrue(accepted["android_supported"])
 
+    def test_navigation_intents_are_android_supported(self):
+        for intent in ("GO_BACK", "CLOSE_APP", "SHOW_RECENTS", "OPEN_NOTIFICATIONS"):
+            with self.subTest(intent=intent):
+                response = _validate(intent)
+
+                self.assertTrue(response["accepted"])
+                self.assertTrue(response["backend_supported"])
+                self.assertTrue(response["android_supported"])
+
     def test_parameter_group_allows_volume_level_and_marks_android_supported(self):
         backend_supported = _validate("ADJUST_VOLUME", {"volume_level": "max"})
         android_supported = _validate("ADJUST_VOLUME", {"volume_action": "increase"})
