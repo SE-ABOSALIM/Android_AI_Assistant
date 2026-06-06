@@ -14,6 +14,7 @@ import com.example.anroidaiassistant.accessibility.AccessibilityActionController
 import com.example.anroidaiassistant.accessibility.CameraCaptureController;
 import com.example.anroidaiassistant.accessibility.GestureController;
 import com.example.anroidaiassistant.accessibility.QuickSettingsTileController;
+import com.example.anroidaiassistant.accessibility.SearchInputController;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
@@ -83,6 +84,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private GestureController gestureController;
     private CameraCaptureController cameraCaptureController;
     private QuickSettingsTileController quickSettingsTileController;
+    private SearchInputController searchInputController;
 
     private WindowManager windowManager;
     private ListeningOverlayController listeningOverlayController;
@@ -106,6 +108,7 @@ public class MyAccessibilityService extends AccessibilityService {
         gestureController = new GestureController(this);
         cameraCaptureController = new CameraCaptureController(this, mainHandler, gestureController);
         quickSettingsTileController = new QuickSettingsTileController(this, mainHandler, gestureController);
+        searchInputController = new SearchInputController(this, mainHandler);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         listeningOverlayController = new ListeningOverlayController(this, windowManager);
         selectionOverlayController = new SelectionOverlayController(this, windowManager, new SelectionOverlayController.Listener() {
@@ -853,12 +856,24 @@ public class MyAccessibilityService extends AccessibilityService {
         return cameraCaptureController != null && cameraCaptureController.capturePhoto();
     }
 
+    public boolean capturePhoto(String camera) {
+        return cameraCaptureController != null && cameraCaptureController.capturePhoto(camera);
+    }
+
     public boolean scroll(String direction) {
         return gestureController != null && gestureController.scroll(direction);
     }
 
     public boolean swipe(String direction) {
         return gestureController != null && gestureController.swipe(direction);
+    }
+
+    public boolean doubleTapCenter() {
+        return gestureController != null && gestureController.doubleTapCenter();
+    }
+
+    public boolean longPressCenter() {
+        return gestureController != null && gestureController.longPressCenter();
     }
 
     public boolean setSoftKeyboardVisible(boolean visible) {
@@ -873,6 +888,18 @@ public class MyAccessibilityService extends AccessibilityService {
     public boolean setQuickSettingState(String intent, String state) {
         return quickSettingsTileController != null
                 && quickSettingsTileController.setTileState(intent, state, this::showFeedback);
+    }
+
+    public boolean performSearchQuery(String query) {
+        return searchInputController != null && searchInputController.performSearch(query);
+    }
+
+    public boolean writeTextToFocusedInput(String text) {
+        return searchInputController != null && searchInputController.writeText(text);
+    }
+
+    public boolean clearFocusedInputText() {
+        return searchInputController != null && searchInputController.clearText();
     }
 
     private String getActivePackageName() {

@@ -13,6 +13,9 @@ import java.util.Locale;
 public final class GestureController {
     private static final long DEFAULT_GESTURE_DURATION_MS = 350L;
     private static final long DEFAULT_SCROLL_DURATION_MS = 650L;
+    private static final long TAP_DURATION_MS = 60L;
+    private static final long DOUBLE_TAP_GAP_MS = 120L;
+    private static final long LONG_PRESS_DURATION_MS = 700L;
 
     private final AccessibilityService service;
 
@@ -54,6 +57,14 @@ public final class GestureController {
         int x = clamp(Math.round(width * xRatio), 1, width - 1);
         int y = clamp(Math.round(height * yRatio), 1, height - 1);
         return tap(x, y);
+    }
+
+    public boolean doubleTapCenter() {
+        return doubleTapByRatio(0.5f, 0.5f);
+    }
+
+    public boolean longPressCenter() {
+        return longPressByRatio(0.5f, 0.5f);
     }
 
     public boolean tapNodeCenter(AccessibilityNodeInfo node) {
@@ -159,7 +170,53 @@ public final class GestureController {
         Path tapPath = new Path();
         tapPath.moveTo(x, y);
         GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
-        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(tapPath, 0, 60L));
+        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(tapPath, 0, TAP_DURATION_MS));
+        return service.dispatchGesture(gestureBuilder.build(), null, null);
+    }
+
+    private boolean doubleTapByRatio(float xRatio, float yRatio) {
+        DisplayMetrics displayMetrics = service.getResources().getDisplayMetrics();
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+
+        if (width <= 0 || height <= 0) {
+            return false;
+        }
+
+        int x = clamp(Math.round(width * xRatio), 1, width - 1);
+        int y = clamp(Math.round(height * yRatio), 1, height - 1);
+
+        Path firstTap = new Path();
+        firstTap.moveTo(x, y);
+        Path secondTap = new Path();
+        secondTap.moveTo(x, y);
+
+        GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
+        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(firstTap, 0, TAP_DURATION_MS));
+        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(
+                secondTap,
+                TAP_DURATION_MS + DOUBLE_TAP_GAP_MS,
+                TAP_DURATION_MS
+        ));
+        return service.dispatchGesture(gestureBuilder.build(), null, null);
+    }
+
+    private boolean longPressByRatio(float xRatio, float yRatio) {
+        DisplayMetrics displayMetrics = service.getResources().getDisplayMetrics();
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+
+        if (width <= 0 || height <= 0) {
+            return false;
+        }
+
+        int x = clamp(Math.round(width * xRatio), 1, width - 1);
+        int y = clamp(Math.round(height * yRatio), 1, height - 1);
+
+        Path pressPath = new Path();
+        pressPath.moveTo(x, y);
+        GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
+        gestureBuilder.addStroke(new GestureDescription.StrokeDescription(pressPath, 0, LONG_PRESS_DURATION_MS));
         return service.dispatchGesture(gestureBuilder.build(), null, null);
     }
 

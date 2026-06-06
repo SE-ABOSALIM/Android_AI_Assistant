@@ -112,6 +112,23 @@ public class CommandDispatcherTest {
     }
 
     @Test
+    public void defaultRegistryDispatchesPhotoIntentWithCameraParameter() {
+        for (String camera : new String[]{"front", "back"}) {
+            List<String> messages = new ArrayList<>();
+            CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+            boolean dispatched = dispatcher.dispatch(
+                    "TAKE_PHOTO",
+                    Collections.singletonMap("camera", camera),
+                    new CommandExecutionContext(null, messages::add)
+            );
+
+            assertTrue(dispatched);
+            assertEquals(Collections.singletonList("Camera unavailable"), messages);
+        }
+    }
+
+    @Test
     public void defaultRegistryDispatchesBrightnessIntent() {
         List<String> messages = new ArrayList<>();
         CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
@@ -228,5 +245,94 @@ public class CommandDispatcherTest {
 
         assertTrue(uninstallDispatched);
         assertEquals(Collections.singletonList("Which app should I uninstall?"), uninstallMessages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesAlarmIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "SET_ALARM",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("What time should I set the alarm for?"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesSearchIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "SEARCH_QUERY",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("What should I search for?"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesCenterGestureIntents() {
+        for (String intent : new String[]{"DOUBLE_TAP", "HOLD_SCREEN"}) {
+            List<String> messages = new ArrayList<>();
+            CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+            boolean dispatched = dispatcher.dispatch(
+                    intent,
+                    Collections.emptyMap(),
+                    new CommandExecutionContext(null, messages::add)
+            );
+
+            assertTrue(dispatched);
+            assertEquals(Collections.singletonList("Accessibility service is not connected"), messages);
+        }
+    }
+
+    @Test
+    public void defaultRegistryDispatchesClearTextIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "CLEAR_TEXT",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Accessibility service is not connected"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesWriteTextIntent() {
+        List<String> missingMessages = new ArrayList<>();
+        CommandDispatcher missingDispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean missingDispatched = missingDispatcher.dispatch(
+                "WRITE_TEXT",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, missingMessages::add)
+        );
+
+        assertTrue(missingDispatched);
+        assertEquals(Collections.singletonList("What should I write?"), missingMessages);
+
+        List<String> serviceMessages = new ArrayList<>();
+        CommandDispatcher serviceDispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean serviceDispatched = serviceDispatcher.dispatch(
+                "WRITE_TEXT",
+                Collections.singletonMap("text", "hello"),
+                new CommandExecutionContext(null, serviceMessages::add)
+        );
+
+        assertTrue(serviceDispatched);
+        assertEquals(Collections.singletonList("Accessibility service is not connected"), serviceMessages);
     }
 }

@@ -1,18 +1,23 @@
 package com.example.anroidaiassistant.executor;
 
 import com.example.anroidaiassistant.apps.AppOpenController;
+import com.example.anroidaiassistant.executor.handlers.AlarmCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.AppCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.BrightnessCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.CameraCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.CenterGestureCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.ClearTextCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ContactCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.NavigationCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.OpenAppCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ScrollCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.SearchCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.StopListeningCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.SystemSettingCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.SwipeCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.TimerCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.VolumeCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.WriteTextCommandHandler;
 
 import java.util.Arrays;
 
@@ -36,6 +41,14 @@ public final class CommandHandlerRegistry {
                 new BrightnessCommandHandler(),
                 new ScrollCommandHandler(),
                 new SwipeCommandHandler(),
+                new CenterGestureCommandHandler(
+                        "DOUBLE_TAP",
+                        CenterGestureCommandHandler.Action.DOUBLE_TAP
+                ),
+                new CenterGestureCommandHandler(
+                        "HOLD_SCREEN",
+                        CenterGestureCommandHandler.Action.LONG_PRESS
+                ),
                 new NavigationCommandHandler("GO_HOME", NavigationCommandHandler.Action.HOME),
                 new NavigationCommandHandler("GO_BACK", NavigationCommandHandler.Action.BACK),
                 new NavigationCommandHandler("CLOSE_APP", NavigationCommandHandler.Action.CLOSE_APP),
@@ -43,8 +56,12 @@ public final class CommandHandlerRegistry {
                 new NavigationCommandHandler("OPEN_NOTIFICATIONS", NavigationCommandHandler.Action.NOTIFICATIONS),
                 new NavigationCommandHandler("TAKE_SCREENSHOT", NavigationCommandHandler.Action.SCREENSHOT),
                 new TimerCommandHandler(),
+                new AlarmCommandHandler(),
                 new CameraCommandHandler(),
                 new ContactCommandHandler(),
+                new SearchCommandHandler(),
+                new WriteTextCommandHandler(),
+                new ClearTextCommandHandler(),
                 new SystemSettingCommandHandler("SET_WIFI"),
                 new SystemSettingCommandHandler("SET_BLUETOOTH"),
                 new SystemSettingCommandHandler("SET_FLASHLIGHT"),
