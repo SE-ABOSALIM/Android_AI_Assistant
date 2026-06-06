@@ -1,6 +1,8 @@
 from typing import Callable, Dict
 
+from V3.extraction.alarm import extract_alarm
 from V3.extraction.contact import extract_contact_name
+from V3.extraction.photo import extract_photo_camera
 from V3.extraction.text import (
     extract_alarm_text,
     extract_click_target,
@@ -58,12 +60,30 @@ def enrich_click_item(context: ValidationContext) -> None:
 
 
 def enrich_alarm(context: ValidationContext) -> None:
-    if context.parameters.get("alarm_text"):
-        return
+    alarm_params = extract_alarm(context.original_text, context.language)
+    for key, value in alarm_params.items():
+        if value is None:
+            continue
+
+        if key in {"alarm_hour", "alarm_minute", "period"} and alarm_params.get("period"):
+            context.parameters[key] = value
+            continue
+
+        if not context.parameters.get(key):
+            context.parameters[key] = value
 
     alarm_text = extract_alarm_text(context.original_text, context.language)
-    if alarm_text:
+    if alarm_text and not context.parameters.get("alarm_text"):
         context.parameters["alarm_text"] = alarm_text
+
+
+def enrich_take_photo(context: ValidationContext) -> None:
+    if context.parameters.get("camera"):
+        return
+
+    camera = extract_photo_camera(context.original_text)
+    if camera:
+        context.parameters["camera"] = camera
 
 
 def _looks_like_stopwatch_command(text: str) -> bool:
@@ -79,6 +99,7 @@ INTENT_ENRICHERS: Dict[str, Callable[[ValidationContext], None]] = {
     "SEARCH_QUERY": enrich_search_query,
     "SET_ALARM": enrich_alarm,
     "SET_TIMER": enrich_timer,
+    "TAKE_PHOTO": enrich_take_photo,
     "UNINSTALL_APP": enrich_app_command,
     "WRITE_TEXT": enrich_write_text,
 }

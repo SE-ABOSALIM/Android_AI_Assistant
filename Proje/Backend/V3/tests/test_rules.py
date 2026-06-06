@@ -89,6 +89,34 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "CLEAR_TEXT")
         self.assertEqual(result["rule_matched"], "clear_text")
 
+    def test_write_text_rule_for_long_turkish_suffix(self):
+        result = rule_based_command("Merhaba Ahmet bugun toplantiyi unutma yaz", "TR")
+
+        self.assertEqual(result["intent"], "WRITE_TEXT")
+        self.assertEqual(result["parameters"], {"text": "Merhaba Ahmet bugun toplantiyi unutma"})
+        self.assertEqual(result["rule_matched"], "write_text")
+
+    def test_write_text_rule_for_turkish_prefix(self):
+        result = rule_based_command("şunu yaz merhaba Ahmet nasılsın", "TR")
+
+        self.assertEqual(result["intent"], "WRITE_TEXT")
+        self.assertEqual(result["parameters"], {"text": "merhaba Ahmet nasılsın"})
+        self.assertEqual(result["rule_matched"], "write_text")
+
+    def test_write_text_rule_for_english_prefix(self):
+        result = rule_based_command("write remember to call Mehmet tomorrow", "EN")
+
+        self.assertEqual(result["intent"], "WRITE_TEXT")
+        self.assertEqual(result["parameters"], {"text": "remember to call Mehmet tomorrow"})
+        self.assertEqual(result["rule_matched"], "write_text")
+
+    def test_write_text_rule_for_arabic_prefix(self):
+        result = rule_based_command("اكتب مرحبا احمد", "AR")
+
+        self.assertEqual(result["intent"], "WRITE_TEXT")
+        self.assertEqual(result["parameters"], {"text": "مرحبا احمد"})
+        self.assertEqual(result["rule_matched"], "write_text")
+
     def test_sound_mode_rule(self):
         result = rule_based_command("telefonu sessiz moda al", "TR")
 
@@ -101,6 +129,13 @@ class RuleServiceTests(unittest.TestCase):
 
         self.assertEqual(result["intent"], "OPEN_APP")
         self.assertEqual(result["parameters"], {"app_name": "c e p t e"})
+        self.assertEqual(result["rule_matched"], "open_app")
+
+    def test_open_app_rule_for_turkish_enter_suffix(self):
+        result = rule_based_command("Instagram'a gir", "TR")
+
+        self.assertEqual(result["intent"], "OPEN_APP")
+        self.assertEqual(result["parameters"], {"app_name": "instagram"})
         self.assertEqual(result["rule_matched"], "open_app")
 
     def test_open_app_rule_for_english_open_prefix(self):
@@ -159,6 +194,24 @@ class RuleServiceTests(unittest.TestCase):
 
         self.assertEqual(result["intent"], "GO_BACK")
         self.assertEqual(result["rule_matched"], "go_back")
+
+    def test_arabic_back_variants_do_not_fall_through_to_scroll_model(self):
+        examples = [
+            "رجعني للخلف",
+            "رجعني للصفحة السابقة",
+            "عود للصفحة السابقة",
+            "ارجع للشاشة السابقة",
+            "الصفحة اللي قبل",
+            "الى الخلف",
+            "الى الوراء",
+        ]
+
+        for text in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, "AR")
+
+                self.assertEqual(result["intent"], "GO_BACK")
+                self.assertEqual(result["rule_matched"], "go_back")
 
     def test_arabic_brightness_rule(self):
         result = rule_based_command("ارفع السطوع", "AR")

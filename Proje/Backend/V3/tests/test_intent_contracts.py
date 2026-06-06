@@ -88,6 +88,15 @@ class IntentContractTests(unittest.TestCase):
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
 
+    def test_text_and_center_gesture_intents_are_android_supported(self):
+        for intent in ("CLEAR_TEXT", "DOUBLE_TAP", "HOLD_SCREEN"):
+            with self.subTest(intent=intent):
+                response = _validate(intent)
+
+                self.assertTrue(response["accepted"])
+                self.assertTrue(response["backend_supported"])
+                self.assertTrue(response["android_supported"])
+
     def test_system_setting_intents_are_android_supported(self):
         examples = {
             "SET_WIFI": {"state": "on"},
@@ -163,12 +172,88 @@ class IntentContractTests(unittest.TestCase):
 
     def test_enriches_text_parameters(self):
         search = _validate("SEARCH_QUERY", {}, text="search for weather")
+        arabic_search = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0637\u0642\u0633",
+            language="AR",
+        )
+        arabic_search_without_preposition = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="\u0627\u0628\u062d\u062b \u0627\u0644\u0637\u0642\u0633",
+            language="AR",
+        )
         write = _validate("WRITE_TEXT", {}, text='write "Meeting starts at 5"')
 
         self.assertTrue(search["accepted"])
+        self.assertTrue(search["android_supported"])
         self.assertEqual(search["parameters"]["query"], "weather")
+        self.assertTrue(arabic_search["accepted"])
+        self.assertEqual(arabic_search["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
+        self.assertTrue(arabic_search_without_preposition["accepted"])
+        self.assertEqual(arabic_search_without_preposition["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
         self.assertTrue(write["accepted"])
+        self.assertTrue(write["android_supported"])
         self.assertEqual(write["parameters"]["text"], "Meeting starts at 5")
+
+    def test_enriches_alarm_time_parameters(self):
+        morning = _validate("SET_ALARM", {}, text="saat 5 icin alarm kur")
+        evening = _validate("SET_ALARM", {}, text="set an alarm for 5 pm")
+        turkish_evening = _validate(
+            "SET_ALARM",
+            {"alarm_hour": 5},
+            text="saat ak\u015fam 5 i\u00e7in alarm kur",
+            language="TR",
+        )
+        turkish_morning = _validate(
+            "SET_ALARM",
+            {"alarm_hour": 17},
+            text="sabah 5 i\u00e7in alarm kur",
+            language="TR",
+        )
+        scheduled_day = _validate("SET_ALARM", {}, text="pazartesi saat 17 icin alarm kur")
+
+        self.assertTrue(morning["accepted"])
+        self.assertTrue(morning["android_supported"])
+        self.assertEqual(morning["parameters"]["alarm_hour"], 5)
+        self.assertEqual(morning["parameters"]["alarm_minute"], 0)
+
+        self.assertTrue(evening["accepted"])
+        self.assertEqual(evening["parameters"]["alarm_hour"], 17)
+        self.assertEqual(evening["parameters"]["period"], "pm")
+
+        self.assertTrue(turkish_evening["accepted"])
+        self.assertEqual(turkish_evening["parameters"]["alarm_hour"], 17)
+        self.assertEqual(turkish_evening["parameters"]["period"], "pm")
+
+        self.assertTrue(turkish_morning["accepted"])
+        self.assertEqual(turkish_morning["parameters"]["alarm_hour"], 5)
+        self.assertEqual(turkish_morning["parameters"]["period"], "am")
+
+        self.assertTrue(scheduled_day["accepted"])
+        self.assertEqual(scheduled_day["parameters"]["alarm_hour"], 17)
+        self.assertEqual(scheduled_day["parameters"]["day"], "monday")
+
+    def test_predict_take_photo_rule_enriches_camera_parameter(self):
+        examples = [
+            ("arka kamera ile fotograf cek", "TR", "back"),
+            ("front camera and capture", "EN", "front"),
+        ]
+
+        for text, language, camera in examples:
+            with self.subTest(text=text):
+                response = predict_command(text=text, language=language)
+
+                self.assertTrue(response["accepted"])
+                self.assertEqual(response["intent"], "TAKE_PHOTO")
+                self.assertEqual(response["parameters"]["camera"], camera)
+
+    def test_take_photo_validation_enriches_selfie_parameter(self):
+        response = _validate("TAKE_PHOTO", {}, text="take a selfie")
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["parameters"]["camera"], "front")
 
     def test_app_catalog_enrichment_sets_package_contract(self):
         session_id = "unit-test-session"

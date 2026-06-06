@@ -86,7 +86,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "CLEAR_TEXT": _contract(
         "CLEAR_TEXT",
-        threshold=0.55
+        threshold=0.55,
+        android_supported=True,
     ),
     "CLICK_ITEM": _contract(
         "CLICK_ITEM",
@@ -100,7 +101,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "DOUBLE_TAP": _contract(
         "DOUBLE_TAP",
-        threshold=0.55
+        threshold=0.55,
+        android_supported=True,
     ),
     "GO_BACK": _contract(
         "GO_BACK",
@@ -114,7 +116,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "HOLD_SCREEN": _contract(
         "HOLD_SCREEN",
-        threshold=0.55
+        threshold=0.55,
+        android_supported=True,
     ),
     "OPEN_APP": _contract(
         "OPEN_APP",
@@ -155,11 +158,14 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         "SEARCH_QUERY",
         threshold=0.55,
         required=("query",),
+        android_supported=True,
     ),
     "SET_ALARM": _contract(
         "SET_ALARM",
         threshold=0.55,
-        optional=("period", "alarm_text"),
+        required=("alarm_hour",),
+        optional=("alarm_minute", "period", "day", "alarm_text"),
+        android_supported=True,
     ),
     "SET_BLUETOOTH": _contract(
         "SET_BLUETOOTH",
@@ -261,6 +267,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         "WRITE_TEXT",
         threshold=0.55,
         required=("text",),
+        android_supported=True,
     ),
     "UNKNOWN_COMMAND": _contract(
         "UNKNOWN_COMMAND",

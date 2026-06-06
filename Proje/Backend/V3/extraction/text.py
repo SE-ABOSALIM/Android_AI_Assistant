@@ -35,7 +35,8 @@ def extract_write_text(text: str, language: str) -> Optional[str]:
 
     command_text = extract_first_match(
         original,
-        patterns_for_language(WRITE_TEXT_PATTERNS, language)
+        patterns_for_language(WRITE_TEXT_PATTERNS, language),
+        ignore_case=True,
     )
     return clean_free_text(command_text or original)
 

@@ -8,6 +8,8 @@ OPEN_APP_PATTERNS = {
     "TR": [
         r"^(.+)\s+ac$",
         r"^ac\s+(.+)$",
+        r"^(.+)\s+gir$",
+        r"^gir\s+(.+)$",
         r"^(.+)\s+uygulamasini ac$",
     ],
     "AR": [
