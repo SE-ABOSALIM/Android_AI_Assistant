@@ -10,7 +10,7 @@ public final class TextNormalizer {
             return "";
         }
 
-        String normalized = text.toLowerCase(Locale.US).trim();
+        String normalized = normalizeArabicLetters(text.toLowerCase(Locale.US).trim());
         normalized = normalized.replaceAll("[^\\p{L}\\p{Nd}\\s]", " ");
         normalized = normalized.replaceAll("\\s+", " ").trim();
         return normalized;
@@ -35,6 +35,22 @@ public final class TextNormalizer {
 
     public static String normalizeAsciiText(String text) {
         return toAsciiTurkish(normalizeText(text));
+    }
+
+    private static String normalizeArabicLetters(String text) {
+        if (text == null) {
+            return "";
+        }
+
+        return text
+                .replace("\u0640", "")
+                .replaceAll("[\\u064B-\\u065F\\u0670]", "")
+                .replace('\u0622', '\u0627')
+                .replace('\u0623', '\u0627')
+                .replace('\u0625', '\u0627')
+                .replace('\u0671', '\u0627')
+                .replace('\u0649', '\u064A')
+                .replace('\u0629', '\u0647');
     }
 
     public static boolean hasText(String value) {
