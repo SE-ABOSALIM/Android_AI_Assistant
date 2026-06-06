@@ -69,6 +69,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         "ADJUST_BRIGHTNESS",
         threshold=0.55,
         required=("brightness",),
+        android_supported=True,
     ),
     "ADJUST_VOLUME": _contract(
         "ADJUST_VOLUME",
@@ -136,6 +137,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         optional=("app_match_score",
                   "app_match_candidates"
                   ),
+        android_supported=True,
+        android_required=("app_package_name",),
     ),
     "OPEN_NOTIFICATIONS": _contract(
         "OPEN_NOTIFICATIONS",
@@ -161,37 +164,44 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     "SET_BLUETOOTH": _contract(
         "SET_BLUETOOTH",
         threshold=0.55,
-        required=("state",)
+        required=("state",),
+        android_supported=True,
     ),
     "SET_FLASHLIGHT": _contract(
         "SET_FLASHLIGHT",
         threshold=0.55,
-        required=("state",)
+        required=("state",),
+        android_supported=True,
     ),
     "SET_KEYBOARD": _contract(
         "SET_KEYBOARD",
         threshold=0.55,
-        required=("state",)
+        required=("state",),
+        android_supported=True,
     ),
     "SET_LOCATION": _contract(
         "SET_LOCATION",
         threshold=0.55,
-        required=("state",)
+        required=("state",),
+        android_supported=True,
     ),
     "SET_MOBILE_DATA": _contract(
         "SET_MOBILE_DATA",
         threshold=0.55,
-        required=("state",)
+        required=("state",),
+        android_supported=True,
     ),
     "SET_MOBILE_HOTSPOT": _contract(
         "SET_MOBILE_HOTSPOT",
         threshold=0.55,
-        required=("state",)
+        required=("state",),
+        android_supported=True,
     ),
     "SET_SOUND_MODE": _contract(
         "SET_SOUND_MODE",
         threshold=0.55,
-        required=("sound_mode",)
+        required=("sound_mode",),
+        android_supported=True,
     ),
     "SET_TIMER": _contract(
         "SET_TIMER",
@@ -205,7 +215,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     "SET_WIFI": _contract(
         "SET_WIFI",
         threshold=0.55,
-        required=("state",)
+        required=("state",),
+        android_supported=True,
     ),
     "SHOW_RECENTS": _contract(
         "SHOW_RECENTS",
@@ -231,7 +242,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "TAKE_SCREENSHOT": _contract(
         "TAKE_SCREENSHOT",
-        threshold=0.55
+        threshold=0.55,
+        android_supported=True
     ),
     "UNINSTALL_APP": _contract(
         "UNINSTALL_APP",
@@ -242,6 +254,8 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         optional=("app_match_score",
                   "app_match_candidates"
                   ),
+        android_supported=True,
+        android_required=("app_package_name",),
     ),
     "WRITE_TEXT": _contract(
         "WRITE_TEXT",

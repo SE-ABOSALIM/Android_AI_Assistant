@@ -68,7 +68,7 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(missing["error_code"], "MISSING_REQUIRED_SLOT")
         self.assertTrue(accepted["accepted"])
         self.assertTrue(accepted["backend_supported"])
-        self.assertFalse(accepted["android_supported"])
+        self.assertTrue(accepted["android_supported"])
 
     def test_android_supported_requires_android_parameters(self):
         missing = _validate("SCROLL_SCREEN", {})
@@ -80,13 +80,76 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(accepted["android_supported"])
 
     def test_navigation_intents_are_android_supported(self):
-        for intent in ("GO_BACK", "CLOSE_APP", "SHOW_RECENTS", "OPEN_NOTIFICATIONS"):
+        for intent in ("GO_BACK", "CLOSE_APP", "SHOW_RECENTS", "OPEN_NOTIFICATIONS", "TAKE_SCREENSHOT"):
             with self.subTest(intent=intent):
                 response = _validate(intent)
 
                 self.assertTrue(response["accepted"])
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
+
+    def test_system_setting_intents_are_android_supported(self):
+        examples = {
+            "SET_WIFI": {"state": "on"},
+            "SET_BLUETOOTH": {"state": "on"},
+            "SET_FLASHLIGHT": {"state": "on"},
+            "SET_LOCATION": {"state": "on"},
+            "SET_MOBILE_DATA": {"state": "on"},
+            "SET_MOBILE_HOTSPOT": {"state": "on"},
+            "SET_SOUND_MODE": {"sound_mode": "silent"},
+            "SET_KEYBOARD": {"state": "open"},
+            "ADJUST_BRIGHTNESS": {"brightness": "increase"},
+        }
+
+        for intent, parameters in examples.items():
+            with self.subTest(intent=intent):
+                response = _validate(intent, parameters)
+
+                self.assertTrue(response["accepted"])
+                self.assertTrue(response["backend_supported"])
+                self.assertTrue(response["android_supported"])
+
+    def test_app_management_intents_are_android_supported(self):
+        session_id = "unit-test-app-management"
+        try:
+            result = save_app_catalog(
+                session_id=session_id,
+                catalog_version="v1",
+                language="EN",
+                apps=[
+                    {
+                        "label": "WhatsApp",
+                        "package_name": "com.whatsapp",
+                        "aliases": ["whatsapp"],
+                    }
+                ],
+            )
+
+            examples = {
+                "OPEN_APP_INFO": {
+                    "app_name": "WhatsApp",
+                    "app_package_name": "com.whatsapp",
+                },
+                "UNINSTALL_APP": {
+                    "app_name": "WhatsApp",
+                    "app_package_name": "com.whatsapp",
+                },
+            }
+
+            for intent, parameters in examples.items():
+                with self.subTest(intent=intent):
+                    response = _validate(
+                        intent,
+                        parameters,
+                        session_id=session_id,
+                        catalog_version=result["catalog_version"],
+                    )
+
+                    self.assertTrue(response["accepted"])
+                    self.assertTrue(response["backend_supported"])
+                    self.assertTrue(response["android_supported"])
+        finally:
+            delete_app_catalog(session_id)
 
     def test_parameter_group_allows_volume_level_and_marks_android_supported(self):
         backend_supported = _validate("ADJUST_VOLUME", {"volume_level": "max"})
