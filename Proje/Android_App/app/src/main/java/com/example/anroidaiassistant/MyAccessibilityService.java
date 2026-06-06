@@ -10,8 +10,10 @@ import com.example.anroidaiassistant.selection.SelectionNumberParser;
 import com.example.anroidaiassistant.ui.ListeningOverlayController;
 import com.example.anroidaiassistant.ui.SelectionOverlayController;
 import com.example.anroidaiassistant.ui.UninstallConfirmationOverlayController;
+import com.example.anroidaiassistant.util.TextNormalizer;
 import com.example.anroidaiassistant.accessibility.AccessibilityActionController;
 import com.example.anroidaiassistant.accessibility.CameraCaptureController;
+import com.example.anroidaiassistant.accessibility.click.ClickItemController;
 import com.example.anroidaiassistant.accessibility.GestureController;
 import com.example.anroidaiassistant.accessibility.QuickSettingsTileController;
 import com.example.anroidaiassistant.accessibility.SearchInputController;
@@ -83,6 +85,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private AccessibilityActionController accessibilityActionController;
     private GestureController gestureController;
     private CameraCaptureController cameraCaptureController;
+    private ClickItemController clickItemController;
     private QuickSettingsTileController quickSettingsTileController;
     private SearchInputController searchInputController;
 
@@ -107,6 +110,7 @@ public class MyAccessibilityService extends AccessibilityService {
         accessibilityActionController = new AccessibilityActionController(this);
         gestureController = new GestureController(this);
         cameraCaptureController = new CameraCaptureController(this, mainHandler, gestureController);
+        clickItemController = new ClickItemController(this, gestureController);
         quickSettingsTileController = new QuickSettingsTileController(this, mainHandler, gestureController);
         searchInputController = new SearchInputController(this, mainHandler);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -605,6 +609,15 @@ public class MyAccessibilityService extends AccessibilityService {
         startSelection(title, choices, callback, false);
     }
 
+    public void startNumberSelection(
+            String title,
+            List<NumberedChoice> choices,
+            NumberSelectionCallback callback,
+            String hint
+    ) {
+        startSelection(title, choices, callback, false, hint);
+    }
+
     public void startConfirmationSelection(
             String title,
             List<NumberedChoice> choices,
@@ -655,6 +668,16 @@ public class MyAccessibilityService extends AccessibilityService {
             NumberSelectionCallback callback,
             boolean confirmationMode
     ) {
+        startSelection(title, choices, callback, confirmationMode, null);
+    }
+
+    private void startSelection(
+            String title,
+            List<NumberedChoice> choices,
+            NumberSelectionCallback callback,
+            boolean confirmationMode,
+            String customHint
+    ) {
         if (choices == null || choices.isEmpty() || callback == null) {
             return;
         }
@@ -663,9 +686,13 @@ public class MyAccessibilityService extends AccessibilityService {
         isNumberSelectionMode = true;
         isConfirmationSelectionMode = confirmationMode;
         numberSelectionTitle = title;
-        numberSelectionHint = confirmationMode
-                ? confirmationSelectionHint()
-                : "Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.";
+        if (TextNormalizer.hasText(customHint)) {
+            numberSelectionHint = customHint;
+        } else if (confirmationMode) {
+            numberSelectionHint = confirmationSelectionHint();
+        } else {
+            numberSelectionHint = "Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.";
+        }
         numberSelectionCallback = callback;
         numberSelectionChoices.clear();
         numberSelectionChoices.addAll(choices);
@@ -874,6 +901,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean longPressCenter() {
         return gestureController != null && gestureController.longPressCenter();
+    }
+
+    public boolean clickItem(String targetText, int targetIndex, String position) {
+        return clickItemController != null && clickItemController.clickItem(targetText, targetIndex, position);
     }
 
     public boolean setSoftKeyboardVisible(boolean visible) {

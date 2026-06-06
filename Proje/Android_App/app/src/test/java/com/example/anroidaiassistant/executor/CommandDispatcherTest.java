@@ -310,6 +310,33 @@ public class CommandDispatcherTest {
     }
 
     @Test
+    public void defaultRegistryDispatchesClickItemIntent() {
+        List<String> missingMessages = new ArrayList<>();
+        CommandDispatcher missingDispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean missingDispatched = missingDispatcher.dispatch(
+                "CLICK_ITEM",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, missingMessages::add)
+        );
+
+        assertTrue(missingDispatched);
+        assertEquals(Collections.singletonList("What should I tap?"), missingMessages);
+
+        List<String> serviceMessages = new ArrayList<>();
+        CommandDispatcher serviceDispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean serviceDispatched = serviceDispatcher.dispatch(
+                "CLICK_ITEM",
+                Collections.singletonMap("target_text", "search"),
+                new CommandExecutionContext(null, serviceMessages::add)
+        );
+
+        assertTrue(serviceDispatched);
+        assertEquals(Collections.singletonList("Accessibility service is not connected"), serviceMessages);
+    }
+
+    @Test
     public void defaultRegistryDispatchesWriteTextIntent() {
         List<String> missingMessages = new ArrayList<>();
         CommandDispatcher missingDispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());

@@ -7,6 +7,7 @@ import com.example.anroidaiassistant.executor.handlers.BrightnessCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.CameraCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.CenterGestureCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ClearTextCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.ClickItemCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ContactCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.NavigationCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.OpenAppCommandHandler;
@@ -62,6 +63,7 @@ public final class CommandHandlerRegistry {
                 new SearchCommandHandler(),
                 new WriteTextCommandHandler(),
                 new ClearTextCommandHandler(),
+                new ClickItemCommandHandler(),
                 new SystemSettingCommandHandler("SET_WIFI"),
                 new SystemSettingCommandHandler("SET_BLUETOOTH"),
                 new SystemSettingCommandHandler("SET_FLASHLIGHT"),
