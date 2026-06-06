@@ -175,11 +175,12 @@ public class MainActivity extends AppCompatActivity {
     private void checkOverlayPermission() {
         if (!Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "Ekran ustu izin gerekli", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:" + getPackageName())
-            );
-            startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
+            // Temporarily disabled: do not redirect to the "Appear on top" settings screen.
+            // Intent intent = new Intent(
+            //         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+            //         Uri.parse("package:" + getPackageName())
+            // );
+            // startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
         }
     }
 
@@ -254,6 +255,7 @@ public class MainActivity extends AppCompatActivity {
         addMissingPermission(missingPermissions, android.Manifest.permission.RECORD_AUDIO);
         addMissingPermission(missingPermissions, android.Manifest.permission.READ_CONTACTS);
         addMissingPermission(missingPermissions, android.Manifest.permission.CALL_PHONE);
+        addMissingPermission(missingPermissions, android.Manifest.permission.CAMERA);
 
         if (missingPermissions.isEmpty()) {
             return true;

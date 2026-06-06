@@ -41,6 +41,10 @@ public final class SelectionOverlayController {
     }
 
     public void show(String title, List<MyAccessibilityService.NumberedChoice> choices) {
+        show(title, choices, null);
+    }
+
+    public void show(String title, List<MyAccessibilityService.NumberedChoice> choices, String hint) {
         if (selectionOverlayView == null) {
             selectionOverlayView = LayoutInflater.from(context).inflate(R.layout.selection_overlay_layout, null);
             selectionTitleView = selectionOverlayView.findViewById(R.id.tv_selection_title);
@@ -78,7 +82,7 @@ public final class SelectionOverlayController {
             selectionOverlayView.requestFocus();
         }
 
-        update(title, choices == null ? Collections.emptyList() : choices);
+        update(title, choices == null ? Collections.emptyList() : choices, hint);
     }
 
     public void hide() {
@@ -93,7 +97,7 @@ public final class SelectionOverlayController {
         selectionHintView = null;
     }
 
-    private void update(String title, List<MyAccessibilityService.NumberedChoice> choices) {
+    private void update(String title, List<MyAccessibilityService.NumberedChoice> choices, String hint) {
         if (selectionOverlayView == null || selectionChoiceContainer == null) {
             return;
         }
@@ -105,7 +109,9 @@ public final class SelectionOverlayController {
             selectionChoiceContainer.addView(createSelectionRow(i, choices.get(i)));
         }
 
-        selectionHintView.setText("Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.");
+        selectionHintView.setText(TextNormalizer.hasText(hint)
+                ? hint
+                : "Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.");
         selectionHintView.setTextColor(Color.parseColor("#B9C0CC"));
     }
 

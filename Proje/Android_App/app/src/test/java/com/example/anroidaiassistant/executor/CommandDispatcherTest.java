@@ -95,4 +95,138 @@ public class CommandDispatcherTest {
         assertTrue(dispatched);
         assertEquals(Collections.singletonList("Accessibility service is not connected"), messages);
     }
+
+    @Test
+    public void defaultRegistryDispatchesScreenshotIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "TAKE_SCREENSHOT",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Accessibility service is not connected"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesBrightnessIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "ADJUST_BRIGHTNESS",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Should I increase or decrease brightness?"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesSystemSettingIntents() {
+        for (String intent : new String[]{
+                "SET_WIFI",
+                "SET_BLUETOOTH",
+                "SET_FLASHLIGHT",
+                "SET_LOCATION",
+                "SET_MOBILE_DATA",
+                "SET_MOBILE_HOTSPOT"
+        }) {
+            List<String> messages = new ArrayList<>();
+            CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+            boolean dispatched = dispatcher.dispatch(
+                    intent,
+                    Collections.emptyMap(),
+                    new CommandExecutionContext(null, messages::add)
+            );
+
+            assertTrue(dispatched);
+            assertEquals(Collections.singletonList("Should I turn it on or off?"), messages);
+        }
+    }
+
+    @Test
+    public void quickSettingsIntentsRequireAccessibilityServiceWhenStateIsProvided() {
+        for (String intent : new String[]{
+                "SET_WIFI",
+                "SET_BLUETOOTH",
+                "SET_LOCATION",
+                "SET_MOBILE_DATA",
+                "SET_MOBILE_HOTSPOT"
+        }) {
+            List<String> messages = new ArrayList<>();
+            CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+            boolean dispatched = dispatcher.dispatch(
+                    intent,
+                    Collections.singletonMap("state", "on"),
+                    new CommandExecutionContext(null, messages::add)
+            );
+
+            assertTrue(dispatched);
+            assertEquals(Collections.singletonList("Accessibility service is not connected"), messages);
+        }
+    }
+
+    @Test
+    public void defaultRegistryDispatchesKeyboardIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "SET_KEYBOARD",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Should I open or close the keyboard?"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesSoundModeIntent() {
+        List<String> messages = new ArrayList<>();
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean dispatched = dispatcher.dispatch(
+                "SET_SOUND_MODE",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, messages::add)
+        );
+
+        assertTrue(dispatched);
+        assertEquals(Collections.singletonList("Which sound mode should I set?"), messages);
+    }
+
+    @Test
+    public void defaultRegistryDispatchesAppManagementIntents() {
+        List<String> infoMessages = new ArrayList<>();
+        CommandDispatcher infoDispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean infoDispatched = infoDispatcher.dispatch(
+                "OPEN_APP_INFO",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, infoMessages::add)
+        );
+
+        assertTrue(infoDispatched);
+        assertEquals(Collections.singletonList("Which app info should I open?"), infoMessages);
+
+        List<String> uninstallMessages = new ArrayList<>();
+        CommandDispatcher uninstallDispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        boolean uninstallDispatched = uninstallDispatcher.dispatch(
+                "UNINSTALL_APP",
+                Collections.emptyMap(),
+                new CommandExecutionContext(null, uninstallMessages::add)
+        );
+
+        assertTrue(uninstallDispatched);
+        assertEquals(Collections.singletonList("Which app should I uninstall?"), uninstallMessages);
+    }
 }

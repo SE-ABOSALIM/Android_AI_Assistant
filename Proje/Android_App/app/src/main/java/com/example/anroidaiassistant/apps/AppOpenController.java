@@ -1,8 +1,10 @@
 package com.example.anroidaiassistant.apps;
 
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 
 import com.example.anroidaiassistant.MainActivity;
+import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.util.ParameterReader;
@@ -14,6 +16,12 @@ import java.util.List;
 import java.util.Map;
 
 public final class AppOpenController {
+    public enum AppAction {
+        OPEN,
+        OPEN_INFO,
+        UNINSTALL
+    }
+
     private final AppMatcher appMatcher;
     private final SpelledAppMatcher spelledAppMatcher;
     private final AppLauncher appLauncher;
@@ -28,15 +36,31 @@ public final class AppOpenController {
     }
 
     public void handleOpenApp(Map<String, Object> parameters, CommandExecutionContext executionContext) {
+        handleAppCommand(parameters, executionContext, AppAction.OPEN);
+    }
+
+    public void handleOpenAppInfo(Map<String, Object> parameters, CommandExecutionContext executionContext) {
+        handleAppCommand(parameters, executionContext, AppAction.OPEN_INFO);
+    }
+
+    public void handleUninstallApp(Map<String, Object> parameters, CommandExecutionContext executionContext) {
+        handleAppCommand(parameters, executionContext, AppAction.UNINSTALL);
+    }
+
+    private void handleAppCommand(
+            Map<String, Object> parameters,
+            CommandExecutionContext executionContext,
+            AppAction action
+    ) {
         String appName = ParameterReader.getStringParam(parameters, "app_name");
         if (!hasText(appName)) {
-            executionContext.showMessage("Which app should I open?");
+            executionContext.showMessage(missingAppNameMessage(action));
             return;
         }
 
         String packageName = ParameterReader.getStringParam(parameters, "app_package_name");
         if (hasText(packageName)) {
-            launchPackage(packageName, appName, executionContext);
+            executePackageAction(packageName, appName, executionContext, action);
             return;
         }
 
@@ -47,11 +71,11 @@ public final class AppOpenController {
         }
 
         if (matches.size() == 1) {
-            launchAppMatch(matches.get(0), executionContext);
+            executeAppMatch(matches.get(0), executionContext, action);
             return;
         }
 
-        showAppChoice(matches, appName, executionContext);
+        showAppChoice(matches, appName, executionContext, action);
     }
 
     public void handleSpelledAppCandidate(String spokenText, CommandExecutionContext executionContext) {
@@ -80,11 +104,11 @@ public final class AppOpenController {
         }
 
         if (!exactMatches.isEmpty()) {
-            showAppChoice(exactMatches, spokenText, executionContext);
+            showAppChoice(exactMatches, spokenText, executionContext, AppAction.OPEN);
             return;
         }
 
-        showAppChoice(matches, spokenText, executionContext);
+        showAppChoice(matches, spokenText, executionContext, AppAction.OPEN);
     }
 
     public boolean handleBackendAppCandidates(PredictResponse response, CommandExecutionContext executionContext) {
@@ -94,10 +118,12 @@ public final class AppOpenController {
             return false;
         }
 
+        AppAction action = actionFromIntent(response.getIntent());
         showAppChoice(
                 matches,
                 firstNonEmpty(ParameterReader.getStringParam(parameters, "app_name"), "app"),
-                executionContext
+                executionContext,
+                action
         );
         return true;
     }
@@ -134,19 +160,48 @@ public final class AppOpenController {
     private void showAppChoice(
             List<AppMatch> matches,
             String appName,
-            CommandExecutionContext executionContext
+            CommandExecutionContext executionContext,
+            AppAction action
     ) {
         appChoicePresenter.showAppChoice(
                 executionContext.getAndroidContext(),
                 matches,
                 appName,
                 executionContext,
-                match -> launchAppMatch(match, executionContext)
+                match -> executeAppMatch(match, executionContext, action)
         );
     }
 
     private void launchAppMatch(AppMatch match, CommandExecutionContext executionContext) {
-        launchPackage(match.getPackageName(), match.getLabel(), executionContext);
+        executeAppMatch(match, executionContext, AppAction.OPEN);
+    }
+
+    private void executeAppMatch(
+            AppMatch match,
+            CommandExecutionContext executionContext,
+            AppAction action
+    ) {
+        executePackageAction(match.getPackageName(), match.getLabel(), executionContext, action);
+    }
+
+    private void executePackageAction(
+            String packageName,
+            String label,
+            CommandExecutionContext executionContext,
+            AppAction action
+    ) {
+        switch (action) {
+            case OPEN_INFO:
+                openAppInfo(packageName, label, executionContext);
+                break;
+            case UNINSTALL:
+                confirmAndUninstall(packageName, label, executionContext);
+                break;
+            case OPEN:
+            default:
+                launchPackage(packageName, label, executionContext);
+                break;
+        }
     }
 
     private void launchPackage(
@@ -164,6 +219,62 @@ public final class AppOpenController {
         }
     }
 
+    private void openAppInfo(
+            String packageName,
+            String label,
+            CommandExecutionContext executionContext
+    ) {
+        appLauncher.openAppInfo(
+                executionContext.getAndroidContext(),
+                packageName,
+                label,
+                executionContext
+        );
+    }
+
+    private void confirmAndUninstall(
+            String packageName,
+            String label,
+            CommandExecutionContext executionContext
+    ) {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null || !service.isContinuousListeningActive()) {
+            executionContext.showMessage("Start listening to confirm uninstall.");
+            return;
+        }
+
+        Context context = executionContext.getAndroidContext();
+        String displayLabel = firstNonEmpty(
+                appLauncher.getAppLabel(context, packageName, label),
+                label,
+                packageName
+        );
+        Drawable icon = appLauncher.getAppIcon(context, packageName);
+        service.startUninstallConfirmation(
+                displayLabel,
+                icon,
+                uninstallConfirmationTitle(service.getSelectedLanguage(), firstNonEmpty(displayLabel, "app")),
+                confirmationYesText(service.getSelectedLanguage()),
+                confirmationNoText(service.getSelectedLanguage()),
+                confirmationHintText(service.getSelectedLanguage()),
+                new MyAccessibilityService.NumberSelectionCallback() {
+                    @Override
+                    public void onSelected(int selectedIndex) {
+                        if (selectedIndex == 0) {
+                            appLauncher.requestUninstallPackage(context, packageName, label, executionContext);
+                        } else {
+                            executionContext.showMessage("Uninstall cancelled");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled() {
+                        executionContext.showMessage("Uninstall cancelled");
+                    }
+                }
+        );
+    }
+
     private void onOpenAppFailure(String appCandidate, CommandExecutionContext executionContext) {
         openAppFailureCount++;
         executionContext.showMessage("App not found. Please spell the app name.");
@@ -174,6 +285,68 @@ public final class AppOpenController {
                 mainActivity.showSpellingSuggestionDialog();
             }
         }
+    }
+
+    private AppAction actionFromIntent(String intent) {
+        if ("OPEN_APP_INFO".equalsIgnoreCase(intent)) {
+            return AppAction.OPEN_INFO;
+        }
+        if ("UNINSTALL_APP".equalsIgnoreCase(intent)) {
+            return AppAction.UNINSTALL;
+        }
+        return AppAction.OPEN;
+    }
+
+    private String missingAppNameMessage(AppAction action) {
+        switch (action) {
+            case OPEN_INFO:
+                return "Which app info should I open?";
+            case UNINSTALL:
+                return "Which app should I uninstall?";
+            case OPEN:
+            default:
+                return "Which app should I open?";
+        }
+    }
+
+    private String uninstallConfirmationTitle(String language, String label) {
+        if ("EN".equalsIgnoreCase(language)) {
+            return "Do you want to uninstall " + label + "?";
+        }
+        if ("AR".equalsIgnoreCase(language)) {
+            return "\u0647\u0644 \u062a\u0631\u064a\u062f \u0627\u0644\u063a\u0627\u0621 \u062a\u062b\u0628\u064a\u062a " + label + "\u061f";
+        }
+        return label + " uygulamasini silmek istiyor musunuz?";
+    }
+
+    private String confirmationYesText(String language) {
+        if ("EN".equalsIgnoreCase(language)) {
+            return "Yes";
+        }
+        if ("AR".equalsIgnoreCase(language)) {
+            return "\u0646\u0639\u0645";
+        }
+        return "Evet";
+    }
+
+    private String confirmationNoText(String language) {
+        if ("EN".equalsIgnoreCase(language)) {
+            return "No";
+        }
+        if ("AR".equalsIgnoreCase(language)) {
+            return "\u0644\u0627";
+        }
+        return "Hayir";
+    }
+
+    private String confirmationHintText(String language) {
+        if ("EN".equalsIgnoreCase(language)) {
+            return "Say yes or no.";
+        }
+        if ("AR".equalsIgnoreCase(language)) {
+            return "\u0642\u0644 \u0646\u0639\u0645 \u0627\u0648 \u0644\u0627.";
+        }
+        return "Evet veya hayir deyin.";
     }
 
     private String stringValue(Object value) {

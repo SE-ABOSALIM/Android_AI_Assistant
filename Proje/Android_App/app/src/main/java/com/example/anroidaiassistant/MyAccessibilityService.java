@@ -9,9 +9,11 @@ import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.selection.SelectionNumberParser;
 import com.example.anroidaiassistant.ui.ListeningOverlayController;
 import com.example.anroidaiassistant.ui.SelectionOverlayController;
+import com.example.anroidaiassistant.ui.UninstallConfirmationOverlayController;
 import com.example.anroidaiassistant.accessibility.AccessibilityActionController;
 import com.example.anroidaiassistant.accessibility.CameraCaptureController;
 import com.example.anroidaiassistant.accessibility.GestureController;
+import com.example.anroidaiassistant.accessibility.QuickSettingsTileController;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
@@ -30,6 +32,7 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -55,6 +58,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private boolean isListening = false;
     private boolean isSpellAppMode = false;
     private boolean isNumberSelectionMode = false;
+    private boolean isConfirmationSelectionMode = false;
     private boolean isRecognitionSessionActive = false;
     private boolean areRecognizerSoundsMuted = false;
     private final Map<Integer, Boolean> streamMuteStateBeforeRecognizer = new HashMap<>();
@@ -62,6 +66,12 @@ public class MyAccessibilityService extends AccessibilityService {
     private final SelectionNumberParser selectionNumberParser = new SelectionNumberParser();
     private NumberSelectionCallback numberSelectionCallback;
     private String numberSelectionTitle;
+    private String numberSelectionHint;
+    private String uninstallConfirmationAppName;
+    private Drawable uninstallConfirmationIcon;
+    private String uninstallConfirmationQuestion;
+    private String uninstallConfirmationYesText;
+    private String uninstallConfirmationNoText;
     private String selectedLanguage = "TR";
     
     private ApiService apiService;
@@ -72,10 +82,12 @@ public class MyAccessibilityService extends AccessibilityService {
     private AccessibilityActionController accessibilityActionController;
     private GestureController gestureController;
     private CameraCaptureController cameraCaptureController;
+    private QuickSettingsTileController quickSettingsTileController;
 
     private WindowManager windowManager;
     private ListeningOverlayController listeningOverlayController;
     private SelectionOverlayController selectionOverlayController;
+    private UninstallConfirmationOverlayController uninstallConfirmationOverlayController;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable restartListeningRunnable = this::startListeningSession;
 
@@ -93,6 +105,7 @@ public class MyAccessibilityService extends AccessibilityService {
         accessibilityActionController = new AccessibilityActionController(this);
         gestureController = new GestureController(this);
         cameraCaptureController = new CameraCaptureController(this, mainHandler, gestureController);
+        quickSettingsTileController = new QuickSettingsTileController(this, mainHandler, gestureController);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         listeningOverlayController = new ListeningOverlayController(this, windowManager);
         selectionOverlayController = new SelectionOverlayController(this, windowManager, new SelectionOverlayController.Listener() {
@@ -103,6 +116,22 @@ public class MyAccessibilityService extends AccessibilityService {
 
             @Override
             public void onSelectionCancelled() {
+                cancelNumberSelection();
+            }
+        });
+        uninstallConfirmationOverlayController = new UninstallConfirmationOverlayController(this, windowManager, new UninstallConfirmationOverlayController.Listener() {
+            @Override
+            public void onConfirmRequested() {
+                completeNumberSelection(0);
+            }
+
+            @Override
+            public void onRejectRequested() {
+                completeNumberSelection(1);
+            }
+
+            @Override
+            public void onConfirmationDismissed() {
                 cancelNumberSelection();
             }
         });
@@ -307,6 +336,10 @@ public class MyAccessibilityService extends AccessibilityService {
         }
     }
 
+    public String getSelectedLanguage() {
+        return selectedLanguage;
+    }
+
     public void startContinuousListening() {
         mainHandler.removeCallbacks(restartListeningRunnable);
         isListening = true;
@@ -352,13 +385,32 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void showSelectionWindow() {
         if (selectionOverlayController != null) {
-            selectionOverlayController.show(numberSelectionTitle, numberSelectionChoices);
+            selectionOverlayController.show(numberSelectionTitle, numberSelectionChoices, numberSelectionHint);
         }
     }
 
     private void hideSelectionWindow() {
         if (selectionOverlayController != null) {
             selectionOverlayController.hide();
+        }
+    }
+
+    private void showUninstallConfirmationWindow() {
+        if (uninstallConfirmationOverlayController != null) {
+            uninstallConfirmationOverlayController.show(
+                    uninstallConfirmationAppName,
+                    uninstallConfirmationIcon,
+                    uninstallConfirmationQuestion,
+                    uninstallConfirmationYesText,
+                    uninstallConfirmationNoText,
+                    numberSelectionHint
+            );
+        }
+    }
+
+    private void hideUninstallConfirmationWindow() {
+        if (uninstallConfirmationOverlayController != null) {
+            uninstallConfirmationOverlayController.hide();
         }
     }
 
@@ -547,13 +599,70 @@ public class MyAccessibilityService extends AccessibilityService {
             List<NumberedChoice> choices,
             NumberSelectionCallback callback
     ) {
+        startSelection(title, choices, callback, false);
+    }
+
+    public void startConfirmationSelection(
+            String title,
+            List<NumberedChoice> choices,
+            NumberSelectionCallback callback
+    ) {
+        startSelection(title, choices, callback, true);
+    }
+
+    public void startUninstallConfirmation(
+            String appName,
+            Drawable appIcon,
+            String question,
+            String yesText,
+            String noText,
+            String hint,
+            NumberSelectionCallback callback
+    ) {
+        if (callback == null) {
+            return;
+        }
+
+        List<NumberedChoice> choices = new ArrayList<>();
+        choices.add(new NumberedChoice(yesText, appName, appIcon));
+        choices.add(new NumberedChoice(noText, appName, appIcon));
+
+        isSpellAppMode = false;
+        isNumberSelectionMode = true;
+        isConfirmationSelectionMode = true;
+        numberSelectionTitle = question;
+        numberSelectionHint = hint;
+        numberSelectionCallback = callback;
+        numberSelectionChoices.clear();
+        numberSelectionChoices.addAll(choices);
+        uninstallConfirmationAppName = appName;
+        uninstallConfirmationIcon = appIcon;
+        uninstallConfirmationQuestion = question;
+        uninstallConfirmationYesText = yesText;
+        uninstallConfirmationNoText = noText;
+        hideOverlay();
+        hideSelectionWindow();
+        showUninstallConfirmationWindow();
+        restartListeningForNumberSelection();
+    }
+
+    private void startSelection(
+            String title,
+            List<NumberedChoice> choices,
+            NumberSelectionCallback callback,
+            boolean confirmationMode
+    ) {
         if (choices == null || choices.isEmpty() || callback == null) {
             return;
         }
 
         isSpellAppMode = false;
         isNumberSelectionMode = true;
+        isConfirmationSelectionMode = confirmationMode;
         numberSelectionTitle = title;
+        numberSelectionHint = confirmationMode
+                ? confirmationSelectionHint()
+                : "Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.";
         numberSelectionCallback = callback;
         numberSelectionChoices.clear();
         numberSelectionChoices.addAll(choices);
@@ -578,6 +687,14 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void handleNumberSelectionResult(String spokenText) {
+        if (isConfirmationSelectionMode) {
+            Integer confirmationIndex = selectionNumberParser.parseConfirmationSelection(spokenText);
+            if (confirmationIndex != null && confirmationIndex < numberSelectionChoices.size()) {
+                completeNumberSelection(confirmationIndex);
+                return;
+            }
+        }
+
         Integer selectedIndex = selectionNumberParser.parseSelectionNumber(spokenText, numberSelectionChoices.size());
         if (selectedIndex == null) {
             if (selectionNumberParser.isCancelSelection(spokenText)) {
@@ -615,10 +732,18 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void clearNumberSelection() {
         isNumberSelectionMode = false;
+        isConfirmationSelectionMode = false;
         numberSelectionTitle = null;
+        numberSelectionHint = null;
         numberSelectionCallback = null;
         numberSelectionChoices.clear();
+        uninstallConfirmationAppName = null;
+        uninstallConfirmationIcon = null;
+        uninstallConfirmationQuestion = null;
+        uninstallConfirmationYesText = null;
+        uninstallConfirmationNoText = null;
         hideSelectionWindow();
+        hideUninstallConfirmationWindow();
         if (isListening) {
             showOverlay();
             updateOverlayText("Listening...");
@@ -644,6 +769,16 @@ public class MyAccessibilityService extends AccessibilityService {
     public interface NumberSelectionCallback {
         void onSelected(int selectedIndex);
         void onCancelled();
+    }
+
+    private String confirmationSelectionHint() {
+        if ("EN".equalsIgnoreCase(selectedLanguage)) {
+            return "Say yes or no.";
+        }
+        if ("AR".equalsIgnoreCase(selectedLanguage)) {
+            return "\u0642\u0644 \u0646\u0639\u0645 \u0627\u0648 \u0644\u0627.";
+        }
+        return "Evet veya hayir deyin.";
     }
 
     private static final class PendingPrediction {
@@ -698,6 +833,16 @@ public class MyAccessibilityService extends AccessibilityService {
         performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS);
     }
 
+    public boolean performScreenshot() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            return false;
+        }
+        if (accessibilityActionController != null) {
+            return accessibilityActionController.performScreenshot();
+        }
+        return performGlobalAction(GLOBAL_ACTION_TAKE_SCREENSHOT);
+    }
+
     public void clickNodeByText(String text) {
         if (accessibilityActionController != null) {
             accessibilityActionController.clickNodeByText(text);
@@ -714,6 +859,20 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean swipe(String direction) {
         return gestureController != null && gestureController.swipe(direction);
+    }
+
+    public boolean setSoftKeyboardVisible(boolean visible) {
+        getSoftKeyboardController().setShowMode(visible ? SHOW_MODE_AUTO : SHOW_MODE_HIDDEN);
+        InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (visible && inputMethodManager != null) {
+            inputMethodManager.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
+        }
+        return true;
+    }
+
+    public boolean setQuickSettingState(String intent, String state) {
+        return quickSettingsTileController != null
+                && quickSettingsTileController.setTileState(intent, state, this::showFeedback);
     }
 
     private String getActivePackageName() {

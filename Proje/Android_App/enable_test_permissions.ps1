@@ -113,7 +113,24 @@ Invoke-Adb -AdbPath $adbPath -Arguments @(
     "shell", "appops", "set", $PackageName, "SYSTEM_ALERT_WINDOW", "allow"
 ) | Out-Null
 
+$runtimePermissions = @(
+    "android.permission.CAMERA",
+    "android.permission.RECORD_AUDIO",
+    "android.permission.READ_CONTACTS",
+    "android.permission.CALL_PHONE"
+)
+
+foreach ($permission in $runtimePermissions) {
+    Invoke-Adb -AdbPath $adbPath -Arguments @(
+        "shell", "pm", "grant", $PackageName, $permission
+    ) | Out-Null
+}
+
 Write-Host ""
 Write-Host "Test permissions applied."
 Write-Host "- Accessibility service: enabled"
 Write-Host "- Appear on top: allowed"
+Write-Host "- Camera: granted"
+Write-Host "- Microphone: granted"
+Write-Host "- Contacts: granted"
+Write-Host "- Make phone calls: granted"

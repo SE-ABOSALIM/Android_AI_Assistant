@@ -43,6 +43,57 @@ public final class SelectionNumberParser {
                 || normalized.contains("\u0627\u0642\u0641\u0644");
     }
 
+    public Integer parseConfirmationSelection(String spokenText) {
+        String normalized = normalizeSelectionText(spokenText);
+        if (!hasText(normalized)) {
+            return null;
+        }
+
+        if (containsAny(
+                normalized,
+                "evet",
+                "onayla",
+                "tamam",
+                "yes",
+                "yeah",
+                "naam",
+                "neam",
+                "na3am",
+                "confirm",
+                "approve",
+                "\u0646\u0639\u0645",
+                "\u0627\u064a\u0648\u0647",
+                "\u0627\u064a\u0648\u0627",
+                "\u0645\u0648\u0627\u0641\u0642",
+                "\u0627\u0643\u062f"
+        )) {
+            return 0;
+        }
+
+        if (containsAny(
+                normalized,
+                "hayir",
+                "hayr",
+                "hayir istemiyorum",
+                "iptal",
+                "vazgec",
+                "la",
+                "le",
+                "laa",
+                "no",
+                "cancel",
+                "deny",
+                "\u0644\u0627",
+                "\u0627\u0644\u063a\u0627\u0621",
+                "\u0627\u0644\u063a\u064a",
+                "\u0627\u0631\u0641\u0636"
+        )) {
+            return 1;
+        }
+
+        return null;
+    }
+
     private Integer toSelectionIndex(String rawNumber, int maxChoice) {
         try {
             int number = Integer.parseInt(rawNumber);
@@ -166,5 +217,18 @@ public final class SelectionNumberParser {
             }
         }
         return builder.toString();
+    }
+
+    private boolean containsAny(String value, String... candidates) {
+        for (String candidate : candidates) {
+            if (value.contains(candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

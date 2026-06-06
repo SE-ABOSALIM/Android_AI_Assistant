@@ -28,6 +28,10 @@ public final class AccessibilityActionController {
         service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_NOTIFICATIONS);
     }
 
+    public boolean performScreenshot() {
+        return service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_TAKE_SCREENSHOT);
+    }
+
     public void clickNodeByText(String text) {
         AccessibilityNodeInfo rootNode = service.getRootInActiveWindow();
         if (rootNode == null) {

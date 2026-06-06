@@ -12,7 +12,8 @@ public final class NavigationCommandHandler implements CommandHandler {
         BACK,
         CLOSE_APP,
         RECENTS,
-        NOTIFICATIONS
+        NOTIFICATIONS,
+        SCREENSHOT
     }
 
     private final String intent;
@@ -51,6 +52,11 @@ public final class NavigationCommandHandler implements CommandHandler {
                 break;
             case NOTIFICATIONS:
                 service.performNotifications();
+                break;
+            case SCREENSHOT:
+                if (!service.performScreenshot()) {
+                    context.showMessage("Screenshot is not supported on this device");
+                }
                 break;
             default:
                 context.showMessage("Navigation action not supported");

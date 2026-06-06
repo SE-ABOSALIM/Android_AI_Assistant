@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
+import android.provider.Settings;
 import android.util.Log;
 
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
@@ -38,6 +40,56 @@ public final class AppLauncher {
         }
     }
 
+    public boolean openAppInfo(
+            Context context,
+            String packageName,
+            String label,
+            CommandExecutionContext executionContext
+    ) {
+        if (!hasText(packageName)) {
+            executionContext.showMessage("App not found. Please spell the app name.");
+            return false;
+        }
+
+        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+        intent.setData(Uri.parse("package:" + packageName));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        try {
+            context.startActivity(intent);
+            return true;
+        } catch (Exception exception) {
+            Log.e(TAG, "Failed to open app info: " + packageName, exception);
+            executionContext.showMessage("Could not open app info for " + firstNonEmpty(label, "app"));
+            return false;
+        }
+    }
+
+    public boolean requestUninstallPackage(
+            Context context,
+            String packageName,
+            String label,
+            CommandExecutionContext executionContext
+    ) {
+        if (!hasText(packageName)) {
+            executionContext.showMessage("App not found. Please spell the app name.");
+            return false;
+        }
+
+        Intent intent = new Intent(Intent.ACTION_DELETE);
+        intent.setData(Uri.parse("package:" + packageName));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
+        try {
+            context.startActivity(intent);
+            return true;
+        } catch (Exception exception) {
+            Log.e(TAG, "Failed to request uninstall: " + packageName, exception);
+            executionContext.showMessage("Could not uninstall " + firstNonEmpty(label, "app"));
+            return false;
+        }
+    }
+
     public Drawable getAppIcon(Context context, String packageName) {
         if (!hasText(packageName)) {
             return null;
@@ -48,6 +100,21 @@ public final class AppLauncher {
         } catch (Exception exception) {
             Log.w(TAG, "Could not load app icon: " + packageName, exception);
             return null;
+        }
+    }
+
+    public String getAppLabel(Context context, String packageName, String fallback) {
+        if (!hasText(packageName)) {
+            return fallback;
+        }
+
+        try {
+            PackageManager packageManager = context.getPackageManager();
+            return packageManager.getApplicationLabel(
+                    packageManager.getApplicationInfo(packageName, 0)
+            ).toString();
+        } catch (Exception exception) {
+            return fallback;
         }
     }
 
