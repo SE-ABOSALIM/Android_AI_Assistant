@@ -92,7 +92,10 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     "CLICK_ITEM": _contract(
         "CLICK_ITEM",
         threshold=0.55,
-        optional=("target_text",),
+        one_of=(("target_text", "target_index"),),
+        optional=("position",),
+        android_supported=True,
+        android_one_of=(("target_text", "target_index"),),
     ),
     "CLOSE_APP": _contract(
         "CLOSE_APP",

@@ -27,17 +27,3 @@ WRITE_TEXT_PATTERNS = {
         r"^\u0627\u0643\u062a\u0628\s+\u0627\u0644\u0646\u0635\s+(.+)$",
     ],
 }
-
-CLICK_TARGET_PATTERNS = {
-    "EN": [
-        r"^(?:tap|click|press)\s+(.+)$",
-    ],
-    "TR": [
-        r"^(.+?)\s+tikla$",
-        r"^(.+?)\s+tiklayin$",
-    ],
-    "AR": [
-        r"^اضغط على\s+(.+)$",
-        r"^انقر على\s+(.+)$",
-    ],
-}

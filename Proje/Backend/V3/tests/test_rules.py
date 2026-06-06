@@ -44,6 +44,41 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "GO_HOME")
         self.assertEqual(result["rule_matched"], "go_home")
 
+    def test_click_item_rule_wins_for_tap_notifications(self):
+        result = rule_based_command("tap notifications", "EN")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "notifications"})
+        self.assertEqual(result["rule_matched"], "click_item")
+
+    def test_click_item_rule_wins_for_tap_home(self):
+        result = rule_based_command("tap home", "EN")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "home"})
+        self.assertEqual(result["rule_matched"], "click_item")
+
+    def test_click_item_rule_keeps_position_hint(self):
+        result = rule_based_command("asagidaki artiya bas", "TR")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "arti", "position": "bottom"})
+        self.assertEqual(result["rule_matched"], "click_item")
+
+    def test_click_item_rule_supports_list_index(self):
+        result = rule_based_command("tap the third option", "EN")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "option", "target_index": 3})
+        self.assertEqual(result["rule_matched"], "click_item")
+
+    def test_click_item_rule_supports_index_without_target_text(self):
+        result = rule_based_command("ucuncusune bas", "TR")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_index": 3})
+        self.assertEqual(result["rule_matched"], "click_item")
+
     def test_timer_rule(self):
         result = rule_based_command("set a timer for 5 minutes", "EN")
 

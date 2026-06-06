@@ -97,6 +97,44 @@ class IntentContractTests(unittest.TestCase):
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
 
+    def test_click_item_extracts_target_and_position(self):
+        bottom_plus = _validate("CLICK_ITEM", {}, text="a\u015fa\u011f\u0131daki art\u0131ya bas", language="TR")
+        search = _validate("CLICK_ITEM", {}, text="tap the search button", language="EN")
+        third_option = _validate("CLICK_ITEM", {}, text="tap the third option", language="EN")
+        second_video = _validate("CLICK_ITEM", {}, text="ikinci videoya bas", language="TR")
+        arabic = _validate(
+            "CLICK_ITEM",
+            {},
+            text="\u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u0628\u062d\u062b",
+            language="AR",
+        )
+
+        self.assertTrue(bottom_plus["accepted"])
+        self.assertTrue(bottom_plus["android_supported"])
+        self.assertEqual(bottom_plus["parameters"]["target_text"], "arti")
+        self.assertEqual(bottom_plus["parameters"]["position"], "bottom")
+
+        self.assertTrue(search["accepted"])
+        self.assertEqual(search["parameters"]["target_text"], "search button")
+
+        self.assertTrue(third_option["accepted"])
+        self.assertEqual(third_option["parameters"]["target_text"], "option")
+        self.assertEqual(third_option["parameters"]["target_index"], 3)
+
+        self.assertTrue(second_video["accepted"])
+        self.assertEqual(second_video["parameters"]["target_text"], "video")
+        self.assertEqual(second_video["parameters"]["target_index"], 2)
+
+        self.assertTrue(arabic["accepted"])
+        self.assertEqual(arabic["parameters"]["target_text"], "\u0627\u0644\u0628\u062d\u062b")
+
+    def test_click_item_allows_index_without_target_text(self):
+        response = _validate("CLICK_ITEM", {}, text="\u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u062b\u0627\u0644\u062b", language="AR")
+
+        self.assertTrue(response["accepted"])
+        self.assertTrue(response["android_supported"])
+        self.assertEqual(response["parameters"]["target_index"], 3)
+
     def test_system_setting_intents_are_android_supported(self):
         examples = {
             "SET_WIFI": {"state": "on"},

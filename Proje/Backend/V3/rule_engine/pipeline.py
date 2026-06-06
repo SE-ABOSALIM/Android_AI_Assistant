@@ -2,6 +2,7 @@ from typing import Callable, List, Optional
 
 from V3.rule_engine.context import RuleContext
 from V3.rule_engine.apps import app_command
+from V3.rule_engine.click_item import click_item_command
 from V3.rule_engine.display import display_command
 from V3.rule_engine.gestures import gesture_command
 from V3.rule_engine.navigation import navigation_command
@@ -18,6 +19,7 @@ RuleHandler = Callable[[RuleContext], Optional[dict]]
 # run before the broad app opener so phrases like "open notifications" are not
 # interpreted as app names.
 RULE_HANDLERS: List[RuleHandler] = [
+    click_item_command,
     display_command,
     system_settings_command,
     volume_command,

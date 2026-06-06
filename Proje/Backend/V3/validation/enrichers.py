@@ -1,11 +1,15 @@
 from typing import Callable, Dict
 
 from V3.extraction.alarm import extract_alarm
+from V3.extraction.click import (
+    extract_click_index,
+    extract_click_position,
+    extract_click_target,
+)
 from V3.extraction.contact import extract_contact_name
 from V3.extraction.photo import extract_photo_camera
 from V3.extraction.text import (
     extract_alarm_text,
-    extract_click_target,
     extract_search_query,
     extract_write_text,
 )
@@ -51,12 +55,20 @@ def enrich_write_text(context: ValidationContext) -> None:
 
 
 def enrich_click_item(context: ValidationContext) -> None:
-    if context.parameters.get("target_text"):
-        return
+    if not context.parameters.get("target_text"):
+        target_text = extract_click_target(context.original_text, context.language)
+        if target_text:
+            context.parameters["target_text"] = target_text
 
-    target_text = extract_click_target(context.original_text, context.language)
-    if target_text:
-        context.parameters["target_text"] = target_text
+    if not context.parameters.get("position"):
+        position = extract_click_position(context.original_text)
+        if position:
+            context.parameters["position"] = position
+
+    if not context.parameters.get("target_index"):
+        target_index = extract_click_index(context.original_text)
+        if target_index:
+            context.parameters["target_index"] = target_index
 
 
 def enrich_alarm(context: ValidationContext) -> None:
