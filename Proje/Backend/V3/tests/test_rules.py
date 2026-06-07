@@ -133,6 +133,8 @@ class RuleServiceTests(unittest.TestCase):
             "Ahmet Kaya icin aramasi yap": "Ahmet Kaya",
             "hava durumu arama yap": "hava durumu",
             "hava durumu ile ilgili arama yap": "hava durumu",
+            "sunu ara Istanbul hava durumu": "Istanbul hava durumu",
+            "\u015funu ara Ahmet Kaya": "Ahmet Kaya",
         }
 
         for text, query in examples.items():

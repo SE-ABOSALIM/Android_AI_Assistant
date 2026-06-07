@@ -3,6 +3,7 @@ SEARCH_QUERY_PATTERNS = {
         r"^(?:search for|look up)\s+(.+)$",
     ],
     "TR": [
+        r"^(?:sunu|\u015funu|bunu)\s+ara\s+(.+)$",
         r"^(.+?)\s+(?:(?:icin|ile\s+ilgili)\s+)?arama\s+yap$",
         r"^(.+?)\s+(?:icin\s+)?aramasi\s+yap$",
         r"^(.+?)\s+(?:icin\s+)?ara$",
@@ -14,6 +15,8 @@ SEARCH_QUERY_PATTERNS = {
         r"^\u0641\u062a\u0634\s+(?:\u0639\u0646\s+)?(.+)$",
     ],
 }
+
+TRAILING_SEARCH_QUERY_NOISE_PATTERN = r"\s+(?:icin|i\u00e7in|ile\s+ilgili)$"
 
 WRITE_TEXT_PATTERNS = {
     "EN": [

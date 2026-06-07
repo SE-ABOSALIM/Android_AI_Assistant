@@ -1,0 +1,35 @@
+DAY_ALIASES = {
+    "monday": ("monday", "pazartesi", "\u0627\u0644\u0627\u062b\u0646\u064a\u0646", "\u0627\u062b\u0646\u064a\u0646"),
+    "tuesday": ("tuesday", "sali", "\u0627\u0644\u062b\u0644\u0627\u062b\u0627\u0621", "\u062b\u0644\u0627\u062b\u0627\u0621"),
+    "wednesday": ("wednesday", "carsamba", "\u0627\u0644\u0627\u0631\u0628\u0639\u0627\u0621", "\u0627\u0631\u0628\u0639\u0627\u0621"),
+    "thursday": ("thursday", "persembe", "\u0627\u0644\u062e\u0645\u064a\u0633", "\u062e\u0645\u064a\u0633"),
+    "friday": ("friday", "cuma", "\u0627\u0644\u062c\u0645\u0639\u0629", "\u062c\u0645\u0639\u0629"),
+    "saturday": ("saturday", "cumartesi", "\u0627\u0644\u0633\u0628\u062a", "\u0633\u0628\u062a"),
+    "sunday": ("sunday", "pazar", "\u0627\u0644\u0627\u062d\u062f", "\u0627\u062d\u062f"),
+}
+
+AM_ALIASES = (
+    "am",
+    "a m",
+    "morning",
+    "sabah",
+    "\u0635\u0628\u0627\u062d",
+    "\u0627\u0644\u0635\u0628\u0627\u062d",
+    "\u0641\u062c\u0631",
+    "\u0627\u0644\u0641\u062c\u0631",
+)
+
+PM_ALIASES = (
+    "pm",
+    "p m",
+    "evening",
+    "afternoon",
+    "night",
+    "aksam",
+    "ogleden sonra",
+    "gece",
+    "\u0645\u0633\u0627\u0621",
+    "\u0627\u0644\u0645\u0633\u0627\u0621",
+    "\u0644\u064a\u0644",
+    "\u0627\u0644\u0644\u064a\u0644",
+)

@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 from V3.extraction.common import clean_free_text, extract_first_match
+from V3.extraction.text import clean_search_query
 from V3.patterns.commands.text_controls import CLEAR_TEXT_PATTERNS, DOUBLE_TAP_PATTERNS, HOLD_SCREEN_PATTERNS
 from V3.patterns.extraction.text import SEARCH_QUERY_PATTERNS, WRITE_TEXT_PATTERNS
 from V3.rule_engine.context import RuleContext
@@ -38,7 +39,7 @@ def _search_query_command(context: RuleContext) -> Optional[Dict[str, Any]]:
         patterns_for_language(SEARCH_QUERY_PATTERNS, context.language),
         ignore_case=True,
     )
-    query = clean_free_text(query)
+    query = clean_search_query(query, context.language)
     if not query:
         return None
 

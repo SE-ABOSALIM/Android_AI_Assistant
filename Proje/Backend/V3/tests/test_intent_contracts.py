@@ -313,6 +313,30 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(android_supported["accepted"])
         self.assertTrue(android_supported["android_supported"])
 
+    def test_model_guard_allows_turkish_volume_phrasing(self):
+        examples = [
+            ("sesi fulle", {"volume_level": "max"}),
+            ("sesi en yuksek seviyeye getir", {"volume_level": "max"}),
+            ("sesini sonuna kadar ac", {"volume_level": "max"}),
+        ]
+
+        for text, parameters in examples:
+            with self.subTest(text=text):
+                response = _validate(
+                    "ADJUST_VOLUME",
+                    parameters,
+                    text=text,
+                    language="TR",
+                    confidence=0.92,
+                    top_predictions=[
+                        {"label": "ADJUST_VOLUME__volume_level=max", "confidence": 0.92},
+                        {"label": "UNKNOWN_COMMAND__none", "confidence": 0.04},
+                    ],
+                )
+
+                self.assertTrue(response["accepted"])
+                self.assertEqual(response["intent"], "ADJUST_VOLUME")
+
     def test_enriches_text_parameters(self):
         search = _validate("SEARCH_QUERY", {}, text="search for weather")
         arabic_search = _validate(
@@ -327,6 +351,18 @@ class IntentContractTests(unittest.TestCase):
             text="\u0627\u0628\u062d\u062b \u0627\u0644\u0637\u0642\u0633",
             language="AR",
         )
+        turkish_search_for = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="Ahmet Kaya i\u00e7in arama yap",
+            language="TR",
+        )
+        turkish_search_this = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="\u015funu ara Istanbul hava durumu",
+            language="TR",
+        )
         write = _validate("WRITE_TEXT", {}, text='write "Meeting starts at 5"')
 
         self.assertTrue(search["accepted"])
@@ -336,6 +372,10 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(arabic_search["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
         self.assertTrue(arabic_search_without_preposition["accepted"])
         self.assertEqual(arabic_search_without_preposition["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
+        self.assertTrue(turkish_search_for["accepted"])
+        self.assertEqual(turkish_search_for["parameters"]["query"], "ahmet kaya")
+        self.assertTrue(turkish_search_this["accepted"])
+        self.assertEqual(turkish_search_this["parameters"]["query"], "istanbul hava durumu")
         self.assertTrue(write["accepted"])
         self.assertTrue(write["android_supported"])
         self.assertEqual(write["parameters"]["text"], "Meeting starts at 5")
