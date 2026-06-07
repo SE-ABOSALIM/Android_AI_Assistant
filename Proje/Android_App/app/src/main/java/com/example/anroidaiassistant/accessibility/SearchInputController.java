@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
+import com.example.anroidaiassistant.resources.SearchInputAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.ArrayList;
@@ -14,6 +15,7 @@ import java.util.List;
 
 public final class SearchInputController {
     private static final int SEARCH_FIELD_RETRY_DELAY_MS = 450;
+    private static final int SUBMIT_AFTER_SET_TEXT_DELAY_MS = 500;
     private static final int MIN_SEARCH_BUTTON_SCORE = 8;
 
     private final MyAccessibilityService service;
@@ -77,13 +79,25 @@ public final class SearchInputController {
         return inputNode != null && setText(inputNode, "");
     }
 
+    public boolean pressKeyboardAction(String actionText) {
+        if (!isKeyboardActionText(actionText)) {
+            return false;
+        }
+
+        AccessibilityNodeInfo inputNode = findBestWritableInput();
+        return inputNode != null && submitSearch(inputNode);
+    }
+
     private boolean writeQueryAndSubmit(AccessibilityNodeInfo inputNode, String query) {
         boolean textSet = setText(inputNode, query);
         if (!textSet) {
             return false;
         }
 
-        submitSearch(inputNode);
+        mainHandler.postDelayed(() -> {
+            AccessibilityNodeInfo refreshedInput = findBestWritableInput();
+            submitSearch(refreshedInput != null ? refreshedInput : inputNode);
+        }, SUBMIT_AFTER_SET_TEXT_DELAY_MS);
         return true;
     }
 
@@ -100,10 +114,13 @@ public final class SearchInputController {
         return inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);
     }
 
-    private void submitSearch(AccessibilityNodeInfo inputNode) {
+    private boolean submitSearch(AccessibilityNodeInfo inputNode) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            inputNode.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
+            inputNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+            inputNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            return inputNode.performAction(AccessibilityNodeInfo.AccessibilityAction.ACTION_IME_ENTER.getId());
         }
+        return false;
     }
 
     private AccessibilityNodeInfo findBestSearchInput(AccessibilityNodeInfo node) {
@@ -247,7 +264,7 @@ public final class SearchInputController {
         Rect bounds = new Rect();
         clickableNode.getBoundsInScreen(bounds);
         int score = 4;
-        if (nodeText.equals("search") || nodeText.equals("ara") || nodeText.equals("arama")) {
+        if (equalsAny(nodeText, SearchInputAliases.EXACT_SEARCH_BUTTON_LABELS)) {
             score += 8;
         }
         if (bounds.width() >= service.getResources().getDisplayMetrics().widthPixels * 0.45f) {
@@ -283,24 +300,42 @@ public final class SearchInputController {
     }
 
     private boolean containsSearchKeyword(String value) {
-        return value.contains("search")
-                || value.contains("ara")
-                || value.contains("arama")
-                || value.contains("\u0628\u062d\u062b")
-                || value.contains("\u0627\u0628\u062d\u062b");
+        return containsAny(value, SearchInputAliases.SEARCH_KEYWORDS);
     }
 
     private boolean isSecondarySearchAction(String value) {
-        return value.contains("voice")
-                || value.contains("mic")
-                || value.contains("microphone")
-                || value.contains("kamera")
-                || value.contains("camera")
-                || value.contains("lens")
-                || value.contains("image")
-                || value.contains("photo")
-                || value.contains("ai mode")
-                || value.contains("labs");
+        return containsAny(value, SearchInputAliases.SECONDARY_SEARCH_ACTION_KEYWORDS);
+    }
+
+    private boolean isKeyboardActionText(String value) {
+        String normalized = normalizeKeyboardActionText(value);
+        return equalsAny(normalized, SearchInputAliases.KEYBOARD_ACTIONS);
+    }
+
+    private String normalizeKeyboardActionText(String value) {
+        String normalized = normalize(value);
+        for (String filler : SearchInputAliases.KEYBOARD_ACTION_FILLERS) {
+            normalized = normalized.replace(filler, " ");
+        }
+        return normalized.replaceAll("\\s+", " ").trim();
+    }
+
+    private boolean containsAny(String value, String[] candidates) {
+        for (String candidate : candidates) {
+            if (value.contains(candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean equalsAny(String value, String[] candidates) {
+        for (String candidate : candidates) {
+            if (value.equals(candidate)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String joinNodeText(AccessibilityNodeInfo node) {

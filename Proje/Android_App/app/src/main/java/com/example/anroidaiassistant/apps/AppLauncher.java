@@ -9,6 +9,7 @@ import android.provider.Settings;
 import android.util.Log;
 
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
+import com.example.anroidaiassistant.resources.AppSourceAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.Locale;
@@ -129,36 +130,26 @@ public final class AppLauncher {
         }
 
         String normalized = packageName.toLowerCase(Locale.US);
-        if (normalized.startsWith("com.google.") || normalized.contains(".google.")) {
-            return "Google";
-        }
-        if (normalized.startsWith("com.microsoft.")
-                || normalized.startsWith("com.azure.")
-                || normalized.contains(".microsoft.")
-                || normalized.contains(".azure.")) {
-            return "Microsoft";
-        }
-        if (normalized.startsWith("com.facebook.")
-                || normalized.startsWith("com.instagram.")
-                || normalized.startsWith("com.whatsapp.")) {
-            return "Meta";
-        }
-        if (normalized.startsWith("org.telegram.") || normalized.contains(".telegram.")) {
-            return "Telegram";
-        }
-        if (normalized.startsWith("com.spotify.")) {
-            return "Spotify";
-        }
-        if (normalized.startsWith("com.netflix.")) {
-            return "Netflix";
-        }
-        if (normalized.contains("turktelekom") || normalized.contains("turk.telekom")) {
-            return "Turk Telekom";
-        }
-        if (normalized.startsWith("com.android.")) {
-            return "System";
+        for (AppSourceAliases.SourceRule rule : AppSourceAliases.SOURCE_RULES) {
+            if (matchesRule(normalized, rule)) {
+                return rule.source;
+            }
         }
         return "";
+    }
+
+    private boolean matchesRule(String packageName, AppSourceAliases.SourceRule rule) {
+        for (String prefix : rule.startsWith) {
+            if (packageName.startsWith(prefix)) {
+                return true;
+            }
+        }
+        for (String part : rule.contains) {
+            if (packageName.contains(part)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String firstNonEmpty(String... values) {

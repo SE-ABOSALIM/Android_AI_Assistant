@@ -2,6 +2,7 @@ package com.example.anroidaiassistant.apps;
 
 import android.content.Context;
 
+import com.example.anroidaiassistant.resources.SpelledLetterAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.ArrayList;
@@ -107,127 +108,34 @@ public final class SpelledAppMatcher {
     private SpelledLetterMatch spelledTokenToLetters(String[] tokens, int index) {
         String token = tokens[index];
 
-        if (("duble".equals(token) || "double".equals(token) || "cift".equals(token))
+        if (containsExact(SpelledLetterAliases.DOUBLE_W_PREFIXES, token)
                 && index + 1 < tokens.length
-                && ("ve".equals(tokens[index + 1]) || "v".equals(tokens[index + 1])
-                || "u".equals(tokens[index + 1]) || "yu".equals(tokens[index + 1])
-                || "you".equals(tokens[index + 1]))) {
+                && containsExact(SpelledLetterAliases.DOUBLE_W_TARGETS, tokens[index + 1])) {
             return new SpelledLetterMatch(Collections.singletonList('w'), 2);
         }
 
-        switch (token) {
-            case "a":
-            case "ah":
-                return new SpelledLetterMatch(Collections.singletonList('a'), 1);
-            case "b":
-            case "be":
-            case "bee":
-                return new SpelledLetterMatch(Collections.singletonList('b'), 1);
-            case "c":
-            case "ce":
-            case "cee":
-                return new SpelledLetterMatch(Collections.singletonList('c'), 1);
-            case "d":
-            case "de":
-            case "dee":
-                return new SpelledLetterMatch(Collections.singletonList('d'), 1);
-            case "e":
-                return new SpelledLetterMatch(Collections.singletonList('e'), 1);
-            case "f":
-            case "fe":
-            case "ef":
-                return new SpelledLetterMatch(Collections.singletonList('f'), 1);
-            case "g":
-            case "ge":
-                return new SpelledLetterMatch(Collections.singletonList('g'), 1);
-            case "h":
-            case "he":
-            case "aitch":
-            case "eyc":
-                return new SpelledLetterMatch(Collections.singletonList('h'), 1);
-            case "i":
-            case "ii":
-                return new SpelledLetterMatch(Collections.singletonList('i'), 1);
-            case "j":
-            case "je":
-            case "jay":
-                return new SpelledLetterMatch(Collections.singletonList('j'), 1);
-            case "k":
-            case "ka":
-            case "key":
-                return new SpelledLetterMatch(Collections.singletonList('k'), 1);
-            case "l":
-            case "le":
-            case "el":
-                return new SpelledLetterMatch(Collections.singletonList('l'), 1);
-            case "m":
-            case "me":
-            case "em":
-                return new SpelledLetterMatch(Collections.singletonList('m'), 1);
-            case "n":
-            case "ne":
-            case "en":
-                return new SpelledLetterMatch(Collections.singletonList('n'), 1);
-            case "o":
-            case "oh":
-                return new SpelledLetterMatch(Collections.singletonList('o'), 1);
-            case "p":
-            case "pe":
-            case "pee":
-                return new SpelledLetterMatch(Collections.singletonList('p'), 1);
-            case "q":
-            case "ku":
-            case "queue":
-                return new SpelledLetterMatch(Collections.singletonList('q'), 1);
-            case "r":
-            case "re":
-            case "ar":
-                return new SpelledLetterMatch(Collections.singletonList('r'), 1);
-            case "s":
-            case "se":
-            case "es":
-                return new SpelledLetterMatch(Collections.singletonList('s'), 1);
-            case "t":
-            case "te":
-            case "tee":
-                return new SpelledLetterMatch(Collections.singletonList('t'), 1);
-            case "u":
-            case "yu":
-            case "you":
-                return new SpelledLetterMatch(Collections.singletonList('u'), 1);
-            case "v":
-            case "vee":
-                return new SpelledLetterMatch(Collections.singletonList('v'), 1);
-            case "ve":
-                List<Character> veCandidates = new ArrayList<>();
-                veCandidates.add('v');
-                veCandidates.add('w');
-                return new SpelledLetterMatch(veCandidates, 1);
-            case "w":
-            case "we":
-            case "dabilyu":
-            case "dabiliyu":
-            case "dabulyu":
-            case "doubleyou":
-            case "doubleu":
-                return new SpelledLetterMatch(Collections.singletonList('w'), 1);
-            case "x":
-            case "iks":
-            case "ex":
-                return new SpelledLetterMatch(Collections.singletonList('x'), 1);
-            case "y":
-            case "ye":
-            case "why":
-                return new SpelledLetterMatch(Collections.singletonList('y'), 1);
-            case "z":
-            case "ze":
-            case "zet":
-            case "zed":
-            case "zee":
-                return new SpelledLetterMatch(Collections.singletonList('z'), 1);
-            default:
-                return new SpelledLetterMatch(Collections.emptyList(), 1);
+        char[] letters = SpelledLetterAliases.lettersFor(token);
+        if (letters == null) {
+            return new SpelledLetterMatch(Collections.emptyList(), 1);
         }
+        return new SpelledLetterMatch(toCharacterList(letters), 1);
+    }
+
+    private List<Character> toCharacterList(char[] letters) {
+        List<Character> values = new ArrayList<>();
+        for (char letter : letters) {
+            values.add(letter);
+        }
+        return values;
+    }
+
+    private boolean containsExact(String[] values, String candidate) {
+        for (String value : values) {
+            if (value.equals(candidate)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String normalizeAsciiText(String text) {

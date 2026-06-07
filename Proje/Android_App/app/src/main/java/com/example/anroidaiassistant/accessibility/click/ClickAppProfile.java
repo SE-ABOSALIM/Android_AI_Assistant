@@ -1,51 +1,43 @@
 package com.example.anroidaiassistant.accessibility.click;
 
+import com.example.anroidaiassistant.resources.ClickAppProfileAliases;
+
 import java.util.Set;
 
 public final class ClickAppProfile {
     public void addProfileVariants(String packageName, String normalizedTarget, Set<String> variants) {
         String normalizedPackage = ClickTextUtils.normalize(packageName);
-        if (normalizedPackage.contains("youtube")) {
+        if (normalizedPackage.contains(ClickAppProfileAliases.YOUTUBE_PACKAGE_MARKER)) {
             addYoutubeVariants(normalizedTarget, variants);
         }
-        if (normalizedPackage.contains("instagram")) {
+        if (normalizedPackage.contains(ClickAppProfileAliases.INSTAGRAM_PACKAGE_MARKER)) {
             addInstagramVariants(normalizedTarget, variants);
         }
-        if (normalizedPackage.contains("whatsapp")) {
+        if (normalizedPackage.contains(ClickAppProfileAliases.WHATSAPP_PACKAGE_MARKER)) {
             addWhatsappVariants(normalizedTarget, variants);
         }
     }
 
     private void addYoutubeVariants(String target, Set<String> variants) {
-        if (containsAny(target, "home", "anasayfa", "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0647")) {
-            add(variants, "home", "anasayfa", "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0647");
-        }
-        if (containsAny(target, "short", "shorts")) {
-            add(variants, "shorts");
-        }
-        if (containsAny(target, "subscription", "abonelik")) {
-            add(variants, "subscriptions", "abonelikler");
-        }
+        addIfMatched(target, variants, ClickAppProfileAliases.HOME_TARGETS, ClickAppProfileAliases.HOME_VARIANTS);
+        addIfMatched(target, variants, ClickAppProfileAliases.YOUTUBE_SHORTS_TARGETS, ClickAppProfileAliases.YOUTUBE_SHORTS_VARIANTS);
+        addIfMatched(target, variants, ClickAppProfileAliases.YOUTUBE_SUBSCRIPTION_TARGETS, ClickAppProfileAliases.YOUTUBE_SUBSCRIPTION_VARIANTS);
     }
 
     private void addInstagramVariants(String target, Set<String> variants) {
-        if (containsAny(target, "home", "anasayfa", "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0647")) {
-            add(variants, "home", "anasayfa", "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0647");
-        }
-        if (containsAny(target, "reels", "reel")) {
-            add(variants, "reels", "reel");
-        }
-        if (containsAny(target, "profile", "profil")) {
-            add(variants, "profile", "profil");
-        }
+        addIfMatched(target, variants, ClickAppProfileAliases.HOME_TARGETS, ClickAppProfileAliases.HOME_VARIANTS);
+        addIfMatched(target, variants, ClickAppProfileAliases.INSTAGRAM_REELS_TARGETS, ClickAppProfileAliases.INSTAGRAM_REELS_VARIANTS);
+        addIfMatched(target, variants, ClickAppProfileAliases.INSTAGRAM_PROFILE_TARGETS, ClickAppProfileAliases.INSTAGRAM_PROFILE_VARIANTS);
     }
 
     private void addWhatsappVariants(String target, Set<String> variants) {
-        if (containsAny(target, "chat", "sohbet")) {
-            add(variants, "chats", "sohbetler");
-        }
-        if (containsAny(target, "call", "arama", "\u0627\u062A\u0635\u0627\u0644")) {
-            add(variants, "calls", "aramalar", "\u0627\u062A\u0635\u0627\u0644\u0627\u062A");
+        addIfMatched(target, variants, ClickAppProfileAliases.WHATSAPP_CHAT_TARGETS, ClickAppProfileAliases.WHATSAPP_CHAT_VARIANTS);
+        addIfMatched(target, variants, ClickAppProfileAliases.WHATSAPP_CALL_TARGETS, ClickAppProfileAliases.WHATSAPP_CALL_VARIANTS);
+    }
+
+    private void addIfMatched(String target, Set<String> variants, String[] targets, String[] values) {
+        if (containsAny(target, targets)) {
+            add(variants, values);
         }
     }
 

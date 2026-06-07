@@ -1,5 +1,7 @@
 package com.example.anroidaiassistant.selection;
 
+import com.example.anroidaiassistant.resources.SelectionAliases;
+
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -28,19 +30,7 @@ public final class SelectionNumberParser {
 
     public boolean isCancelSelection(String text) {
         String normalized = normalizeSelectionText(text);
-        return normalized.contains("iptal")
-                || normalized.contains("cancel")
-                || normalized.contains("vazgec")
-                || normalized.contains("vaz gectim")
-                || normalized.contains("geri")
-                || normalized.contains("kapat")
-                || normalized.contains("cik")
-                || normalized.contains("cikis")
-                || normalized.contains("\u0627\u0644\u063a\u0627\u0621")
-                || normalized.contains("\u0627\u0644\u063a\u064a")
-                || normalized.contains("\u062e\u0631\u0648\u062c")
-                || normalized.contains("\u0631\u062c\u0648\u0639")
-                || normalized.contains("\u0627\u0642\u0641\u0644");
+        return containsAny(normalized, SelectionAliases.CANCEL_SELECTION);
     }
 
     public Integer parseConfirmationSelection(String spokenText) {
@@ -49,45 +39,11 @@ public final class SelectionNumberParser {
             return null;
         }
 
-        if (containsAny(
-                normalized,
-                "evet",
-                "onayla",
-                "tamam",
-                "yes",
-                "yeah",
-                "naam",
-                "neam",
-                "na3am",
-                "confirm",
-                "approve",
-                "\u0646\u0639\u0645",
-                "\u0627\u064a\u0648\u0647",
-                "\u0627\u064a\u0648\u0627",
-                "\u0645\u0648\u0627\u0641\u0642",
-                "\u0627\u0643\u062f"
-        )) {
+        if (containsAny(normalized, SelectionAliases.CONFIRM_YES)) {
             return 0;
         }
 
-        if (containsAny(
-                normalized,
-                "hayir",
-                "hayr",
-                "hayir istemiyorum",
-                "iptal",
-                "vazgec",
-                "la",
-                "le",
-                "laa",
-                "no",
-                "cancel",
-                "deny",
-                "\u0644\u0627",
-                "\u0627\u0644\u063a\u0627\u0621",
-                "\u0627\u0644\u063a\u064a",
-                "\u0627\u0631\u0641\u0636"
-        )) {
+        if (containsAny(normalized, SelectionAliases.CONFIRM_NO)) {
             return 1;
         }
 
@@ -107,78 +63,7 @@ public final class SelectionNumberParser {
     }
 
     private Integer selectionWordToNumber(String token) {
-        switch (token) {
-            case "bir":
-            case "birinci":
-            case "one":
-            case "first":
-            case "\u0648\u0627\u062d\u062f":
-            case "\u0648\u0627\u062d\u062f\u0647":
-            case "\u0627\u062d\u062f":
-            case "\u0627\u062d\u062f\u0649":
-            case "\u0627\u0648\u0644":
-            case "\u0627\u0648\u0644\u0649":
-            case "\u0627\u0644\u0627\u0648\u0644":
-            case "\u0627\u0644\u0627\u0648\u0644\u0649":
-            case "wahid":
-            case "vahid":
-                return 1;
-            case "iki":
-            case "ikinci":
-            case "two":
-            case "second":
-            case "\u0627\u062b\u0646\u064a\u0646":
-            case "\u0627\u062b\u0646\u0627\u0646":
-            case "\u0627\u062a\u0646\u064a\u0646":
-            case "\u062b\u0646\u064a\u0646":
-            case "\u0627\u062b\u0646\u062a\u064a\u0646":
-            case "\u0627\u062b\u0646\u062a\u0627\u0646":
-            case "\u062b\u0627\u0646\u064a":
-            case "\u0627\u0644\u062b\u0627\u0646\u064a":
-            case "\u062a\u0627\u0646\u064a":
-            case "isnan":
-            case "ithnan":
-            case "itnen":
-                return 2;
-            case "uc":
-            case "ucuncu":
-            case "three":
-            case "third":
-            case "\u062b\u0644\u0627\u062b\u0647":
-            case "\u062b\u0644\u0627\u062b\u0629":
-            case "\u062b\u0644\u0627\u062b":
-            case "\u062a\u0644\u0627\u062a\u0647":
-            case "\u062a\u0644\u0627\u062a\u0629":
-            case "\u062b\u0627\u0644\u062b":
-            case "\u0627\u0644\u062b\u0627\u0644\u062b":
-            case "talata":
-            case "thalatha":
-                return 3;
-            case "dort":
-            case "dorduncu":
-            case "four":
-            case "fourth":
-            case "\u0627\u0631\u0628\u0639\u0647":
-            case "\u0627\u0631\u0628\u0639\u0629":
-            case "\u0627\u0631\u0628\u0639":
-            case "\u0631\u0627\u0628\u0639":
-            case "\u0627\u0644\u0631\u0627\u0628\u0639":
-            case "arbaa":
-                return 4;
-            case "bes":
-            case "besinci":
-            case "five":
-            case "fifth":
-            case "\u062e\u0645\u0633\u0647":
-            case "\u062e\u0645\u0633\u0629":
-            case "\u062e\u0645\u0633":
-            case "\u062e\u0627\u0645\u0633":
-            case "\u0627\u0644\u062e\u0627\u0645\u0633":
-            case "khamsa":
-                return 5;
-            default:
-                return null;
-        }
+        return SelectionAliases.NUMBER_WORDS.get(token);
     }
 
     private String normalizeSelectionText(String text) {

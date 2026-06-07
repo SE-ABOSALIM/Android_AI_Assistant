@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.os.Handler;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import com.example.anroidaiassistant.resources.QuickSettingsAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.ArrayList;
@@ -212,10 +213,10 @@ public final class QuickSettingsTileController {
             return null;
         }
 
-        if (containsAny(normalized, " off ", " kapali ", " kapalı ", " disabled ", " غير مفعل ", " ايقاف ")) {
+        if (containsAny(normalized, QuickSettingsAliases.STATE_OFF_TEXTS)) {
             return false;
         }
-        if (containsAny(normalized, " on ", " acik ", " açık ", " enabled ", " مفعل ", " تشغيل ")) {
+        if (containsAny(normalized, QuickSettingsAliases.STATE_ON_TEXTS)) {
             return true;
         }
         return null;
@@ -379,22 +380,10 @@ public final class QuickSettingsTileController {
             return null;
         }
 
-        if (containsAny(
-                normalized,
-                " bluetooth off ",
-                " bluetooth disabled ",
-                " bluetooth kapali ",
-                " bluetooth kapalÄ± "
-        )) {
+        if (containsAny(normalized, QuickSettingsAliases.BLUETOOTH_OFF_TEXTS)) {
             return false;
         }
-        if (containsAny(
-                normalized,
-                " bluetooth on ",
-                " bluetooth enabled ",
-                " bluetooth acik ",
-                " bluetooth aÃ§Ä±k "
-        )) {
+        if (containsAny(normalized, QuickSettingsAliases.BLUETOOTH_ON_TEXTS)) {
             return true;
         }
         return null;
@@ -406,22 +395,10 @@ public final class QuickSettingsTileController {
             return null;
         }
 
-        if (containsAny(
-                normalized,
-                " turn on bluetooth ",
-                " enable bluetooth ",
-                " bluetooth u ac ",
-                " bluetooth ac "
-        )) {
+        if (containsAny(normalized, QuickSettingsAliases.BLUETOOTH_ENABLE_ACTION_TEXTS)) {
             return false;
         }
-        if (containsAny(
-                normalized,
-                " turn off bluetooth ",
-                " disable bluetooth ",
-                " bluetooth u kapat ",
-                " bluetooth kapat "
-        )) {
+        if (containsAny(normalized, QuickSettingsAliases.BLUETOOTH_DISABLE_ACTION_TEXTS)) {
             return true;
         }
         return readStateFromText(value);
@@ -565,24 +542,16 @@ public final class QuickSettingsTileController {
     }
 
     private void registerTargets() {
-        targets.put("SET_WIFI", new TileTarget("Wi-Fi", new String[]{
-                "Wi-Fi", "Wifi", "Kablosuz", "واي فاي", "وايفاى"
-        }));
-        targets.put("SET_BLUETOOTH", new TileTarget("Bluetooth", new String[]{
-                "Bluetooth", "بلوتوث"
-        }, true));
-        targets.put("SET_LOCATION", new TileTarget("Location", new String[]{
-                "Location", "Konum", "موقع", "الموقع"
-        }));
-        targets.put("SET_MOBILE_DATA", new TileTarget("Mobile data", new String[]{
-                "Mobile data", "Cellular data", "Mobil veri", "Hucresel veri", "Hücresel veri",
-                "بيانات الهاتف", "بيانات الجوال", "بيانات المحمول"
-        }));
-        targets.put("SET_MOBILE_HOTSPOT", new TileTarget("Hotspot", new String[]{
-                "Hotspot", "Mobile hotspot", "Personal hotspot", "Tethering",
-                "Mobil hotspot", "Kisisel erisim noktasi", "Kişisel erişim noktası", "Erisim noktasi",
-                "نقطة الاتصال", "نقطه الاتصال", "هوتسبوت"
-        }));
+        for (QuickSettingsAliases.TileSpec spec : QuickSettingsAliases.TILE_SPECS) {
+            targets.put(
+                    spec.intent,
+                    new TileTarget(
+                            spec.displayName,
+                            spec.labels,
+                            spec.useBluetoothToggleFallback
+                    )
+            );
+        }
     }
 
     private static final class TileTarget {
@@ -601,3 +570,4 @@ public final class QuickSettingsTileController {
         }
     }
 }
+

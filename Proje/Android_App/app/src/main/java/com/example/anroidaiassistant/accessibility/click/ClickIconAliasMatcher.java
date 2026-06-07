@@ -1,5 +1,6 @@
 package com.example.anroidaiassistant.accessibility.click;
 
+import com.example.anroidaiassistant.resources.ClickIconAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.ArrayList;
@@ -23,55 +24,89 @@ public final class ClickIconAliasMatcher {
     }
 
     public boolean isGenericListTarget(String value) {
-        return isAny(
-                value,
-                "option",
-                "item",
-                "result",
-                "video",
-                "device",
-                "row",
-                "secenek",
-                "sonuc",
-                "cihaz",
-                "\u062E\u064A\u0627\u0631",
-                "\u0646\u062A\u064A\u062C\u0647",
-                "\u0641\u064A\u062F\u064A\u0648",
-                "\u062C\u0647\u0627\u0632"
-        );
+        return isAny(value, ClickIconAliases.GENERIC_LIST_TARGETS);
     }
 
     private void addGlobalIconAliases(String normalizedTarget, Set<String> variants) {
-        if (isAny(normalizedTarget, "arti", "plus", "add", "ekle", "olustur", "create", "new")) {
-            addVariants(variants, "arti", "plus", "add", "ekle", "olustur", "create", "new", "post", "+");
+        boolean videoCallTarget = isVideoCallTarget(normalizedTarget);
+
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.PLUS_TARGETS, ClickIconAliases.PLUS_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.CLOSE_TARGETS, ClickIconAliases.CLOSE_VARIANTS);
+        if (videoCallTarget) {
+            addVariants(variants, ClickIconAliases.VIDEO_CALL_VARIANTS);
         }
-        if (isAny(normalizedTarget, "ara", "arama", "search", "\u0628\u062D\u062B", "\u0627\u0644\u0628\u062D\u062B")) {
-            addVariants(variants, "ara", "arama", "search", "\u0628\u062D\u062B", "\u0627\u0628\u062D\u062B");
+        if (!videoCallTarget) {
+            addIfMatched(
+                    normalizedTarget,
+                    variants,
+                    ClickIconAliases.SEARCH_TARGETS,
+                    ClickIconAliases.SEARCH_VARIANTS
+            );
         }
-        if (isAny(normalizedTarget, "gonder", "send", "\u0627\u0631\u0633\u0644")) {
-            addVariants(variants, "gonder", "send", "\u0627\u0631\u0633\u0644", "share", "paylas");
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.CAMERA_TARGETS, ClickIconAliases.CAMERA_VARIANTS);
+        if (!videoCallTarget) {
+            addIfMatched(
+                    normalizedTarget,
+                    variants,
+                    ClickIconAliases.VIDEO_TARGETS,
+                    ClickIconAliases.VIDEO_VARIANTS
+            );
         }
-        if (isAny(normalizedTarget, "geri", "back", "\u0631\u062C\u0648\u0639", "\u062E\u0644\u0641")) {
-            addVariants(variants, "geri", "back", "navigate up", "\u0631\u062C\u0648\u0639", "\u062E\u0644\u0641");
-        }
-        if (isAny(normalizedTarget, "devam", "continue", "next", "ileri")) {
-            addVariants(variants, "devam", "continue", "next", "ileri");
-        }
-        if (isAny(normalizedTarget, "home", "anasayfa", "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0647")) {
-            addVariants(variants, "home", "anasayfa", "\u0627\u0644\u0631\u0626\u064A\u0633\u064A\u0647");
-        }
-        if (isAny(normalizedTarget, "more", "menu", "options", "secenek", "ayar")) {
-            addVariants(variants, "more", "menu", "options", "secenekler", "ayarlar");
-        }
-        if (isAny(normalizedTarget, "like", "begeni", "kalp")) {
-            addVariants(variants, "like", "begeni", "kalp");
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.SEND_TARGETS, ClickIconAliases.SEND_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.MICROPHONE_TARGETS, ClickIconAliases.MICROPHONE_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.ATTACHMENT_TARGETS, ClickIconAliases.ATTACHMENT_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.EMOJI_TARGETS, ClickIconAliases.EMOJI_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.BACK_TARGETS, ClickIconAliases.BACK_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.CONTINUE_TARGETS, ClickIconAliases.CONTINUE_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.HOME_TARGETS, ClickIconAliases.HOME_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.MORE_TARGETS, ClickIconAliases.MORE_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.DRAWER_TARGETS, ClickIconAliases.DRAWER_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.LIKE_TARGETS, ClickIconAliases.LIKE_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.COMMENT_TARGETS, ClickIconAliases.COMMENT_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.CART_TARGETS, ClickIconAliases.CART_VARIANTS);
+    }
+
+    private boolean isVideoCallTarget(String normalizedTarget) {
+        return isAny(normalizedTarget, ClickIconAliases.VIDEO_CALL_TARGETS);
+    }
+
+    private void addIfMatched(
+            String normalizedTarget,
+            Set<String> variants,
+            String[] targets,
+            String[] values
+    ) {
+        if (isAny(normalizedTarget, targets)) {
+            addVariants(variants, values);
         }
     }
 
     private boolean isAny(String value, String... candidates) {
         for (String candidate : candidates) {
             String normalizedCandidate = ClickTextUtils.normalize(candidate);
-            if (value.equals(normalizedCandidate) || value.contains(normalizedCandidate)) {
+            if (matchesCandidate(value, normalizedCandidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean matchesCandidate(String value, String candidate) {
+        if (!TextNormalizer.hasText(candidate)) {
+            return false;
+        }
+        if (value.equals(candidate)) {
+            return true;
+        }
+        if (candidate.replace(" ", "").length() <= 2) {
+            return containsToken(value, candidate);
+        }
+        return value.contains(candidate);
+    }
+
+    private boolean containsToken(String value, String candidate) {
+        for (String token : value.split(" ")) {
+            if (token.equals(candidate)) {
                 return true;
             }
         }
