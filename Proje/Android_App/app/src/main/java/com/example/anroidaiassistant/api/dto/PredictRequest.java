@@ -22,6 +22,9 @@ public class PredictRequest {
     @SerializedName("catalog_version")
     private String catalogVersion;
 
+    @SerializedName("has_search_input")
+    private boolean hasSearchInput;
+
     public PredictRequest(String text, String language) {
         this(text, language, AssistantSession.getSessionId());
     }
@@ -31,11 +34,22 @@ public class PredictRequest {
     }
 
     public PredictRequest(String text, String language, String sessionId, List<String> textAlternatives) {
+        this(text, language, sessionId, textAlternatives, false);
+    }
+
+    public PredictRequest(
+            String text,
+            String language,
+            String sessionId,
+            List<String> textAlternatives,
+            boolean hasSearchInput
+    ) {
         this.text = text;
         this.language = language;
         this.textAlternatives = textAlternatives == null ? new ArrayList<>() : new ArrayList<>(textAlternatives);
         this.sessionId = sessionId;
         this.catalogVersion = AssistantSession.getCatalogVersion();
+        this.hasSearchInput = hasSearchInput;
     }
 
     public String getText() {
@@ -56,5 +70,9 @@ public class PredictRequest {
 
     public String getCatalogVersion() {
         return catalogVersion;
+    }
+
+    public boolean hasSearchInput() {
+        return hasSearchInput;
     }
 }

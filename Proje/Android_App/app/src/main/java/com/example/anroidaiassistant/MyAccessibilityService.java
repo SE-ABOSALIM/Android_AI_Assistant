@@ -503,7 +503,8 @@ public class MyAccessibilityService extends AccessibilityService {
                 text,
                 selectedLanguage,
                 AssistantSession.getSessionId(),
-                alternatives
+                alternatives,
+                hasSearchInputAvailable()
         );
         apiService.predict(request).enqueue(new Callback<PredictResponse>() {
             @Override
@@ -923,6 +924,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean performSearchQuery(String query) {
         return searchInputController != null && searchInputController.performSearch(query);
+    }
+
+    public boolean hasSearchInputAvailable() {
+        return searchInputController != null && searchInputController.hasSearchInputAvailable();
     }
 
     public boolean writeTextToFocusedInput(String text) {

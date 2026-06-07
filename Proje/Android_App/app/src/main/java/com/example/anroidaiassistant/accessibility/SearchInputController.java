@@ -1,5 +1,6 @@
 package com.example.anroidaiassistant.accessibility;
 
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +14,7 @@ import java.util.List;
 
 public final class SearchInputController {
     private static final int SEARCH_FIELD_RETRY_DELAY_MS = 450;
+    private static final int MIN_SEARCH_BUTTON_SCORE = 8;
 
     private final MyAccessibilityService service;
     private final Handler mainHandler;
@@ -50,6 +52,15 @@ public final class SearchInputController {
             }
         }, SEARCH_FIELD_RETRY_DELAY_MS);
         return true;
+    }
+
+    public boolean hasSearchInputAvailable() {
+        AccessibilityNodeInfo rootNode = service.getRootInActiveWindow();
+        if (rootNode == null) {
+            return false;
+        }
+
+        return findBestSearchInput(rootNode) != null || findSearchButton(rootNode) != null;
     }
 
     public boolean writeText(String text) {
@@ -187,25 +198,65 @@ public final class SearchInputController {
     }
 
     private AccessibilityNodeInfo findSearchButton(AccessibilityNodeInfo node) {
+        SearchButtonResult result = findBestSearchButton(node, null, -1);
+        return result.score >= MIN_SEARCH_BUTTON_SCORE ? result.node : null;
+    }
+
+    private SearchButtonResult findBestSearchButton(
+            AccessibilityNodeInfo node,
+            AccessibilityNodeInfo bestNode,
+            int bestScore
+    ) {
         if (node == null) {
-            return null;
+            return new SearchButtonResult(bestNode, bestScore);
         }
 
-        if (!isTextInput(node) && containsSearchKeyword(normalize(joinNodeText(node)))) {
+        int score = scoreSearchButton(node);
+        if (score > bestScore) {
             AccessibilityNodeInfo clickableNode = findClickableNode(node);
             if (clickableNode != null) {
-                return clickableNode;
+                bestNode = clickableNode;
+                bestScore = score;
             }
         }
 
         for (int i = 0; i < node.getChildCount(); i++) {
-            AccessibilityNodeInfo result = findSearchButton(node.getChild(i));
-            if (result != null) {
-                return result;
-            }
+            SearchButtonResult childResult = findBestSearchButton(node.getChild(i), bestNode, bestScore);
+            bestNode = childResult.node;
+            bestScore = childResult.score;
         }
 
-        return null;
+        return new SearchButtonResult(bestNode, bestScore);
+    }
+
+    private int scoreSearchButton(AccessibilityNodeInfo node) {
+        if (isTextInput(node)) {
+            return -1;
+        }
+
+        String nodeText = normalize(joinNodeText(node));
+        if (!containsSearchKeyword(nodeText) || isSecondarySearchAction(nodeText)) {
+            return -1;
+        }
+
+        AccessibilityNodeInfo clickableNode = findClickableNode(node);
+        if (clickableNode == null) {
+            return -1;
+        }
+
+        Rect bounds = new Rect();
+        clickableNode.getBoundsInScreen(bounds);
+        int score = 4;
+        if (nodeText.equals("search") || nodeText.equals("ara") || nodeText.equals("arama")) {
+            score += 8;
+        }
+        if (bounds.width() >= service.getResources().getDisplayMetrics().widthPixels * 0.45f) {
+            score += 14;
+        }
+        if (bounds.height() >= 40) {
+            score += 2;
+        }
+        return score;
     }
 
     private boolean clickNode(AccessibilityNodeInfo node) {
@@ -239,6 +290,19 @@ public final class SearchInputController {
                 || value.contains("\u0627\u0628\u062d\u062b");
     }
 
+    private boolean isSecondarySearchAction(String value) {
+        return value.contains("voice")
+                || value.contains("mic")
+                || value.contains("microphone")
+                || value.contains("kamera")
+                || value.contains("camera")
+                || value.contains("lens")
+                || value.contains("image")
+                || value.contains("photo")
+                || value.contains("ai mode")
+                || value.contains("labs");
+    }
+
     private String joinNodeText(AccessibilityNodeInfo node) {
         StringBuilder builder = new StringBuilder();
         append(builder, node.getText());
@@ -269,6 +333,16 @@ public final class SearchInputController {
         private final int score;
 
         private SearchResult(AccessibilityNodeInfo node, int score) {
+            this.node = node;
+            this.score = score;
+        }
+    }
+
+    private static final class SearchButtonResult {
+        private final AccessibilityNodeInfo node;
+        private final int score;
+
+        private SearchButtonResult(AccessibilityNodeInfo node, int score) {
             this.node = node;
             this.score = score;
         }
