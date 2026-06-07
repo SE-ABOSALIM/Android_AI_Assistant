@@ -7,6 +7,7 @@ import android.util.Log;
 import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.executor.CommandHandler;
+import com.example.anroidaiassistant.resources.CameraAliases;
 import com.example.anroidaiassistant.util.ParameterReader;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
@@ -51,16 +52,22 @@ public final class CameraCommandHandler implements CommandHandler {
 
     private String normalizeCamera(String camera) {
         String normalized = TextNormalizer.normalizeAsciiText(camera).toLowerCase(Locale.US);
-        if (normalized.contains("front")
-                || normalized.contains("selfie")
+        if (containsAny(normalized, CameraAliases.FRONT_CAMERA_KEYWORDS)
                 || normalized.equals("on")) {
             return "front";
         }
-        if (normalized.contains("back")
-                || normalized.contains("rear")
-                || normalized.contains("arka")) {
+        if (containsAny(normalized, CameraAliases.BACK_CAMERA_KEYWORDS)) {
             return "back";
         }
         return "";
+    }
+
+    private boolean containsAny(String value, String[] candidates) {
+        for (String candidate : candidates) {
+            if (value.contains(candidate)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

@@ -1,7 +1,10 @@
 param(
     [string]$PackageName = "com.example.anroidaiassistant",
     [string]$ServiceClass = ".MyAccessibilityService",
+    [string]$MainActivityClass = ".MainActivity",
     [string]$Serial = "",
+    [switch]$NoForceStop,
+    [switch]$NoLaunch,
     [switch]$DryRun
 )
 
@@ -74,43 +77,134 @@ function Invoke-Adb {
     return ($output | Out-String).Trim()
 }
 
-$adbPath = Get-AdbPath
-$serviceShort = "$PackageName/$ServiceClass"
-$serviceLong = "$PackageName/$($PackageName + $ServiceClass.TrimStart('.'))"
+function Invoke-AdbOptional {
+    param(
+        [string]$AdbPath,
+        [string[]]$Arguments
+    )
 
-Write-Host "Using package: $PackageName"
-Write-Host "Using service: $serviceShort"
-
-Invoke-Adb -AdbPath $adbPath -Arguments @("wait-for-device") | Out-Null
-
-$currentServices = Invoke-Adb -AdbPath $adbPath -Arguments @(
-    "shell", "settings", "get", "secure", "enabled_accessibility_services"
-)
-
-$serviceEntries = @()
-if ($currentServices -and $currentServices -ne "null") {
-    $serviceEntries = $currentServices.Split(":") | Where-Object {
-        $_ -and $_ -ne "null"
+    try {
+        Invoke-Adb -AdbPath $AdbPath -Arguments $Arguments | Out-Null
+        return $true
+    } catch {
+        Write-Host ("Warning: " + $_.Exception.Message)
+        return $false
     }
 }
 
-$hasService = $serviceEntries -contains $serviceShort -or $serviceEntries -contains $serviceLong
-if (-not $hasService) {
-    $serviceEntries += $serviceShort
+function Get-EnabledAccessibilityServices {
+    param([string]$AdbPath)
+
+    $currentServices = Invoke-Adb -AdbPath $AdbPath -Arguments @(
+        "shell", "settings", "get", "secure", "enabled_accessibility_services"
+    )
+
+    if (-not $currentServices -or $currentServices -eq "null") {
+        return @()
+    }
+
+    return @($currentServices.Split(":") | Where-Object { $_ -and $_ -ne "null" })
 }
 
-$mergedServices = ($serviceEntries | Select-Object -Unique) -join ":"
+function Set-EnabledAccessibilityServices {
+    param(
+        [string]$AdbPath,
+        [string[]]$Services
+    )
 
-Invoke-Adb -AdbPath $adbPath -Arguments @(
-    "shell", "settings", "put", "secure", "enabled_accessibility_services", $mergedServices
-) | Out-Null
+    $mergedServices = (@($Services) | Where-Object { $_ } | Select-Object -Unique) -join ":"
+    if ($mergedServices) {
+        Invoke-Adb -AdbPath $AdbPath -Arguments @(
+            "shell", "settings", "put", "secure", "enabled_accessibility_services", $mergedServices
+        ) | Out-Null
+        return
+    }
+
+    Invoke-AdbOptional -AdbPath $AdbPath -Arguments @(
+        "shell", "settings", "delete", "secure", "enabled_accessibility_services"
+    ) | Out-Null
+}
+
+function Remove-ServiceAliases {
+    param(
+        [string[]]$Services,
+        [string[]]$Aliases,
+        [string]$PackageName
+    )
+
+    return @($Services | Where-Object {
+        $entry = $_
+        if ($Aliases -contains $entry) {
+            return $false
+        }
+        if ($entry -like "$PackageName/*" -and $entry -like "*MyAccessibilityService*") {
+            return $false
+        }
+        return $true
+    })
+}
+
+$adbPath = Get-AdbPath
+$serviceClassName = $ServiceClass
+if ($serviceClassName.StartsWith(".")) {
+    $serviceClassName = $PackageName + $serviceClassName
+}
+
+$mainActivityClassName = $MainActivityClass
+if ($mainActivityClassName.StartsWith(".")) {
+    $mainActivityClassName = $PackageName + $mainActivityClassName
+}
+
+$serviceShort = "$PackageName/$ServiceClass"
+$serviceComponent = "$PackageName/$serviceClassName"
+$serviceAliases = @($serviceShort, $serviceComponent) | Select-Object -Unique
+$mainActivityComponent = "$PackageName/$mainActivityClassName"
+
+Write-Host "Using package: $PackageName"
+Write-Host "Using service: $serviceComponent"
+Write-Host "Using main activity: $mainActivityComponent"
+
+Invoke-Adb -AdbPath $adbPath -Arguments @("wait-for-device") | Out-Null
+
+if (-not $NoForceStop) {
+    Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
+        "shell", "am", "force-stop", $PackageName
+    ) | Out-Null
+}
+
+$serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
+$serviceEntries = Remove-ServiceAliases -Services $serviceEntries -Aliases $serviceAliases -PackageName $PackageName
+Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
+
+if ($serviceEntries.Count -eq 0) {
+    Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
+        "shell", "settings", "put", "secure", "accessibility_enabled", "0"
+    ) | Out-Null
+}
+
+if (-not $DryRun) {
+    Start-Sleep -Milliseconds 900
+}
+
+$serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
+$serviceEntries = Remove-ServiceAliases -Services $serviceEntries -Aliases $serviceAliases -PackageName $PackageName
+$serviceEntries += $serviceComponent
+Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
 
 Invoke-Adb -AdbPath $adbPath -Arguments @(
     "shell", "settings", "put", "secure", "accessibility_enabled", "1"
 ) | Out-Null
 
-Invoke-Adb -AdbPath $adbPath -Arguments @(
+if (-not $DryRun) {
+    Start-Sleep -Milliseconds 1200
+}
+
+Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
     "shell", "appops", "set", $PackageName, "SYSTEM_ALERT_WINDOW", "allow"
+) | Out-Null
+
+Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
+    "shell", "appops", "set", $PackageName, "WRITE_SETTINGS", "allow"
 ) | Out-Null
 
 $runtimePermissions = @(
@@ -121,16 +215,27 @@ $runtimePermissions = @(
 )
 
 foreach ($permission in $runtimePermissions) {
-    Invoke-Adb -AdbPath $adbPath -Arguments @(
+    Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
         "shell", "pm", "grant", $PackageName, $permission
+    ) | Out-Null
+}
+
+if (-not $NoLaunch) {
+    Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
+        "shell", "am", "start", "-n", $mainActivityComponent,
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER"
     ) | Out-Null
 }
 
 Write-Host ""
 Write-Host "Test permissions applied."
-Write-Host "- Accessibility service: enabled"
+Write-Host "- Accessibility service: toggled off and enabled"
 Write-Host "- Appear on top: allowed"
 Write-Host "- Camera: granted"
 Write-Host "- Microphone: granted"
 Write-Host "- Contacts: granted"
 Write-Host "- Make phone calls: granted"
+if (-not $NoLaunch) {
+    Write-Host "- App relaunched"
+}

@@ -8,6 +8,8 @@ import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import com.example.anroidaiassistant.resources.CameraAliases;
+
 import java.util.Locale;
 
 public final class CameraCaptureController {
@@ -84,10 +86,7 @@ public final class CameraCaptureController {
         }
 
         String normalizedPackageName = normalizeKeywordText(packageName.toString());
-        return normalizedPackageName.contains("camera")
-                || normalizedPackageName.contains("kamera")
-                || normalizedPackageName.contains("googlecamera")
-                || normalizedPackageName.contains("snapcam");
+        return containsAny(normalizedPackageName, CameraAliases.CAMERA_PACKAGE_KEYWORDS);
     }
 
     private boolean hasLikelyCameraShutter(AccessibilityNodeInfo node) {
@@ -269,38 +268,7 @@ public final class CameraCaptureController {
 
     private boolean isCameraSwitchNode(AccessibilityNodeInfo node) {
         String normalizedText = normalizeKeywordText(joinNodeText(node));
-        return normalizedText.contains("switch camera")
-                || normalizedText.contains("flip camera")
-                || normalizedText.contains("swap camera")
-                || normalizedText.contains("change camera")
-                || normalizedText.contains("reverse camera")
-                || normalizedText.contains("switch to front")
-                || normalizedText.contains("switch to back")
-                || normalizedText.contains("switch to rear")
-                || normalizedText.contains("front camera")
-                || normalizedText.contains("back camera")
-                || normalizedText.contains("rear camera")
-                || normalizedText.contains("camera switch")
-                || normalizedText.contains("camera_switch")
-                || normalizedText.contains("switch_camera")
-                || normalizedText.contains("flip_camera")
-                || normalizedText.contains("camera_flip")
-                || normalizedText.contains("camera_picker")
-                || normalizedText.contains("camera_facing")
-                || normalizedText.contains("toggle_camera")
-                || normalizedText.contains("lens_toggle")
-                || normalizedText.contains("camera_toggle")
-                || normalizedText.contains("kamera cevir")
-                || normalizedText.contains("kamera degistir")
-                || normalizedText.contains("kameraya gec")
-                || normalizedText.contains("cevir")
-                || normalizedText.contains("degistir")
-                || normalizedText.contains("kamerayi cevir")
-                || normalizedText.contains("kamerayi degistir")
-                || normalizedText.contains("\u0628\u062f\u0644 \u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627")
-                || normalizedText.contains("\u062a\u0628\u062f\u064a\u0644 \u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627")
-                || normalizedText.contains("\u062a\u063a\u064a\u064a\u0631 \u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627")
-                || normalizedText.contains("\u0642\u0644\u0628 \u0627\u0644\u0643\u0627\u0645\u064a\u0631\u0627");
+        return containsAny(normalizedText, CameraAliases.CAMERA_SWITCH_KEYWORDS);
     }
 
     private boolean clickCameraSwitch(AccessibilityNodeInfo switchNode) {
@@ -527,19 +495,7 @@ public final class CameraCaptureController {
         }
 
         String normalizedValue = normalizeKeywordText(value.toString());
-        return normalizedValue.contains("shutter")
-                || normalizedValue.contains("capture")
-                || normalizedValue.contains("snap")
-                || normalizedValue.contains("take picture")
-                || normalizedValue.contains("take photo")
-                || normalizedValue.contains("camera_button")
-                || normalizedValue.contains("shutter_button")
-                || normalizedValue.contains("capture_button")
-                || normalizedValue.contains("button_capture")
-                || normalizedValue.contains("normal_center_button")
-                || normalizedValue.contains("deklansor")
-                || normalizedValue.contains("foto")
-                || normalizedValue.contains("cek");
+        return containsAny(normalizedValue, CameraAliases.CAMERA_SHUTTER_KEYWORDS);
     }
 
     private boolean containsLikelyShutterKeyword(CharSequence value) {
@@ -548,14 +504,7 @@ public final class CameraCaptureController {
         }
 
         String normalizedValue = normalizeKeywordText(value.toString());
-        return normalizedValue.contains("shutter")
-                || normalizedValue.contains("capture")
-                || normalizedValue.contains("camera_button")
-                || normalizedValue.contains("shutter_button")
-                || normalizedValue.contains("capture_button")
-                || normalizedValue.contains("button_capture")
-                || normalizedValue.contains("normal_center_button")
-                || normalizedValue.contains("deklansor");
+        return containsAny(normalizedValue, CameraAliases.LIKELY_CAMERA_SHUTTER_KEYWORDS);
     }
 
     private String normalizeKeywordText(String value) {
@@ -570,27 +519,11 @@ public final class CameraCaptureController {
     }
 
     private boolean containsFrontCameraKeyword(String normalizedText) {
-        return normalizedText.contains("front")
-                || normalizedText.contains("selfie")
-                || normalizedText.contains("front facing")
-                || normalizedText.contains("front-facing")
-                || normalizedText.contains("selfie camera")
-                || normalizedText.contains("on kamera")
-                || normalizedText.contains("kamera on")
-                || normalizedText.contains("\u0627\u0645\u0627\u0645\u064a")
-                || normalizedText.contains("\u0627\u0644\u0627\u0645\u0627\u0645\u064a\u0629");
+        return containsAny(normalizedText, CameraAliases.FRONT_CAMERA_KEYWORDS);
     }
 
     private boolean containsBackCameraKeyword(String normalizedText) {
-        return normalizedText.contains("back")
-                || normalizedText.contains("rear")
-                || normalizedText.contains("back camera")
-                || normalizedText.contains("rear camera")
-                || normalizedText.contains("back facing")
-                || normalizedText.contains("back-facing")
-                || normalizedText.contains("arka")
-                || normalizedText.contains("\u062e\u0644\u0641\u064a")
-                || normalizedText.contains("\u0627\u0644\u062e\u0644\u0641\u064a\u0629");
+        return containsAny(normalizedText, CameraAliases.BACK_CAMERA_KEYWORDS);
     }
 
     private String joinNodeText(AccessibilityNodeInfo node) {
@@ -617,17 +550,23 @@ public final class CameraCaptureController {
         }
 
         String normalizedCamera = normalizeKeywordText(camera);
-        if (normalizedCamera.contains("front")
-                || normalizedCamera.contains("selfie")
+        if (containsAny(normalizedCamera, CameraAliases.FRONT_CAMERA_KEYWORDS)
                 || "on".equals(normalizedCamera)) {
             return "front";
         }
-        if (normalizedCamera.contains("back")
-                || normalizedCamera.contains("rear")
-                || normalizedCamera.contains("arka")) {
+        if (containsAny(normalizedCamera, CameraAliases.BACK_CAMERA_KEYWORDS)) {
             return "back";
         }
         return "";
+    }
+
+    private boolean containsAny(String value, String[] candidates) {
+        for (String candidate : candidates) {
+            if (value.contains(candidate)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private AccessibilityNodeInfo findClickableNode(AccessibilityNodeInfo node) {

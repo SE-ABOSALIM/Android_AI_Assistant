@@ -85,10 +85,22 @@ public final class GestureController {
     }
 
     private boolean scrollUp() {
+        if (isActivePackage("com.whatsapp")
+                && scrollByRatio(0.52f, 0.42f, 0.52f, 0.88f)) {
+            return true;
+        }
         if (scrollByRatio(0.52f, 0.16f, 0.52f, 0.82f)) {
             return true;
         }
         return performScrollActionOnNodeTree(AccessibilityNodeInfo.ACTION_SCROLL_BACKWARD);
+    }
+
+    private boolean isActivePackage(String packagePrefix) {
+        AccessibilityNodeInfo rootNode = service.getRootInActiveWindow();
+        if (rootNode == null || rootNode.getPackageName() == null) {
+            return false;
+        }
+        return rootNode.getPackageName().toString().startsWith(packagePrefix);
     }
 
     private boolean performScrollActionOnNodeTree(int action) {
