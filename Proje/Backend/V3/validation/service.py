@@ -4,7 +4,9 @@ from V3.intents.registry import get_intent_contract, missing_required_parameters
 from V3.intents.registry import get_threshold
 from V3.validation.context import ValidationContext
 from V3.validation.enrichers import INTENT_ENRICHERS
+from V3.validation.model_guard import should_reject_weak_model_command
 from V3.validation.response import build_response
+from V3.validation.search_call_resolver import resolve_turkish_search_call_conflict
 
 
 def validate_and_build_response(
@@ -18,8 +20,16 @@ def validate_and_build_response(
     text_alternatives: Optional[List[str]] = None,
     session_id: Optional[str] = None,
     catalog_version: Optional[str] = None,
+    has_search_input: bool = False,
 ) -> Dict[str, Any]:
     model_intent = str(model_intent or "UNKNOWN_COMMAND").upper()
+    model_intent, model_parameters = resolve_turkish_search_call_conflict(
+        original_text=original_text,
+        language=language,
+        intent=model_intent,
+        parameters=dict(model_parameters or {}),
+        has_search_input=has_search_input,
+    )
     threshold = get_threshold(model_intent)
     contract = get_intent_contract(model_intent)
     top_predictions = top_predictions or []
@@ -78,14 +88,36 @@ def validate_and_build_response(
             contract=None,
         )
 
+    if should_reject_weak_model_command(original_text, language, model_intent, raw_label):
+        return build_response(
+            original_text=original_text,
+            language=language,
+            intent="UNKNOWN_COMMAND",
+            parameters={},
+            accepted=False,
+            missing_slots=[],
+            error_code="WEAK_COMMAND_SHAPE",
+            error_message="Model prediction is not command-shaped enough to execute.",
+            needs_confirmation=False,
+            confidence=confidence,
+            threshold=threshold,
+            raw_label=raw_label,
+            top_predictions=top_predictions,
+            contract=get_intent_contract("UNKNOWN_COMMAND"),
+        )
+
     context = ValidationContext(
         original_text=original_text,
         language=language,
         intent=model_intent,
         parameters=dict(model_parameters or {}),
+        confidence=confidence,
+        raw_label=raw_label,
+        top_predictions=top_predictions,
         text_alternatives=text_alternatives,
         session_id=session_id,
         catalog_version=catalog_version,
+        has_search_input=has_search_input,
     )
 
     enricher = INTENT_ENRICHERS.get(model_intent)

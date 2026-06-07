@@ -17,6 +17,7 @@ from V3.extraction.timer import extract_timer
 from V3.utils.text import normalized_lower
 from V3.validation.app_matching import enrich_app_command
 from V3.validation.context import ValidationContext
+from V3.validation.stop_listening import should_accept_stop_listening
 
 
 def enrich_timer(context: ValidationContext) -> None:
@@ -98,6 +99,20 @@ def enrich_take_photo(context: ValidationContext) -> None:
         context.parameters["camera"] = camera
 
 
+def enrich_stop_listening(context: ValidationContext) -> None:
+    if should_accept_stop_listening(
+        context.confidence,
+        context.raw_label,
+        context.top_predictions,
+    ):
+        return
+
+    context.reject(
+        "WEAK_STOP_LISTENING_COMMAND",
+        "Stop listening requires a strong and unambiguous model prediction.",
+    )
+
+
 def _looks_like_stopwatch_command(text: str) -> bool:
     normalized = normalized_lower(text)
     return "kronometre" in normalized or "stopwatch" in normalized
@@ -111,6 +126,7 @@ INTENT_ENRICHERS: Dict[str, Callable[[ValidationContext], None]] = {
     "SEARCH_QUERY": enrich_search_query,
     "SET_ALARM": enrich_alarm,
     "SET_TIMER": enrich_timer,
+    "STOP_LISTENING": enrich_stop_listening,
     "TAKE_PHOTO": enrich_take_photo,
     "UNINSTALL_APP": enrich_app_command,
     "WRITE_TEXT": enrich_write_text,

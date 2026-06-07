@@ -30,6 +30,7 @@ def predict(request: PredictRequest):
         text_alternatives=request.text_alternatives,
         session_id=request.session_id,
         catalog_version=request.catalog_version,
+        has_search_input=request.has_search_input,
     )
     response["processing_time_ms"] = round((time.perf_counter() - started_at) * 1000, 2)
     print(

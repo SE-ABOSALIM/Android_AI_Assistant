@@ -11,6 +11,7 @@ def predict_command(
     text_alternatives: list[str] = None,
     session_id: str = None,
     catalog_version: str = None,
+    has_search_input: bool = False,
 ) -> Dict[str, Any]:
     """
     Main prediction pipeline:
@@ -33,6 +34,7 @@ def predict_command(
             text_alternatives=text_alternatives,
             session_id=session_id,
             catalog_version=catalog_version,
+            has_search_input=has_search_input,
         )
 
     model_result = predict_model(
@@ -51,4 +53,5 @@ def predict_command(
         text_alternatives=text_alternatives,
         session_id=session_id,
         catalog_version=catalog_version,
+        has_search_input=has_search_input,
     )

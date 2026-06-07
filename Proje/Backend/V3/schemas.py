@@ -8,6 +8,7 @@ class PredictRequest(BaseModel):
     text_alternatives: List[str] = Field(default_factory=list)
     session_id: Optional[str] = None
     catalog_version: Optional[str] = None
+    has_search_input: bool = False
 
 
 class AppCatalogEntry(BaseModel):

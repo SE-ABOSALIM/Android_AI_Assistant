@@ -124,6 +124,25 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "CLEAR_TEXT")
         self.assertEqual(result["rule_matched"], "clear_text")
 
+    def test_turkish_search_query_rules(self):
+        examples = {
+            "hava durumu icin ara": "hava durumu",
+            "Ahmet Kaya icin arama yap": "Ahmet Kaya",
+            "Istanbul hava durumu icin arama yap": "Istanbul hava durumu",
+            "hava durumu aramasi yap": "hava durumu",
+            "Ahmet Kaya icin aramasi yap": "Ahmet Kaya",
+            "hava durumu arama yap": "hava durumu",
+            "hava durumu ile ilgili arama yap": "hava durumu",
+        }
+
+        for text, query in examples.items():
+            with self.subTest(text=text):
+                result = rule_based_command(text, "TR")
+
+                self.assertEqual(result["intent"], "SEARCH_QUERY")
+                self.assertEqual(result["parameters"], {"query": query})
+                self.assertEqual(result["rule_matched"], "search_query")
+
     def test_write_text_rule_for_long_turkish_suffix(self):
         result = rule_based_command("Merhaba Ahmet bugun toplantiyi unutma yaz", "TR")
 

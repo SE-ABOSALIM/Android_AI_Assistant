@@ -15,10 +15,11 @@ def _validate(intent, parameters=None, text="test command", confidence=0.99, **k
         model_parameters=parameters or {},
         confidence=confidence,
         raw_label=kwargs.pop("raw_label", f"{intent}__test"),
-        top_predictions=[],
+        top_predictions=kwargs.pop("top_predictions", []),
         text_alternatives=kwargs.pop("text_alternatives", []),
         session_id=kwargs.pop("session_id", None),
         catalog_version=kwargs.pop("catalog_version", None),
+        has_search_input=kwargs.pop("has_search_input", False),
     )
 
 
@@ -60,8 +61,12 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(missing_required_parameters(contract, {"brightness": "increase"}), [])
 
     def test_validator_uses_registry_required_parameters(self):
-        missing = _validate("ADJUST_BRIGHTNESS", {})
-        accepted = _validate("ADJUST_BRIGHTNESS", {"brightness": "increase"})
+        missing = _validate("ADJUST_BRIGHTNESS", {}, text="increase brightness")
+        accepted = _validate(
+            "ADJUST_BRIGHTNESS",
+            {"brightness": "increase"},
+            text="increase brightness",
+        )
 
         self.assertFalse(missing["accepted"])
         self.assertEqual(missing["missing_slots"], ["brightness"])
@@ -71,8 +76,8 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(accepted["android_supported"])
 
     def test_android_supported_requires_android_parameters(self):
-        missing = _validate("SCROLL_SCREEN", {})
-        accepted = _validate("SCROLL_SCREEN", {"direction": "down"})
+        missing = _validate("SCROLL_SCREEN", {}, text="scroll")
+        accepted = _validate("SCROLL_SCREEN", {"direction": "down"}, text="scroll down")
 
         self.assertFalse(missing["accepted"])
         self.assertFalse(missing["android_supported"])
@@ -80,18 +85,110 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(accepted["android_supported"])
 
     def test_navigation_intents_are_android_supported(self):
-        for intent in ("GO_BACK", "CLOSE_APP", "SHOW_RECENTS", "OPEN_NOTIFICATIONS", "TAKE_SCREENSHOT"):
+        examples = {
+            "GO_BACK": "go back",
+            "CLOSE_APP": "close app",
+            "SHOW_RECENTS": "show recents",
+            "OPEN_NOTIFICATIONS": "open notifications",
+            "TAKE_SCREENSHOT": "take screenshot",
+        }
+
+        for intent, text in examples.items():
             with self.subTest(intent=intent):
-                response = _validate(intent)
+                response = _validate(intent, text=text)
 
                 self.assertTrue(response["accepted"])
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
 
+    def test_model_fallback_rejects_bare_words_for_direct_actions(self):
+        screenshot = _validate(
+            "TAKE_SCREENSHOT",
+            {},
+            text="Baklava",
+            language="TR",
+            confidence=0.98,
+            top_predictions=[
+                {"label": "TAKE_SCREENSHOT__none", "confidence": 0.98},
+                {"label": "TAKE_PHOTO__none", "confidence": 0.01},
+            ],
+        )
+        recents = _validate(
+            "SHOW_RECENTS",
+            {},
+            text="\u015eark\u0131lar",
+            language="TR",
+            confidence=0.95,
+            top_predictions=[
+                {"label": "SHOW_RECENTS__none", "confidence": 0.95},
+                {"label": "OPEN_APP__none", "confidence": 0.02},
+            ],
+        )
+
+        self.assertFalse(screenshot["accepted"])
+        self.assertEqual(screenshot["intent"], "UNKNOWN_COMMAND")
+        self.assertEqual(screenshot["error_code"], "WEAK_COMMAND_SHAPE")
+        self.assertFalse(recents["accepted"])
+        self.assertEqual(recents["intent"], "UNKNOWN_COMMAND")
+        self.assertEqual(recents["error_code"], "WEAK_COMMAND_SHAPE")
+
+    def test_stop_listening_requires_strong_model_prediction(self):
+        strong = _validate(
+            "STOP_LISTENING",
+            {},
+            text="stop listening",
+            language="EN",
+            confidence=0.93,
+            top_predictions=[
+                {"label": "STOP_LISTENING__none", "confidence": 0.93},
+                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.30},
+            ],
+        )
+
+        self.assertTrue(strong["accepted"])
+        self.assertTrue(strong["android_supported"])
+
+        weak = _validate(
+            "STOP_LISTENING",
+            {},
+            text="Just once sabas",
+            language="EN",
+            confidence=0.72,
+            top_predictions=[
+                {"label": "STOP_LISTENING__none", "confidence": 0.72},
+                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.48},
+            ],
+        )
+
+        self.assertFalse(weak["accepted"])
+        self.assertEqual(weak["error_code"], "WEAK_STOP_LISTENING_COMMAND")
+
+    def test_stop_listening_rejects_ambiguous_model_prediction(self):
+        ambiguous = _validate(
+            "STOP_LISTENING",
+            {},
+            text="stop something",
+            language="EN",
+            confidence=0.91,
+            top_predictions=[
+                {"label": "STOP_LISTENING__none", "confidence": 0.91},
+                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.79},
+            ],
+        )
+
+        self.assertFalse(ambiguous["accepted"])
+        self.assertEqual(ambiguous["error_code"], "WEAK_STOP_LISTENING_COMMAND")
+
     def test_text_and_center_gesture_intents_are_android_supported(self):
-        for intent in ("CLEAR_TEXT", "DOUBLE_TAP", "HOLD_SCREEN"):
+        examples = {
+            "CLEAR_TEXT": "clear text",
+            "DOUBLE_TAP": "double tap",
+            "HOLD_SCREEN": "hold screen",
+        }
+
+        for intent, text in examples.items():
             with self.subTest(intent=intent):
-                response = _validate(intent)
+                response = _validate(intent, text=text)
 
                 self.assertTrue(response["accepted"])
                 self.assertTrue(response["backend_supported"])
@@ -150,7 +247,7 @@ class IntentContractTests(unittest.TestCase):
 
         for intent, parameters in examples.items():
             with self.subTest(intent=intent):
-                response = _validate(intent, parameters)
+                response = _validate(intent, parameters, text=f"turn on {intent.lower()}")
 
                 self.assertTrue(response["accepted"])
                 self.assertTrue(response["backend_supported"])
@@ -199,8 +296,16 @@ class IntentContractTests(unittest.TestCase):
             delete_app_catalog(session_id)
 
     def test_parameter_group_allows_volume_level_and_marks_android_supported(self):
-        backend_supported = _validate("ADJUST_VOLUME", {"volume_level": "max"})
-        android_supported = _validate("ADJUST_VOLUME", {"volume_action": "increase"})
+        backend_supported = _validate(
+            "ADJUST_VOLUME",
+            {"volume_level": "max"},
+            text="set volume to max",
+        )
+        android_supported = _validate(
+            "ADJUST_VOLUME",
+            {"volume_action": "increase"},
+            text="increase volume",
+        )
 
         self.assertTrue(backend_supported["accepted"])
         self.assertTrue(backend_supported["backend_supported"])
@@ -234,6 +339,69 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(write["accepted"])
         self.assertTrue(write["android_supported"])
         self.assertEqual(write["parameters"]["text"], "Meeting starts at 5")
+
+    def test_resolves_turkish_single_word_ara_as_contact(self):
+        response = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="Abdullah'i ara",
+            language="TR",
+            has_search_input=True,
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["intent"], "CALL_CONTACT")
+        self.assertEqual(response["parameters"]["contact_name"], "abdullah")
+
+    def test_resolves_turkish_query_hints_as_search(self):
+        response = _validate(
+            "CALL_CONTACT",
+            {},
+            text="hava durumu ara",
+            language="TR",
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["intent"], "SEARCH_QUERY")
+        self.assertEqual(response["parameters"]["query"], "hava durumu")
+
+    def test_resolves_turkish_long_ara_subject_as_search(self):
+        response = _validate(
+            "CALL_CONTACT",
+            {},
+            text="android studio emulator internet sorunu ara",
+            language="TR",
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["intent"], "SEARCH_QUERY")
+        self.assertEqual(response["parameters"]["query"], "android studio emulator internet sorunu")
+
+    def test_resolves_turkish_multi_word_ara_with_search_input_as_search(self):
+        response = _validate(
+            "CALL_CONTACT",
+            {},
+            text="Ahmet Kaya ara",
+            language="TR",
+            has_search_input=True,
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["intent"], "SEARCH_QUERY")
+        self.assertEqual(response["parameters"]["query"], "ahmet kaya")
+
+    def test_resolves_turkish_multi_word_ara_without_search_input_as_contact(self):
+        response = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="Mehmet abi ara",
+            language="TR",
+            has_search_input=False,
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["intent"], "CALL_CONTACT")
+        self.assertEqual(response["parameters"]["contact_name"], "mehmet abi")
 
     def test_enriches_alarm_time_parameters(self):
         morning = _validate("SET_ALARM", {}, text="saat 5 icin alarm kur")
