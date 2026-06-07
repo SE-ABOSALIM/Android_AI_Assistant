@@ -8,6 +8,7 @@ import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.selection.SelectionNumberParser;
 import com.example.anroidaiassistant.ui.ListeningOverlayController;
+import com.example.anroidaiassistant.ui.ClickTargetOverlayController;
 import com.example.anroidaiassistant.ui.SelectionOverlayController;
 import com.example.anroidaiassistant.ui.UninstallConfirmationOverlayController;
 import com.example.anroidaiassistant.util.TextNormalizer;
@@ -22,6 +23,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
+import android.graphics.Rect;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -91,6 +93,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private WindowManager windowManager;
     private ListeningOverlayController listeningOverlayController;
+    private ClickTargetOverlayController clickTargetOverlayController;
     private SelectionOverlayController selectionOverlayController;
     private UninstallConfirmationOverlayController uninstallConfirmationOverlayController;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -115,6 +118,7 @@ public class MyAccessibilityService extends AccessibilityService {
         searchInputController = new SearchInputController(this, mainHandler);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         listeningOverlayController = new ListeningOverlayController(this, windowManager);
+        clickTargetOverlayController = new ClickTargetOverlayController(this, windowManager);
         selectionOverlayController = new SelectionOverlayController(this, windowManager, new SelectionOverlayController.Listener() {
             @Override
             public void onChoiceSelected(int selectedIndex) {
@@ -402,6 +406,24 @@ public class MyAccessibilityService extends AccessibilityService {
         }
     }
 
+    private void showClickTargetMarkers() {
+        if (clickTargetOverlayController != null) {
+            List<ClickTargetChoice> choices = new ArrayList<>();
+            for (NumberedChoice choice : numberSelectionChoices) {
+                if (choice instanceof ClickTargetChoice) {
+                    choices.add((ClickTargetChoice) choice);
+                }
+            }
+            clickTargetOverlayController.show(choices);
+        }
+    }
+
+    private void hideClickTargetMarkers() {
+        if (clickTargetOverlayController != null) {
+            clickTargetOverlayController.hide();
+        }
+    }
+
     private void showUninstallConfirmationWindow() {
         if (uninstallConfirmationOverlayController != null) {
             uninstallConfirmationOverlayController.show(
@@ -619,6 +641,32 @@ public class MyAccessibilityService extends AccessibilityService {
         startSelection(title, choices, callback, false, hint);
     }
 
+    public void startClickTargetSelection(
+            List<ClickTargetChoice> choices,
+            NumberSelectionCallback callback,
+            String hint
+    ) {
+        if (choices == null || choices.isEmpty() || callback == null) {
+            return;
+        }
+
+        isSpellAppMode = false;
+        isNumberSelectionMode = true;
+        isConfirmationSelectionMode = false;
+        numberSelectionTitle = null;
+        numberSelectionHint = TextNormalizer.hasText(hint)
+                ? hint
+                : "Istediginiz ogenin numarasini soyleyin.";
+        numberSelectionCallback = callback;
+        numberSelectionChoices.clear();
+        numberSelectionChoices.addAll(choices);
+        hideOverlay();
+        hideSelectionWindow();
+        hideUninstallConfirmationWindow();
+        showClickTargetMarkers();
+        restartListeningForNumberSelection();
+    }
+
     public void startConfirmationSelection(
             String title,
             List<NumberedChoice> choices,
@@ -755,13 +803,22 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void completeNumberSelection(int selectedIndex) {
         NumberSelectionCallback callback = numberSelectionCallback;
-        clearNumberSelection();
+        boolean clickTargetSelection = isClickTargetSelectionActive();
+        clearNumberSelection(!clickTargetSelection);
         if (callback != null) {
             callback.onSelected(selectedIndex);
+        }
+        if (clickTargetSelection && isListening) {
+            showOverlay();
+            updateOverlayText("Listening...");
         }
     }
 
     private void clearNumberSelection() {
+        clearNumberSelection(true);
+    }
+
+    private void clearNumberSelection(boolean restoreListeningOverlay) {
         isNumberSelectionMode = false;
         isConfirmationSelectionMode = false;
         numberSelectionTitle = null;
@@ -774,11 +831,17 @@ public class MyAccessibilityService extends AccessibilityService {
         uninstallConfirmationYesText = null;
         uninstallConfirmationNoText = null;
         hideSelectionWindow();
+        hideClickTargetMarkers();
         hideUninstallConfirmationWindow();
-        if (isListening) {
+        if (restoreListeningOverlay && isListening) {
             showOverlay();
             updateOverlayText("Listening...");
         }
+    }
+
+    private boolean isClickTargetSelectionActive() {
+        return !numberSelectionChoices.isEmpty()
+                && numberSelectionChoices.get(0) instanceof ClickTargetChoice;
     }
 
     public static class NumberedChoice {
@@ -794,6 +857,15 @@ public class MyAccessibilityService extends AccessibilityService {
             this.title = title;
             this.subtitle = subtitle;
             this.icon = icon;
+        }
+    }
+
+    public static final class ClickTargetChoice extends NumberedChoice {
+        public final Rect bounds;
+
+        public ClickTargetChoice(String title, String subtitle, Rect bounds) {
+            super(title, subtitle);
+            this.bounds = bounds == null ? new Rect() : new Rect(bounds);
         }
     }
 
@@ -924,6 +996,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean performSearchQuery(String query) {
         return searchInputController != null && searchInputController.performSearch(query);
+    }
+
+    public boolean pressKeyboardAction(String actionText) {
+        return searchInputController != null && searchInputController.pressKeyboardAction(actionText);
     }
 
     public boolean hasSearchInputAvailable() {

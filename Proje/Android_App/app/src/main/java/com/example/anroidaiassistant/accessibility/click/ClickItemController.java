@@ -41,6 +41,10 @@ public final class ClickItemController {
             return false;
         }
 
+        if (command.hasTargetText() && service.pressKeyboardAction(command.targetText)) {
+            return true;
+        }
+
         AccessibilityNodeInfo rootNode = service.getRootInActiveWindow();
         if (rootNode == null) {
             return false;
@@ -145,16 +149,16 @@ public final class ClickItemController {
             return false;
         }
 
-        List<MyAccessibilityService.NumberedChoice> choices = new ArrayList<>();
+        List<MyAccessibilityService.ClickTargetChoice> choices = new ArrayList<>();
         for (ClickCandidate candidate : fallbackCandidates) {
-            choices.add(new MyAccessibilityService.NumberedChoice(
+            choices.add(new MyAccessibilityService.ClickTargetChoice(
                     displayTitle(candidate),
-                    displaySubtitle(candidate)
+                    displaySubtitle(candidate),
+                    candidate.bounds
             ));
         }
 
-        service.startNumberSelection(
-                selectionTitle(),
+        service.startClickTargetSelection(
                 choices,
                 new MyAccessibilityService.NumberSelectionCallback() {
                     @Override
@@ -223,16 +227,6 @@ public final class ClickItemController {
 
     private String displaySubtitle(ClickCandidate candidate) {
         return "";
-    }
-
-    private String selectionTitle() {
-        if ("EN".equalsIgnoreCase(service.getSelectedLanguage())) {
-            return "Multiple items found";
-        }
-        if ("AR".equalsIgnoreCase(service.getSelectedLanguage())) {
-            return "\u062A\u0645 \u0627\u0644\u0639\u062B\u0648\u0631 \u0639\u0644\u0649 \u0639\u062F\u0629 \u0639\u0646\u0627\u0635\u0631";
-        }
-        return "Birden cok oge bulundu";
     }
 
     private String selectionHint() {

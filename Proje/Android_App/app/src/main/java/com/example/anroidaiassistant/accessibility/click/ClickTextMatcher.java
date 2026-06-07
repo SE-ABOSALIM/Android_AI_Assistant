@@ -38,6 +38,9 @@ public final class ClickTextMatcher {
         if (nodeText.equals(target)) {
             return new ClickTextMatch(EXACT_SCORE, "exact");
         }
+        if (target.replace(" ", "").length() < 2) {
+            return new ClickTextMatch(0, "");
+        }
         if (nodeText.contains(target)
                 || (nodeText.length() >= 4 && target.contains(nodeText))) {
             return new ClickTextMatch(CONTAINS_SCORE, "contains");
