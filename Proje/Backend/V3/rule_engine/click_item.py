@@ -21,7 +21,7 @@ def click_item_command(context: RuleContext) -> Optional[Dict[str, Any]]:
     if target_index:
         parameters["target_index"] = target_index
 
-    position = extract_click_position(context.original)
+    position = extract_click_position(context.original, context.language)
     if position:
         parameters["position"] = position
 

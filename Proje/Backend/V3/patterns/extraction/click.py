@@ -3,7 +3,7 @@ CLICK_TARGET_PATTERNS = {
         r"^(?:\u0627\u0636\u063a\u0637|\u0627\u0646\u0642\u0631)\s+(?:\u0639\u0644\u0649\s+)?(.+)$",
     ],
     "EN": [
-        r"^(?:tap|click|press)\s+(?:the\s+)?(.+)$",
+        r"^(?:tap|top|click|press)\s+(?:on\s+)?(?:the\s+)?(.+)$",
     ],
     "TR": [
         r"^(.+?)\s+(?:tikla|tiklayin|bas|basin)$",
@@ -13,6 +13,20 @@ CLICK_TARGET_PATTERNS = {
         r"^(?:\u0627\u0636\u063a\u0637|\u0627\u0646\u0642\u0631)\s+\u0639\u0644\u0649\s+(.+)$",
         r"^(?:\u0627\u0636\u063a\u0637|\u0627\u0646\u0642\u0631)\s+(.+)$",
     ],
+}
+
+CLICK_NUMBERED_ICON_PATTERNS = (
+    r"\b(?:3|three)\s+(?:dots?|points?|lines?|bars?)\b",
+    r"\b(?:uc|üç)\s+(?:nokta|cizgi|çizgi)\b",
+    r"(?<!\w)\u062b\u0644\u0627\u062b(?:\u0629)?\s+(?:\u0646\u0642\u0627\u0637|\u062e\u0637\u0648\u0637)(?!\w)",
+)
+
+CLICK_TARGET_TRAILING_NOISE_PATTERNS = {
+    "EN": (
+        r"\s+on\s+the\s+(?:top|bottom|left|right)(?:\s+of\s+the\s+(?:page|screen))?$",
+        r"\s+on\s+(?:top|bottom|left|right)$",
+        r"\s+at\s+the\s+(?:top|bottom|left|right)(?:\s+of\s+the\s+(?:page|screen))?$",
+    ),
 }
 
 CLICK_POSITION_ALIASES = {

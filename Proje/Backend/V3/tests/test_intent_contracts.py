@@ -197,6 +197,8 @@ class IntentContractTests(unittest.TestCase):
     def test_click_item_extracts_target_and_position(self):
         bottom_plus = _validate("CLICK_ITEM", {}, text="a\u015fa\u011f\u0131daki art\u0131ya bas", language="TR")
         search = _validate("CLICK_ITEM", {}, text="tap the search button", language="EN")
+        top_search = _validate("CLICK_ITEM", {}, text="top search", language="EN")
+        top_dots = _validate("CLICK_ITEM", {}, text="click on the three dots on the top of the page", language="EN")
         third_option = _validate("CLICK_ITEM", {}, text="tap the third option", language="EN")
         second_video = _validate("CLICK_ITEM", {}, text="ikinci videoya bas", language="TR")
         arabic = _validate(
@@ -213,6 +215,15 @@ class IntentContractTests(unittest.TestCase):
 
         self.assertTrue(search["accepted"])
         self.assertEqual(search["parameters"]["target_text"], "search button")
+
+        self.assertTrue(top_search["accepted"])
+        self.assertEqual(top_search["parameters"]["target_text"], "search")
+        self.assertNotIn("position", top_search["parameters"])
+
+        self.assertTrue(top_dots["accepted"])
+        self.assertEqual(top_dots["parameters"]["target_text"], "dots")
+        self.assertEqual(top_dots["parameters"]["position"], "top")
+        self.assertNotIn("target_index", top_dots["parameters"])
 
         self.assertTrue(third_option["accepted"])
         self.assertEqual(third_option["parameters"]["target_text"], "option")

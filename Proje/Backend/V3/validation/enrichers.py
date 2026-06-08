@@ -62,7 +62,7 @@ def enrich_click_item(context: ValidationContext) -> None:
             context.parameters["target_text"] = target_text
 
     if not context.parameters.get("position"):
-        position = extract_click_position(context.original_text)
+        position = extract_click_position(context.original_text, context.language)
         if position:
             context.parameters["position"] = position
 

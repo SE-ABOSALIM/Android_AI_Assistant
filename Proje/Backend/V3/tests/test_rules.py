@@ -72,6 +72,21 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"target_text": "option", "target_index": 3})
         self.assertEqual(result["rule_matched"], "click_item")
 
+    def test_click_item_rule_treats_three_dots_as_icon_not_index(self):
+        examples = [
+            "click three dots",
+            "click three dots top",
+            "click on the three dots on the top of the page",
+        ]
+
+        for text in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, "EN")
+
+                self.assertEqual(result["intent"], "CLICK_ITEM")
+                self.assertEqual(result["parameters"], {"target_text": "dots", "position": "top"} if "top" in text else {"target_text": "dots"})
+                self.assertEqual(result["rule_matched"], "click_item")
+
     def test_click_item_rule_supports_index_without_target_text(self):
         result = rule_based_command("ucuncusune bas", "TR")
 
