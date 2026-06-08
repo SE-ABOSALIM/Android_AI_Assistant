@@ -125,6 +125,19 @@ function Set-EnabledAccessibilityServices {
     ) | Out-Null
 }
 
+function Start-App {
+    param(
+        [string]$AdbPath,
+        [string]$MainActivityComponent
+    )
+
+    Invoke-AdbOptional -AdbPath $AdbPath -Arguments @(
+        "shell", "am", "start", "-n", $MainActivityComponent,
+        "-a", "android.intent.action.MAIN",
+        "-c", "android.intent.category.LAUNCHER"
+    ) | Out-Null
+}
+
 function Remove-ServiceAliases {
     param(
         [string[]]$Services,
@@ -166,12 +179,6 @@ Write-Host "Using main activity: $mainActivityComponent"
 
 Invoke-Adb -AdbPath $adbPath -Arguments @("wait-for-device") | Out-Null
 
-if (-not $NoForceStop) {
-    Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
-        "shell", "am", "force-stop", $PackageName
-    ) | Out-Null
-}
-
 $serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
 $serviceEntries = Remove-ServiceAliases -Services $serviceEntries -Aliases $serviceAliases -PackageName $PackageName
 Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
@@ -184,19 +191,6 @@ if ($serviceEntries.Count -eq 0) {
 
 if (-not $DryRun) {
     Start-Sleep -Milliseconds 900
-}
-
-$serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
-$serviceEntries = Remove-ServiceAliases -Services $serviceEntries -Aliases $serviceAliases -PackageName $PackageName
-$serviceEntries += $serviceComponent
-Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
-
-Invoke-Adb -AdbPath $adbPath -Arguments @(
-    "shell", "settings", "put", "secure", "accessibility_enabled", "1"
-) | Out-Null
-
-if (-not $DryRun) {
-    Start-Sleep -Milliseconds 1200
 }
 
 Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
@@ -220,12 +214,35 @@ foreach ($permission in $runtimePermissions) {
     ) | Out-Null
 }
 
-if (-not $NoLaunch) {
+if (-not $NoForceStop) {
     Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
-        "shell", "am", "start", "-n", $mainActivityComponent,
-        "-a", "android.intent.action.MAIN",
-        "-c", "android.intent.category.LAUNCHER"
+        "shell", "am", "force-stop", $PackageName
     ) | Out-Null
+}
+
+if (-not $NoLaunch) {
+    Start-App -AdbPath $adbPath -MainActivityComponent $mainActivityComponent
+}
+
+if (-not $DryRun) {
+    Start-Sleep -Milliseconds 900
+}
+
+$serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
+$serviceEntries = Remove-ServiceAliases -Services $serviceEntries -Aliases $serviceAliases -PackageName $PackageName
+$serviceEntries += $serviceComponent
+Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
+
+Invoke-Adb -AdbPath $adbPath -Arguments @(
+    "shell", "settings", "put", "secure", "accessibility_enabled", "1"
+) | Out-Null
+
+if (-not $DryRun) {
+    Start-Sleep -Milliseconds 1800
+}
+
+if (-not $NoLaunch) {
+    Start-App -AdbPath $adbPath -MainActivityComponent $mainActivityComponent
 }
 
 Write-Host ""
