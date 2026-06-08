@@ -17,8 +17,7 @@ public final class ClickItemCommandHandler implements CommandHandler {
     @Override
     public void handle(Map<String, Object> parameters, CommandExecutionContext context) {
         String targetText = ParameterReader.getStringParam(parameters, "target_text");
-        int targetIndex = ParameterReader.getIntParam(parameters, "target_index");
-        if (!TextNormalizer.hasText(targetText) && targetIndex < 1) {
+        if (!TextNormalizer.hasText(targetText)) {
             context.showMessage("What should I tap?");
             return;
         }
@@ -30,7 +29,7 @@ public final class ClickItemCommandHandler implements CommandHandler {
         }
 
         String position = ParameterReader.getStringParam(parameters, "position");
-        if (!service.clickItem(targetText, targetIndex, position)) {
+        if (!service.clickItem(targetText, position)) {
             context.showMessage("Item not found");
         }
     }

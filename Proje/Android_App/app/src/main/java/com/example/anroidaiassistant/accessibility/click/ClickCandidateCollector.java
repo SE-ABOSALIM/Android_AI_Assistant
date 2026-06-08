@@ -29,27 +29,6 @@ public final class ClickCandidateCollector {
         return candidates;
     }
 
-    public List<ClickCandidate> collectIndexedCandidates(
-            AccessibilityNodeInfo rootNode,
-            List<String> targetVariants,
-            boolean genericTarget,
-            String position,
-            int screenWidth,
-            int screenHeight
-    ) {
-        List<ClickCandidate> candidates = new ArrayList<>();
-        collectIndexedCandidates(
-                rootNode,
-                targetVariants,
-                genericTarget,
-                position,
-                screenWidth,
-                screenHeight,
-                candidates
-        );
-        return candidates;
-    }
-
     private void collectTextCandidates(
             AccessibilityNodeInfo node,
             List<String> targetVariants,
@@ -134,94 +113,6 @@ public final class ClickCandidateCollector {
         );
     }
 
-    private void collectIndexedCandidates(
-            AccessibilityNodeInfo node,
-            List<String> targetVariants,
-            boolean genericTarget,
-            String position,
-            int screenWidth,
-            int screenHeight,
-            List<ClickCandidate> candidates
-    ) {
-        if (node == null || screenWidth <= 0 || screenHeight <= 0) {
-            return;
-        }
-
-        AccessibilityNodeInfo clickNode = findClickableNode(node);
-        if (clickNode != null) {
-            ClickCandidate candidate = buildIndexedCandidate(
-                    clickNode,
-                    targetVariants,
-                    genericTarget,
-                    position,
-                    screenWidth,
-                    screenHeight
-            );
-            if (candidate != null && !containsEquivalentCandidate(candidates, candidate)) {
-                candidates.add(candidate);
-            }
-        }
-
-        for (int i = 0; i < node.getChildCount(); i++) {
-            collectIndexedCandidates(
-                    node.getChild(i),
-                    targetVariants,
-                    genericTarget,
-                    position,
-                    screenWidth,
-                    screenHeight,
-                    candidates
-            );
-        }
-    }
-
-    private ClickCandidate buildIndexedCandidate(
-            AccessibilityNodeInfo clickNode,
-            List<String> targetVariants,
-            boolean genericTarget,
-            String position,
-            int screenWidth,
-            int screenHeight
-    ) {
-        Rect bounds = new Rect();
-        clickNode.getBoundsInScreen(bounds);
-        if (bounds.isEmpty()
-                || !positionFilter.matches(bounds, position, screenWidth, screenHeight)
-                || !isLikelyListItem(bounds, screenWidth, screenHeight)) {
-            return null;
-        }
-
-        String rawNodeText = ClickTextUtils.joinSubtreeText(clickNode);
-        String nodeText = ClickTextUtils.normalize(rawNodeText);
-        ClickTextMatch textMatch = textMatcher.score(nodeText, targetVariants);
-        if (!targetVariants.isEmpty() && !genericTarget && textMatch.score <= 0) {
-            return null;
-        }
-
-        int score = 10 + positionFilter.score(bounds, position, screenWidth, screenHeight);
-        if (TextNormalizer.hasText(nodeText)) {
-            score += 4;
-        }
-        if (textMatch.score > 0) {
-            score += textMatch.score;
-        }
-
-        return new ClickCandidate(clickNode, bounds, displayLabel(rawNodeText, bounds), score, "indexed");
-    }
-
-    private boolean isLikelyListItem(Rect bounds, int screenWidth, int screenHeight) {
-        float widthRatio = bounds.width() / (float) screenWidth;
-        float heightRatio = bounds.height() / (float) screenHeight;
-
-        if (widthRatio > 0.95f && heightRatio > 0.55f) {
-            return false;
-        }
-        if (heightRatio > 0.45f) {
-            return false;
-        }
-        return bounds.height() >= 36 || bounds.width() >= screenWidth * 0.20f;
-    }
-
     private boolean containsEquivalentCandidate(List<ClickCandidate> candidates, ClickCandidate candidate) {
         for (ClickCandidate existing : candidates) {
             if (sameBounds(existing.bounds, candidate.bounds)) {
@@ -270,4 +161,5 @@ public final class ClickCandidateCollector {
         }
         return "Item at " + bounds.centerX() + ", " + bounds.centerY();
     }
+
 }

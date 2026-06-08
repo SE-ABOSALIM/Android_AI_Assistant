@@ -31,10 +31,9 @@ public final class ClickItemController {
         this.gestureController = gestureController;
     }
 
-    public boolean clickItem(String targetText, int targetIndex, String position) {
+    public boolean clickItem(String targetText, String position) {
         ClickCommand command = new ClickCommand(
                 targetText,
-                targetIndex,
                 positionFilter.normalizePosition(position)
         );
         if (!command.isValid()) {
@@ -53,49 +52,7 @@ public final class ClickItemController {
         DisplayMetrics displayMetrics = service.getResources().getDisplayMetrics();
         String packageName = rootNode.getPackageName() == null ? "" : rootNode.getPackageName().toString();
 
-        if (command.hasTargetIndex()) {
-            return clickIndexedItem(rootNode, command, packageName, displayMetrics);
-        }
-
         return clickByTargetText(rootNode, command, packageName, displayMetrics);
-    }
-
-    private boolean clickIndexedItem(
-            AccessibilityNodeInfo rootNode,
-            ClickCommand command,
-            String packageName,
-            DisplayMetrics displayMetrics
-    ) {
-        List<String> targetVariants = command.hasTargetText()
-                ? aliasMatcher.targetVariants(command.targetText, packageName)
-                : new ArrayList<>();
-        boolean genericTarget = aliasMatcher.isGenericListTarget(ClickTextUtils.normalize(command.targetText));
-        List<ClickCandidate> candidates = candidateCollector.collectIndexedCandidates(
-                rootNode,
-                targetVariants,
-                genericTarget,
-                command.position,
-                displayMetrics.widthPixels,
-                displayMetrics.heightPixels
-        );
-
-        if (candidates.size() < command.targetIndex && command.hasTargetText()) {
-            candidates = candidateCollector.collectIndexedCandidates(
-                    rootNode,
-                    new ArrayList<>(),
-                    true,
-                    command.position,
-                    displayMetrics.widthPixels,
-                    displayMetrics.heightPixels
-            );
-        }
-
-        if (command.targetIndex < 1 || command.targetIndex > candidates.size()) {
-            return showFallbackIfUseful(candidates);
-        }
-
-        candidates.sort(screenOrderComparator());
-        return clickCandidate(candidates.get(command.targetIndex - 1));
     }
 
     private boolean clickByTargetText(
@@ -217,12 +174,6 @@ public final class ClickItemController {
                 .comparingInt((ClickCandidate candidate) -> candidate.score)
                 .reversed()
                 .thenComparingInt(candidate -> candidate.bounds.top)
-                .thenComparingInt(candidate -> candidate.bounds.left);
-    }
-
-    private Comparator<ClickCandidate> screenOrderComparator() {
-        return Comparator
-                .comparingInt((ClickCandidate candidate) -> candidate.bounds.top)
                 .thenComparingInt(candidate -> candidate.bounds.left);
     }
 

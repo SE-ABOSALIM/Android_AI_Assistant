@@ -976,8 +976,8 @@ public class MyAccessibilityService extends AccessibilityService {
         return gestureController != null && gestureController.longPressCenter();
     }
 
-    public boolean clickItem(String targetText, int targetIndex, String position) {
-        return clickItemController != null && clickItemController.clickItem(targetText, targetIndex, position);
+    public boolean clickItem(String targetText, String position) {
+        return clickItemController != null && clickItemController.clickItem(targetText, position);
     }
 
     public boolean setSoftKeyboardVisible(boolean visible) {
