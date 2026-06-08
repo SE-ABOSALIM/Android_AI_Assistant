@@ -95,7 +95,7 @@ public final class ClickItemController {
         }
 
         candidates.sort(screenOrderComparator());
-        return clickNode(candidates.get(command.targetIndex - 1).clickNode);
+        return clickCandidate(candidates.get(command.targetIndex - 1));
     }
 
     private boolean clickByTargetText(
@@ -115,7 +115,7 @@ public final class ClickItemController {
         candidates.sort(bestMatchComparator());
         ClickCandidate directCandidate = chooseDirectCandidate(candidates);
         if (directCandidate != null) {
-            return clickNode(directCandidate.clickNode);
+            return clickCandidate(directCandidate);
         }
 
         return showFallbackIfUseful(candidates);
@@ -167,7 +167,7 @@ public final class ClickItemController {
                             service.showFeedback("Item not found");
                             return;
                         }
-                        if (!clickNode(fallbackCandidates.get(selectedIndex).clickNode)) {
+                        if (!clickCandidate(fallbackCandidates.get(selectedIndex))) {
                             service.showFeedback("Item could not be clicked");
                         }
                     }
@@ -195,6 +195,14 @@ public final class ClickItemController {
             return new ArrayList<>(filtered.subList(0, MAX_FALLBACK_CANDIDATES));
         }
         return filtered;
+    }
+
+    private boolean clickCandidate(ClickCandidate candidate) {
+        if (candidate.preferBoundsTap && gestureController.tapBoundsCenter(candidate.bounds)) {
+            return true;
+        }
+
+        return clickNode(candidate.clickNode);
     }
 
     private boolean clickNode(AccessibilityNodeInfo node) {

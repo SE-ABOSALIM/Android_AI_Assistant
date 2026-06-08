@@ -91,8 +91,15 @@ public final class ClickCandidateCollector {
             return null;
         }
 
-        Rect bounds = new Rect();
-        clickNode.getBoundsInScreen(bounds);
+        Rect clickBounds = new Rect();
+        clickNode.getBoundsInScreen(clickBounds);
+        if (clickBounds.isEmpty()) {
+            return null;
+        }
+
+        Rect nodeBounds = new Rect();
+        node.getBoundsInScreen(nodeBounds);
+        Rect bounds = chooseTapBounds(nodeBounds, clickBounds);
         if (bounds.isEmpty() || !positionFilter.matches(bounds, position, screenWidth, screenHeight)) {
             return null;
         }
@@ -116,7 +123,15 @@ public final class ClickCandidateCollector {
             score += 1;
         }
 
-        return new ClickCandidate(clickNode, bounds, displayLabel(rawNodeText, bounds), score, textMatch.reason);
+        boolean preferBoundsTap = clickNode != node && !sameBounds(bounds, clickBounds);
+        return new ClickCandidate(
+                clickNode,
+                bounds,
+                displayLabel(rawNodeText, bounds),
+                score,
+                textMatch.reason,
+                preferBoundsTap
+        );
     }
 
     private void collectIndexedCandidates(
@@ -221,6 +236,19 @@ public final class ClickCandidateCollector {
                 && first.top == second.top
                 && first.right == second.right
                 && first.bottom == second.bottom;
+    }
+
+    private Rect chooseTapBounds(Rect nodeBounds, Rect clickBounds) {
+        if (nodeBounds == null
+                || nodeBounds.isEmpty()
+                || clickBounds == null
+                || clickBounds.isEmpty()
+                || !clickBounds.contains(nodeBounds)
+                || sameBounds(nodeBounds, clickBounds)) {
+            return new Rect(clickBounds);
+        }
+
+        return new Rect(nodeBounds);
     }
 
     private AccessibilityNodeInfo findClickableNode(AccessibilityNodeInfo node) {

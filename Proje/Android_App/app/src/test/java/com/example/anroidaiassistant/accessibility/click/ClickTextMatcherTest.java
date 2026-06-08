@@ -58,6 +58,8 @@ public class ClickTextMatcherTest {
         assertTrue(aliasMatcher.targetVariants("paylas isareti", "").contains("share"));
         assertTrue(aliasMatcher.targetVariants("arama isareti", "").contains("search"));
         assertTrue(aliasMatcher.targetVariants("mikrofon isareti", "").contains("microphone"));
+        assertTrue(aliasMatcher.targetVariants("mikrofona", "").contains("voice note"));
+        assertTrue(aliasMatcher.targetVariants("mikrofona", "").contains("voice note btn"));
         assertTrue(aliasMatcher.targetVariants("kagit tutucu", "").contains("attachment"));
         assertTrue(aliasMatcher.targetVariants("atac isareti", "").contains("paperclip"));
         assertTrue(aliasMatcher.targetVariants("emoji isareti", "").contains("emoji"));
@@ -83,5 +85,17 @@ public class ClickTextMatcherTest {
 
         assertEquals(0, notMatch.score);
         assertTrue(exactMatch.score >= 100);
+    }
+
+    @Test
+    public void scoresWhatsAppVoiceNoteResourceIdAsMicrophone() {
+        ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
+
+        ClickTextMatch match = matcher.score(
+                "com whatsapp id voice note btn",
+                aliasMatcher.targetVariants("mikrofona", "com.whatsapp")
+        );
+
+        assertTrue(match.score >= 66);
     }
 }

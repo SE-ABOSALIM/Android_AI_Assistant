@@ -77,6 +77,14 @@ public final class GestureController {
         return tap(bounds.centerX(), bounds.centerY());
     }
 
+    public boolean tapBoundsCenter(Rect bounds) {
+        if (bounds == null || bounds.isEmpty()) {
+            return false;
+        }
+
+        return tap(bounds.centerX(), bounds.centerY());
+    }
+
     private boolean scrollDown() {
         if (scrollByRatio(0.52f, 0.82f, 0.52f, 0.16f)) {
             return true;
