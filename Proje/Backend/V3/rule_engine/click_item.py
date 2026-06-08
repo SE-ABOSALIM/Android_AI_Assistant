@@ -1,25 +1,21 @@
 from typing import Any, Dict, Optional
 
-from V3.extraction.click import extract_click_index, extract_click_position, extract_click_target
+from V3.extraction.click import extract_click_position, extract_click_target
 from V3.rule_engine.context import RuleContext
 from V3.rule_engine.result import command
 from V3.utils.text import normalized_lower
 
 
 def click_item_command(context: RuleContext) -> Optional[Dict[str, Any]]:
-    if not _has_click_action(context.original):
+    if not _has_click_action(context):
         return None
 
     target_text = extract_click_target(context.original, context.language)
-    target_index = extract_click_index(context.original)
-    if not target_text and not target_index:
+    if not target_text:
         return None
 
     parameters: Dict[str, Any] = {}
-    if target_text:
-        parameters["target_text"] = target_text
-    if target_index:
-        parameters["target_index"] = target_index
+    parameters["target_text"] = target_text
 
     position = extract_click_position(context.original, context.language)
     if position:
@@ -28,8 +24,11 @@ def click_item_command(context: RuleContext) -> Optional[Dict[str, Any]]:
     return command("CLICK_ITEM", "click_item", parameters)
 
 
-def _has_click_action(text: str) -> bool:
-    normalized = f" {normalized_lower(text)} "
+def _has_click_action(context: RuleContext) -> bool:
+    normalized = f" {normalized_lower(context.original)} "
+    if _looks_like_turkish_merged_click(context):
+        return True
+
     return any(
         action in normalized
         for action in (
@@ -44,3 +43,14 @@ def _has_click_action(text: str) -> bool:
             " \u0627\u0646\u0642\u0631 ",
         )
     )
+
+
+def _looks_like_turkish_merged_click(context: RuleContext) -> bool:
+    if not str(context.language or "").upper().startswith("TR"):
+        return False
+
+    words = normalized_lower(context.original).split()
+    if len(words) < 2:
+        return False
+
+    return words[-1].endswith("yamaz") or words[-1].endswith("yemez")

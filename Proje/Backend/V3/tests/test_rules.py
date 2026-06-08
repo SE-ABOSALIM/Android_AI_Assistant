@@ -65,12 +65,24 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"target_text": "arti", "position": "bottom"})
         self.assertEqual(result["rule_matched"], "click_item")
 
-    def test_click_item_rule_supports_list_index(self):
-        result = rule_based_command("tap the third option", "EN")
+    def test_click_item_rule_strips_turkish_dative_suffix(self):
+        result = rule_based_command("Daire numarasına bas", "TR")
 
         self.assertEqual(result["intent"], "CLICK_ITEM")
-        self.assertEqual(result["parameters"], {"target_text": "option", "target_index": 3})
+        self.assertEqual(result["parameters"], {"target_text": "daire numarasi"})
         self.assertEqual(result["rule_matched"], "click_item")
+
+    def test_click_item_rule_repairs_turkish_merged_bas_stt(self):
+        result = rule_based_command("sepeti onaylayamaz", "TR")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "sepeti onayla"})
+        self.assertEqual(result["rule_matched"], "click_item")
+
+    def test_click_item_rule_rejects_list_index(self):
+        result = rule_based_command("tap the third option", "EN")
+
+        self.assertIsNone(result)
 
     def test_click_item_rule_treats_three_dots_as_icon_not_index(self):
         examples = [
@@ -84,15 +96,13 @@ class RuleServiceTests(unittest.TestCase):
                 result = rule_based_command(text, "EN")
 
                 self.assertEqual(result["intent"], "CLICK_ITEM")
-                self.assertEqual(result["parameters"], {"target_text": "dots", "position": "top"} if "top" in text else {"target_text": "dots"})
+                self.assertEqual(result["parameters"], {"target_text": "three dots", "position": "top"} if "top" in text else {"target_text": "three dots"})
                 self.assertEqual(result["rule_matched"], "click_item")
 
-    def test_click_item_rule_supports_index_without_target_text(self):
+    def test_click_item_rule_rejects_index_without_target_text(self):
         result = rule_based_command("ucuncusune bas", "TR")
 
-        self.assertEqual(result["intent"], "CLICK_ITEM")
-        self.assertEqual(result["parameters"], {"target_index": 3})
-        self.assertEqual(result["rule_matched"], "click_item")
+        self.assertIsNone(result)
 
     def test_timer_rule(self):
         result = rule_based_command("set a timer for 5 minutes", "EN")

@@ -1,6 +1,5 @@
 from V3.extraction.app import extract_app_name_for_intent
 from V3.extraction.click import (
-    extract_click_index,
     extract_click_position,
     extract_click_target,
 )
@@ -17,7 +16,6 @@ __all__ = [
     "extract_app_name_for_intent",
     "extract_click_target",
     "extract_click_position",
-    "extract_click_index",
     "extract_contact_name",
     "extract_search_query",
     "extract_timer",

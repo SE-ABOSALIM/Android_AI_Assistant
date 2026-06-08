@@ -163,6 +163,26 @@ class IntentContractTests(unittest.TestCase):
         self.assertFalse(weak["accepted"])
         self.assertEqual(weak["error_code"], "WEAK_STOP_LISTENING_COMMAND")
 
+    def test_stop_listening_rejects_single_word_commands(self):
+        examples = ["bas", "git", "kapat"]
+
+        for text in examples:
+            with self.subTest(text=text):
+                response = _validate(
+                    "STOP_LISTENING",
+                    {},
+                    text=text,
+                    language="TR",
+                    confidence=0.99,
+                    top_predictions=[
+                        {"label": "STOP_LISTENING__none", "confidence": 0.99},
+                        {"label": "UNKNOWN_COMMAND__none", "confidence": 0.01},
+                    ],
+                )
+
+                self.assertFalse(response["accepted"])
+                self.assertEqual(response["error_code"], "STOP_LISTENING_TOO_SHORT")
+
     def test_stop_listening_rejects_ambiguous_model_prediction(self):
         ambiguous = _validate(
             "STOP_LISTENING",
@@ -199,6 +219,8 @@ class IntentContractTests(unittest.TestCase):
         search = _validate("CLICK_ITEM", {}, text="tap the search button", language="EN")
         top_search = _validate("CLICK_ITEM", {}, text="top search", language="EN")
         top_dots = _validate("CLICK_ITEM", {}, text="click on the three dots on the top of the page", language="EN")
+        apartment_number = _validate("CLICK_ITEM", {}, text="Daire numarasına bas", language="TR")
+        merged_approve = _validate("CLICK_ITEM", {}, text="sepeti onaylayamaz", language="TR")
         third_option = _validate("CLICK_ITEM", {}, text="tap the third option", language="EN")
         second_video = _validate("CLICK_ITEM", {}, text="ikinci videoya bas", language="TR")
         arabic = _validate(
@@ -221,27 +243,30 @@ class IntentContractTests(unittest.TestCase):
         self.assertNotIn("position", top_search["parameters"])
 
         self.assertTrue(top_dots["accepted"])
-        self.assertEqual(top_dots["parameters"]["target_text"], "dots")
+        self.assertEqual(top_dots["parameters"]["target_text"], "three dots")
         self.assertEqual(top_dots["parameters"]["position"], "top")
         self.assertNotIn("target_index", top_dots["parameters"])
 
-        self.assertTrue(third_option["accepted"])
-        self.assertEqual(third_option["parameters"]["target_text"], "option")
-        self.assertEqual(third_option["parameters"]["target_index"], 3)
+        self.assertTrue(apartment_number["accepted"])
+        self.assertEqual(apartment_number["parameters"]["target_text"], "daire numarasi")
 
-        self.assertTrue(second_video["accepted"])
-        self.assertEqual(second_video["parameters"]["target_text"], "video")
-        self.assertEqual(second_video["parameters"]["target_index"], 2)
+        self.assertTrue(merged_approve["accepted"])
+        self.assertEqual(merged_approve["parameters"]["target_text"], "sepeti onayla")
+
+        self.assertFalse(third_option["accepted"])
+        self.assertEqual(third_option["error_code"], "MISSING_REQUIRED_SLOT")
+
+        self.assertFalse(second_video["accepted"])
+        self.assertEqual(second_video["error_code"], "MISSING_REQUIRED_SLOT")
 
         self.assertTrue(arabic["accepted"])
         self.assertEqual(arabic["parameters"]["target_text"], "\u0627\u0644\u0628\u062d\u062b")
 
-    def test_click_item_allows_index_without_target_text(self):
+    def test_click_item_rejects_index_without_target_text(self):
         response = _validate("CLICK_ITEM", {}, text="\u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u0627\u0644\u062b\u0627\u0644\u062b", language="AR")
 
-        self.assertTrue(response["accepted"])
-        self.assertTrue(response["android_supported"])
-        self.assertEqual(response["parameters"]["target_index"], 3)
+        self.assertFalse(response["accepted"])
+        self.assertEqual(response["error_code"], "MISSING_REQUIRED_SLOT")
 
     def test_system_setting_intents_are_android_supported(self):
         examples = {

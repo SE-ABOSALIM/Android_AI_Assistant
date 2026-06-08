@@ -2,7 +2,6 @@ from typing import Callable, Dict
 
 from V3.extraction.alarm import extract_alarm
 from V3.extraction.click import (
-    extract_click_index,
     extract_click_position,
     extract_click_target,
 )
@@ -17,7 +16,7 @@ from V3.extraction.timer import extract_timer
 from V3.utils.text import normalized_lower
 from V3.validation.app_matching import enrich_app_command
 from V3.validation.context import ValidationContext
-from V3.validation.stop_listening import should_accept_stop_listening
+from V3.validation.stop_listening import has_enough_stop_listening_words, should_accept_stop_listening
 
 
 def enrich_timer(context: ValidationContext) -> None:
@@ -66,11 +65,6 @@ def enrich_click_item(context: ValidationContext) -> None:
         if position:
             context.parameters["position"] = position
 
-    if not context.parameters.get("target_index"):
-        target_index = extract_click_index(context.original_text)
-        if target_index:
-            context.parameters["target_index"] = target_index
-
 
 def enrich_alarm(context: ValidationContext) -> None:
     alarm_params = extract_alarm(context.original_text, context.language)
@@ -100,6 +94,13 @@ def enrich_take_photo(context: ValidationContext) -> None:
 
 
 def enrich_stop_listening(context: ValidationContext) -> None:
+    if not has_enough_stop_listening_words(context.original_text):
+        context.reject(
+            "STOP_LISTENING_TOO_SHORT",
+            "Stop listening cannot be triggered by a single word.",
+        )
+        return
+
     if should_accept_stop_listening(
         context.confidence,
         context.raw_label,

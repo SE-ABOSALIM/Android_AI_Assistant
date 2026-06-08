@@ -1,9 +1,15 @@
+import re
 from typing import Any, Dict, Iterable, Optional
 
 
 STOP_LISTENING_MODEL_CONFIDENCE_THRESHOLD = 0.88
 STOP_LISTENING_MIN_TOP_MARGIN = 0.25
 STOP_LISTENING_NO_TOPK_CONFIDENCE_THRESHOLD = 0.94
+STOP_LISTENING_MIN_WORD_COUNT = 2
+
+
+def has_enough_stop_listening_words(text: str) -> bool:
+    return len(re.findall(r"\w+", str(text or ""))) >= STOP_LISTENING_MIN_WORD_COUNT
 
 
 def should_accept_stop_listening(
