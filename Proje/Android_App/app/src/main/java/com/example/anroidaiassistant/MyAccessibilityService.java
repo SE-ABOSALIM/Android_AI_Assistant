@@ -6,14 +6,17 @@ import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.selection.GridCommandParser;
 import com.example.anroidaiassistant.selection.SelectionNumberParser;
 import com.example.anroidaiassistant.ui.ListeningOverlayController;
 import com.example.anroidaiassistant.ui.ClickTargetOverlayController;
+import com.example.anroidaiassistant.ui.GridOverlayController;
 import com.example.anroidaiassistant.ui.SelectionOverlayController;
 import com.example.anroidaiassistant.ui.UninstallConfirmationOverlayController;
 import com.example.anroidaiassistant.util.TextNormalizer;
 import com.example.anroidaiassistant.accessibility.AccessibilityActionController;
 import com.example.anroidaiassistant.accessibility.CameraCaptureController;
+import com.example.anroidaiassistant.accessibility.GridController;
 import com.example.anroidaiassistant.accessibility.click.ClickItemController;
 import com.example.anroidaiassistant.accessibility.GestureController;
 import com.example.anroidaiassistant.accessibility.QuickSettingsTileController;
@@ -69,6 +72,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private final Map<Integer, Boolean> streamMuteStateBeforeRecognizer = new HashMap<>();
     private final List<NumberedChoice> numberSelectionChoices = new ArrayList<>();
     private final SelectionNumberParser selectionNumberParser = new SelectionNumberParser();
+    private final GridCommandParser gridCommandParser = new GridCommandParser();
     private NumberSelectionCallback numberSelectionCallback;
     private String numberSelectionTitle;
     private String numberSelectionHint;
@@ -87,6 +91,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private AccessibilityActionController accessibilityActionController;
     private GestureController gestureController;
     private CameraCaptureController cameraCaptureController;
+    private GridController gridController;
     private ClickItemController clickItemController;
     private QuickSettingsTileController quickSettingsTileController;
     private SearchInputController searchInputController;
@@ -94,6 +99,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private WindowManager windowManager;
     private ListeningOverlayController listeningOverlayController;
     private ClickTargetOverlayController clickTargetOverlayController;
+    private GridOverlayController gridOverlayController;
     private SelectionOverlayController selectionOverlayController;
     private UninstallConfirmationOverlayController uninstallConfirmationOverlayController;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
@@ -119,6 +125,8 @@ public class MyAccessibilityService extends AccessibilityService {
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         listeningOverlayController = new ListeningOverlayController(this, windowManager);
         clickTargetOverlayController = new ClickTargetOverlayController(this, windowManager);
+        gridOverlayController = new GridOverlayController(this, windowManager);
+        gridController = new GridController(gridOverlayController, gestureController);
         selectionOverlayController = new SelectionOverlayController(this, windowManager, new SelectionOverlayController.Listener() {
             @Override
             public void onChoiceSelected(int selectedIndex) {
@@ -224,7 +232,9 @@ public class MyAccessibilityService extends AccessibilityService {
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null && !matches.isEmpty()) {
                     String spokenText = matches.get(0);
-                    if (isNumberSelectionMode) {
+                    if (isGridActive() && handleGridSpeech(spokenText)) {
+                        // Grid consumed the utterance.
+                    } else if (isNumberSelectionMode) {
                         handleNumberSelectionResult(spokenText);
                     } else if (consumeSpellAppMode()) {
                         updateOverlayText("Input: " + spokenText);
@@ -244,7 +254,7 @@ public class MyAccessibilityService extends AccessibilityService {
             @Override
             public void onPartialResults(Bundle partialResults) {
                 ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                if (isNumberSelectionMode) {
+                if (isNumberSelectionMode || isGridActive()) {
                     return;
                 }
                 if (matches != null && !matches.isEmpty()) {
@@ -366,6 +376,7 @@ public class MyAccessibilityService extends AccessibilityService {
         isListening = false;
         isSpellAppMode = false;
         clearNumberSelection();
+        hideGrid();
         cancelAppCatalogSyncIfNeeded();
         closeCurrentBackendSession();
         mainHandler.removeCallbacks(restartListeningRunnable);
@@ -421,6 +432,12 @@ public class MyAccessibilityService extends AccessibilityService {
     private void hideClickTargetMarkers() {
         if (clickTargetOverlayController != null) {
             clickTargetOverlayController.hide();
+        }
+    }
+
+    private void hideGrid() {
+        if (gridController != null) {
+            gridController.hide();
         }
     }
 
@@ -570,6 +587,17 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     protected boolean onKeyEvent(KeyEvent event) {
+        if (isGridActive() && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
+            if (event.getAction() == KeyEvent.ACTION_UP) {
+                hideGrid();
+                if (isListening) {
+                    showOverlay();
+                    updateOverlayText("Listening...");
+                }
+            }
+            return true;
+        }
+
         if (isNumberSelectionMode
                 && event.getKeyCode() == KeyEvent.KEYCODE_BACK) {
             if (event.getAction() == KeyEvent.ACTION_UP) {
@@ -587,6 +615,7 @@ public class MyAccessibilityService extends AccessibilityService {
         isListening = false;
         isSpellAppMode = false;
         clearNumberSelection();
+        hideGrid();
         cancelAppCatalogSyncIfNeeded();
         closeCurrentBackendSession();
         hideOverlay();
@@ -615,6 +644,7 @@ public class MyAccessibilityService extends AccessibilityService {
     public void enableSpellAppMode() {
         isSpellAppMode = true;
         clearNumberSelection();
+        hideGrid();
         updateOverlayText("Spell app name...");
     }
 
@@ -651,6 +681,7 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         isSpellAppMode = false;
+        hideGrid();
         isNumberSelectionMode = true;
         isConfirmationSelectionMode = false;
         numberSelectionTitle = null;
@@ -693,6 +724,7 @@ public class MyAccessibilityService extends AccessibilityService {
         choices.add(new NumberedChoice(noText, appName, appIcon));
 
         isSpellAppMode = false;
+        hideGrid();
         isNumberSelectionMode = true;
         isConfirmationSelectionMode = true;
         numberSelectionTitle = question;
@@ -732,6 +764,7 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         isSpellAppMode = false;
+        hideGrid();
         isNumberSelectionMode = true;
         isConfirmationSelectionMode = confirmationMode;
         numberSelectionTitle = title;
@@ -786,6 +819,39 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         completeNumberSelection(selectedIndex);
+    }
+
+    private boolean handleGridSpeech(String spokenText) {
+        String gridAction = gridCommandParser.parseAction(spokenText);
+        if (TextNormalizer.hasText(gridAction)) {
+            handleGridAction(gridAction);
+            return true;
+        }
+
+        if (!gridCommandParser.isCellSelectionText(spokenText)) {
+            return false;
+        }
+
+        if (gridController == null) {
+            return true;
+        }
+
+        Integer selectedIndex = selectionNumberParser.parseSelectionNumber(
+                spokenText,
+                gridController.getCellCount()
+        );
+        if (selectedIndex == null) {
+            Toast.makeText(this, "Grid numarasini soyle.", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        String gridGestureAction = gridCommandParser.parseCellGestureAction(spokenText);
+        if (gridController.performCellGesture(selectedIndex, gridGestureAction)) {
+            return true;
+        }
+
+        Toast.makeText(this, "Grid cell could not be tapped.", Toast.LENGTH_SHORT).show();
+        return true;
     }
 
     private void cancelNumberSelection() {
@@ -978,6 +1044,28 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean clickItem(String targetText, String position) {
         return clickItemController != null && clickItemController.clickItem(targetText, position);
+    }
+
+    public void handleGridAction(String action) {
+        if (gridController == null) {
+            showFeedback("Grid is unavailable");
+            return;
+        }
+
+        gridController.handleAction(action);
+        if (gridController.isActive()) {
+            hideOverlay();
+            return;
+        }
+
+        if (isListening) {
+            showOverlay();
+            updateOverlayText("Listening...");
+        }
+    }
+
+    public boolean isGridActive() {
+        return gridController != null && gridController.isActive();
     }
 
     public boolean setSoftKeyboardVisible(boolean visible) {

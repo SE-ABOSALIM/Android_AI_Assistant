@@ -9,6 +9,7 @@ import com.example.anroidaiassistant.executor.handlers.CenterGestureCommandHandl
 import com.example.anroidaiassistant.executor.handlers.ClearTextCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ClickItemCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ContactCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.GridCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.NavigationCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.OpenAppCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ScrollCommandHandler;
@@ -56,6 +57,7 @@ public final class CommandHandlerRegistry {
                 new NavigationCommandHandler("SHOW_RECENTS", NavigationCommandHandler.Action.RECENTS),
                 new NavigationCommandHandler("OPEN_NOTIFICATIONS", NavigationCommandHandler.Action.NOTIFICATIONS),
                 new NavigationCommandHandler("TAKE_SCREENSHOT", NavigationCommandHandler.Action.SCREENSHOT),
+                new GridCommandHandler(),
                 new TimerCommandHandler(),
                 new AlarmCommandHandler(),
                 new CameraCommandHandler(),

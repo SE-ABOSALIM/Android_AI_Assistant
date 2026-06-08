@@ -61,6 +61,11 @@ public class CommandExecutor {
             return;
         }
 
+        if (isGridBlockingTouchIntent(intent)) {
+            showMessage("Grid acikken dokunmak icin grid numarasi soyle.");
+            return;
+        }
+
         Map<String, Object> parameters = response.getParameters();
         if (commandDispatcher.dispatch(intent, parameters, executionContext)) {
             return;
@@ -159,6 +164,21 @@ public class CommandExecutor {
 
     private boolean errorEquals(PredictResponse response, String errorCode) {
         return response.getErrorCode() != null && response.getErrorCode().equalsIgnoreCase(errorCode);
+    }
+
+    private boolean isGridBlockingTouchIntent(String intent) {
+        if (!isTouchIntent(intent)) {
+            return false;
+        }
+
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        return service != null && service.isGridActive();
+    }
+
+    private boolean isTouchIntent(String intent) {
+        return "CLICK_ITEM".equalsIgnoreCase(intent)
+                || "DOUBLE_TAP".equalsIgnoreCase(intent)
+                || "HOLD_SCREEN".equalsIgnoreCase(intent);
     }
 
     private String firstNonEmpty(String... values) {

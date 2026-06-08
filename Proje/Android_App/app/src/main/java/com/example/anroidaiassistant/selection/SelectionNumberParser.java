@@ -18,11 +18,9 @@ public final class SelectionNumberParser {
             return toSelectionIndex(matcher.group(), maxChoice);
         }
 
-        for (String token : normalized.split(" ")) {
-            Integer value = selectionWordToNumber(token);
-            if (value != null) {
-                return toSelectionIndex(String.valueOf(value), maxChoice);
-            }
+        Integer wordNumber = parseNumberWords(normalized);
+        if (wordNumber != null) {
+            return toSelectionIndex(String.valueOf(wordNumber), maxChoice);
         }
 
         return null;
@@ -63,7 +61,67 @@ public final class SelectionNumberParser {
     }
 
     private Integer selectionWordToNumber(String token) {
-        return SelectionAliases.NUMBER_WORDS.get(token);
+        Integer directValue = SelectionAliases.NUMBER_WORDS.get(token);
+        if (directValue != null) {
+            return directValue;
+        }
+        if (token != null && token.length() > 1 && token.charAt(0) == '\u0648') {
+            return SelectionAliases.NUMBER_WORDS.get(token.substring(1));
+        }
+        Integer suffixedTurkishValue = turkishSuffixedNumberToValue(token);
+        if (suffixedTurkishValue != null) {
+            return suffixedTurkishValue;
+        }
+        return null;
+    }
+
+    private Integer turkishSuffixedNumberToValue(String token) {
+        if (!hasText(token)) {
+            return null;
+        }
+
+        for (String suffix : new String[]{"ye", "ya", "e", "a", "inci", "inciye", "uncu", "uncuye"}) {
+            if (token.length() > suffix.length() + 1 && token.endsWith(suffix)) {
+                Integer value = turkishNumberStemToValue(token.substring(0, token.length() - suffix.length()));
+                if (value != null) {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    private Integer turkishNumberStemToValue(String stem) {
+        Integer value = SelectionAliases.NUMBER_WORDS.get(stem);
+        if (value != null) {
+            return value;
+        }
+        if ("dord".equals(stem)) {
+            return SelectionAliases.NUMBER_WORDS.get("dort");
+        }
+        return null;
+    }
+
+    private Integer parseNumberWords(String normalized) {
+        int sum = 0;
+        int matchedCount = 0;
+
+        for (String token : normalized.split(" ")) {
+            Integer value = selectionWordToNumber(token);
+            if (value == null) {
+                continue;
+            }
+            if (value == 100) {
+                return 100;
+            }
+            sum += value;
+            matchedCount++;
+        }
+
+        if (matchedCount == 0 || sum <= 0 || sum > 100) {
+            return null;
+        }
+        return sum;
     }
 
     private String normalizeSelectionText(String text) {

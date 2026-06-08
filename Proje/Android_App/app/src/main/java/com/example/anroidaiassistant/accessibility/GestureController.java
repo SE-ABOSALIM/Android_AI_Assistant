@@ -85,6 +85,22 @@ public final class GestureController {
         return tap(bounds.centerX(), bounds.centerY());
     }
 
+    public boolean doubleTapBoundsCenter(Rect bounds) {
+        if (bounds == null || bounds.isEmpty()) {
+            return false;
+        }
+
+        return doubleTap(bounds.centerX(), bounds.centerY());
+    }
+
+    public boolean longPressBoundsCenter(Rect bounds) {
+        if (bounds == null || bounds.isEmpty()) {
+            return false;
+        }
+
+        return longPress(bounds.centerX(), bounds.centerY());
+    }
+
     private boolean scrollDown() {
         if (scrollByRatio(0.52f, 0.82f, 0.52f, 0.16f)) {
             return true;
@@ -206,6 +222,25 @@ public final class GestureController {
         int x = clamp(Math.round(width * xRatio), 1, width - 1);
         int y = clamp(Math.round(height * yRatio), 1, height - 1);
 
+        return doubleTap(x, y);
+    }
+
+    private boolean longPressByRatio(float xRatio, float yRatio) {
+        DisplayMetrics displayMetrics = service.getResources().getDisplayMetrics();
+        int width = displayMetrics.widthPixels;
+        int height = displayMetrics.heightPixels;
+
+        if (width <= 0 || height <= 0) {
+            return false;
+        }
+
+        int x = clamp(Math.round(width * xRatio), 1, width - 1);
+        int y = clamp(Math.round(height * yRatio), 1, height - 1);
+
+        return longPress(x, y);
+    }
+
+    private boolean doubleTap(int x, int y) {
         Path firstTap = new Path();
         firstTap.moveTo(x, y);
         Path secondTap = new Path();
@@ -221,18 +256,7 @@ public final class GestureController {
         return service.dispatchGesture(gestureBuilder.build(), null, null);
     }
 
-    private boolean longPressByRatio(float xRatio, float yRatio) {
-        DisplayMetrics displayMetrics = service.getResources().getDisplayMetrics();
-        int width = displayMetrics.widthPixels;
-        int height = displayMetrics.heightPixels;
-
-        if (width <= 0 || height <= 0) {
-            return false;
-        }
-
-        int x = clamp(Math.round(width * xRatio), 1, width - 1);
-        int y = clamp(Math.round(height * yRatio), 1, height - 1);
-
+    private boolean longPress(int x, int y) {
         Path pressPath = new Path();
         pressPath.moveTo(x, y);
         GestureDescription.Builder gestureBuilder = new GestureDescription.Builder();
