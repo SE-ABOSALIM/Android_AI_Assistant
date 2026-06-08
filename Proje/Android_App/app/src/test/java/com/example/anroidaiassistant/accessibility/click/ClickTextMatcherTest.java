@@ -88,6 +88,48 @@ public class ClickTextMatcherTest {
     }
 
     @Test
+    public void keepsSingleSharedWordAsSuggestionOnlyForMultiWordTarget() {
+        ClickTextMatch waffleMatch = matcher.score(
+                "waffle tatlisi",
+                Arrays.asList("tatli istemiyorum")
+        );
+        ClickTextMatch puddingMatch = matcher.score(
+                "puding tatlisi",
+                Arrays.asList("tatli istemiyorum")
+        );
+
+        assertTrue(waffleMatch.score > 0);
+        assertTrue(puddingMatch.score > 0);
+        assertTrue(waffleMatch.score < 66);
+        assertTrue(puddingMatch.score < 66);
+    }
+
+    @Test
+    public void scoresFullPhraseAndClosePhraseMatchesAboveSuggestionOnlyMatches() {
+        ClickTextMatch exactMatch = matcher.score(
+                "tatli istemiyorum",
+                Arrays.asList("tatli istemiyorum")
+        );
+        ClickTextMatch phraseMatch = matcher.score(
+                "sepetinizi goruntuleyin 3 urun",
+                Arrays.asList("sepetinizi goruntuleyin")
+        );
+        ClickTextMatch closeMatch = matcher.score(
+                "pudding tatlisi",
+                Arrays.asList("buding tatlisi")
+        );
+        ClickTextMatch sharedWordOnlyMatch = matcher.score(
+                "waffle tatlisi",
+                Arrays.asList("buding tatlisi")
+        );
+
+        assertTrue(exactMatch.score >= 100);
+        assertTrue(phraseMatch.score >= 74);
+        assertTrue(closeMatch.score >= 66);
+        assertTrue(closeMatch.score > sharedWordOnlyMatch.score);
+    }
+
+    @Test
     public void scoresWhatsAppVoiceNoteResourceIdAsMicrophone() {
         ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
 

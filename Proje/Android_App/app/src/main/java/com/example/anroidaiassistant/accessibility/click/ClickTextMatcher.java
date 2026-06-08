@@ -8,7 +8,9 @@ public final class ClickTextMatcher {
     private static final int EXACT_SCORE = 100;
     private static final int CONTAINS_SCORE = 82;
     private static final int ALL_TOKENS_SCORE = 74;
+    private static final int TOKEN_COVERAGE_SCORE = 58;
     private static final int TOKEN_OVERLAP_SCORE = 48;
+    private static final int SINGLE_TOKEN_SCORE = 48;
     private static final int FUZZY_SCORE = 66;
 
     public ClickTextMatch score(String nodeText, List<String> targetVariants) {
@@ -41,45 +43,137 @@ public final class ClickTextMatcher {
         if (target.replace(" ", "").length() < 2) {
             return new ClickTextMatch(0, "");
         }
-        if (nodeText.contains(target)
-                || (nodeText.length() >= 4 && target.contains(nodeText))) {
+        if (containsSafePhrase(nodeText, target)) {
             return new ClickTextMatch(CONTAINS_SCORE, "contains");
         }
         if (containsAllTokens(nodeText, target)) {
             return new ClickTextMatch(ALL_TOKENS_SCORE, "all_tokens");
         }
-        if (hasUsefulTokenOverlap(nodeText, target)) {
-            return new ClickTextMatch(TOKEN_OVERLAP_SCORE, "token_overlap");
+        if (isStrongTokenCoverage(nodeText, target)) {
+            return new ClickTextMatch(TOKEN_COVERAGE_SCORE, "token_coverage");
         }
         if (isStrongFuzzyMatch(nodeText, target)) {
             return new ClickTextMatch(FUZZY_SCORE, "fuzzy");
+        }
+        if (hasUsefulTokenOverlap(nodeText, target)) {
+            return new ClickTextMatch(TOKEN_OVERLAP_SCORE, "token_overlap");
+        }
+        if (isSingleUsefulTokenMatch(nodeText, target)) {
+            return new ClickTextMatch(SINGLE_TOKEN_SCORE, "single_token");
         }
 
         return new ClickTextMatch(0, "");
     }
 
+    private boolean containsSafePhrase(String nodeText, String target) {
+        if (nodeText.contains(target)) {
+            return true;
+        }
+
+        String[] nodeTokens = meaningfulTokens(nodeText);
+        String[] targetTokens = meaningfulTokens(target);
+        return nodeTokens.length >= 2
+                && targetTokens.length >= 2
+                && target.contains(nodeText);
+    }
+
     private boolean containsAllTokens(String nodeText, String target) {
-        String[] tokens = target.split(" ");
-        boolean hasToken = false;
-        for (String token : tokens) {
-            if (!TextNormalizer.hasText(token)) {
-                continue;
-            }
-            hasToken = true;
-            if (!nodeText.contains(token)) {
+        String[] targetTokens = meaningfulTokens(target);
+        if (targetTokens.length < 2) {
+            return false;
+        }
+
+        for (String token : targetTokens) {
+            if (!containsSimilarToken(nodeText, token)) {
                 return false;
             }
         }
-        return hasToken;
+        return true;
+    }
+
+    private boolean isStrongTokenCoverage(String nodeText, String target) {
+        String[] targetTokens = meaningfulTokens(target);
+        if (targetTokens.length < 3) {
+            return false;
+        }
+
+        int matchedTokens = 0;
+        for (String token : targetTokens) {
+            if (containsSimilarToken(nodeText, token)) {
+                matchedTokens++;
+            }
+        }
+
+        int requiredMatches = Math.max(2, (int) Math.ceil(targetTokens.length * 0.75));
+        return matchedTokens >= requiredMatches;
+    }
+
+    private boolean isSingleUsefulTokenMatch(String nodeText, String target) {
+        String[] targetTokens = meaningfulTokens(target);
+        if (targetTokens.length != 1) {
+            return false;
+        }
+        return containsSimilarToken(nodeText, targetTokens[0]);
     }
 
     private boolean hasUsefulTokenOverlap(String nodeText, String target) {
-        for (String token : target.split(" ")) {
-            if (token.length() >= 4 && nodeText.contains(token)) {
+        String[] targetTokens = meaningfulTokens(target);
+        if (targetTokens.length < 2) {
+            return false;
+        }
+
+        for (String token : targetTokens) {
+            if (containsSimilarToken(nodeText, token)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private String[] meaningfulTokens(String text) {
+        if (!TextNormalizer.hasText(text)) {
+            return new String[0];
+        }
+
+        String[] rawTokens = text.split(" ");
+        int count = 0;
+        for (String token : rawTokens) {
+            if (isMeaningfulToken(token)) {
+                count++;
+            }
+        }
+
+        String[] tokens = new String[count];
+        int index = 0;
+        for (String token : rawTokens) {
+            if (isMeaningfulToken(token)) {
+                tokens[index++] = token;
+            }
+        }
+        return tokens;
+    }
+
+    private boolean isMeaningfulToken(String token) {
+        return TextNormalizer.hasText(token) && token.length() >= 2;
+    }
+
+    private boolean containsSimilarToken(String nodeText, String targetToken) {
+        for (String nodeToken : meaningfulTokens(nodeText)) {
+            if (tokensMatch(nodeToken, targetToken)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean tokensMatch(String nodeToken, String targetToken) {
+        if (nodeToken.equals(targetToken)) {
+            return true;
+        }
+        if (nodeToken.length() < 4 || targetToken.length() < 4) {
+            return false;
+        }
+        return nodeToken.contains(targetToken) || targetToken.contains(nodeToken);
     }
 
     private boolean isStrongFuzzyMatch(String nodeText, String target) {
