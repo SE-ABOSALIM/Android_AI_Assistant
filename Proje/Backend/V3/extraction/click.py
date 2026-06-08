@@ -81,6 +81,13 @@ def _extract_turkish_merged_click_target(normalized_text: str) -> Optional[str]:
     if len(words) < 2:
         return None
 
+    if _is_turkish_stt_sebas_click_word(words[-1]):
+        target_words = words[:-1]
+        if not target_words:
+            return None
+        target_words[-1] = _strip_turkish_click_suffix(target_words[-1])
+        return normalize_text(" ".join(target_words))
+
     repaired_word = _repair_turkish_merged_click_word(words[-1])
     if not repaired_word:
         return None
@@ -97,6 +104,10 @@ def _repair_turkish_merged_click_word(word: str) -> Optional[str]:
         if len(word) > len(suffix) + 2 and word.endswith(suffix):
             return word[: -len(suffix)] + repaired_ending
     return None
+
+
+def _is_turkish_stt_sebas_click_word(word: str) -> bool:
+    return word in {"sebas", "sebasin"}
 
 
 def _remove_click_target_noise(cleaned: str, language: str) -> str:

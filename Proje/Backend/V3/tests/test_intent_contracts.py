@@ -221,6 +221,7 @@ class IntentContractTests(unittest.TestCase):
         top_dots = _validate("CLICK_ITEM", {}, text="click on the three dots on the top of the page", language="EN")
         apartment_number = _validate("CLICK_ITEM", {}, text="Daire numarasına bas", language="TR")
         merged_approve = _validate("CLICK_ITEM", {}, text="sepeti onaylayamaz", language="TR")
+        merged_sebas = _validate("CLICK_ITEM", {}, text="Real Sebas", language="TR")
         third_option = _validate("CLICK_ITEM", {}, text="tap the third option", language="EN")
         second_video = _validate("CLICK_ITEM", {}, text="ikinci videoya bas", language="TR")
         arabic = _validate(
@@ -252,6 +253,9 @@ class IntentContractTests(unittest.TestCase):
 
         self.assertTrue(merged_approve["accepted"])
         self.assertEqual(merged_approve["parameters"]["target_text"], "sepeti onayla")
+
+        self.assertTrue(merged_sebas["accepted"])
+        self.assertEqual(merged_sebas["parameters"]["target_text"], "real")
 
         self.assertFalse(third_option["accepted"])
         self.assertEqual(third_option["error_code"], "MISSING_REQUIRED_SLOT")

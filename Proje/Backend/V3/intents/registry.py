@@ -231,6 +231,12 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         threshold=0.55,
         android_supported=True
     ),
+    "SHOW_GRID": _contract(
+        "SHOW_GRID",
+        threshold=0.55,
+        optional=("grid_action",),
+        android_supported=True,
+    ),
     "STOP_LISTENING": _contract(
         "STOP_LISTENING",
         threshold=0.60,

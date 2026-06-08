@@ -79,6 +79,13 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"target_text": "sepeti onayla"})
         self.assertEqual(result["rule_matched"], "click_item")
 
+    def test_click_item_rule_repairs_turkish_sebas_stt(self):
+        result = rule_based_command("Real Sebas", "TR")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "real"})
+        self.assertEqual(result["rule_matched"], "click_item")
+
     def test_click_item_rule_rejects_list_index(self):
         result = rule_based_command("tap the third option", "EN")
 
@@ -250,6 +257,22 @@ class RuleServiceTests(unittest.TestCase):
 
         self.assertEqual(result["intent"], "SHOW_RECENTS")
         self.assertEqual(result["rule_matched"], "show_recents")
+
+    def test_show_grid_rule(self):
+        examples = [
+            ("show grid", "EN", "show", "show_grid"),
+            ("gridi kucult", "TR", "smaller", "smaller_grid"),
+            ("larger grid", "EN", "larger", "larger_grid"),
+            ("\u0627\u0638\u0647\u0631 \u0627\u0644\u0634\u0628\u0643\u0647", "AR", "show", "show_grid"),
+        ]
+
+        for text, language, action, rule_matched in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, language)
+
+                self.assertEqual(result["intent"], "SHOW_GRID")
+                self.assertEqual(result["parameters"], {"grid_action": action})
+                self.assertEqual(result["rule_matched"], rule_matched)
 
     def test_app_switcher_rule_wins_before_open_app_rule(self):
         result = rule_based_command("open app switcher", "EN")
