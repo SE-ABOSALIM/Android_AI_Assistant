@@ -1,10 +1,7 @@
 param(
     [string]$PackageName = "com.example.anroidaiassistant",
     [string]$ServiceClass = ".MyAccessibilityService",
-    [string]$MainActivityClass = ".MainActivity",
     [string]$Serial = "",
-    [switch]$NoForceStop,
-    [switch]$NoLaunch,
     [switch]$DryRun
 )
 
@@ -125,73 +122,18 @@ function Set-EnabledAccessibilityServices {
     ) | Out-Null
 }
 
-function Start-App {
-    param(
-        [string]$AdbPath,
-        [string]$MainActivityComponent
-    )
-
-    Invoke-AdbOptional -AdbPath $AdbPath -Arguments @(
-        "shell", "am", "start", "-n", $MainActivityComponent,
-        "-a", "android.intent.action.MAIN",
-        "-c", "android.intent.category.LAUNCHER"
-    ) | Out-Null
-}
-
-function Remove-ServiceAliases {
-    param(
-        [string[]]$Services,
-        [string[]]$Aliases,
-        [string]$PackageName
-    )
-
-    return @($Services | Where-Object {
-        $entry = $_
-        if ($Aliases -contains $entry) {
-            return $false
-        }
-        if ($entry -like "$PackageName/*" -and $entry -like "*MyAccessibilityService*") {
-            return $false
-        }
-        return $true
-    })
-}
-
 $adbPath = Get-AdbPath
 $serviceClassName = $ServiceClass
 if ($serviceClassName.StartsWith(".")) {
     $serviceClassName = $PackageName + $serviceClassName
 }
 
-$mainActivityClassName = $MainActivityClass
-if ($mainActivityClassName.StartsWith(".")) {
-    $mainActivityClassName = $PackageName + $mainActivityClassName
-}
-
-$serviceShort = "$PackageName/$ServiceClass"
 $serviceComponent = "$PackageName/$serviceClassName"
-$serviceAliases = @($serviceShort, $serviceComponent) | Select-Object -Unique
-$mainActivityComponent = "$PackageName/$mainActivityClassName"
 
 Write-Host "Using package: $PackageName"
 Write-Host "Using service: $serviceComponent"
-Write-Host "Using main activity: $mainActivityComponent"
 
 Invoke-Adb -AdbPath $adbPath -Arguments @("wait-for-device") | Out-Null
-
-$serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
-$serviceEntries = Remove-ServiceAliases -Services $serviceEntries -Aliases $serviceAliases -PackageName $PackageName
-Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
-
-if ($serviceEntries.Count -eq 0) {
-    Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
-        "shell", "settings", "put", "secure", "accessibility_enabled", "0"
-    ) | Out-Null
-}
-
-if (-not $DryRun) {
-    Start-Sleep -Milliseconds 900
-}
 
 Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
     "shell", "appops", "set", $PackageName, "SYSTEM_ALERT_WINDOW", "allow"
@@ -214,22 +156,7 @@ foreach ($permission in $runtimePermissions) {
     ) | Out-Null
 }
 
-if (-not $NoForceStop) {
-    Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
-        "shell", "am", "force-stop", $PackageName
-    ) | Out-Null
-}
-
-if (-not $NoLaunch) {
-    Start-App -AdbPath $adbPath -MainActivityComponent $mainActivityComponent
-}
-
-if (-not $DryRun) {
-    Start-Sleep -Milliseconds 900
-}
-
 $serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
-$serviceEntries = Remove-ServiceAliases -Services $serviceEntries -Aliases $serviceAliases -PackageName $PackageName
 $serviceEntries += $serviceComponent
 Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
 
@@ -237,22 +164,11 @@ Invoke-Adb -AdbPath $adbPath -Arguments @(
     "shell", "settings", "put", "secure", "accessibility_enabled", "1"
 ) | Out-Null
 
-if (-not $DryRun) {
-    Start-Sleep -Milliseconds 1800
-}
-
-if (-not $NoLaunch) {
-    Start-App -AdbPath $adbPath -MainActivityComponent $mainActivityComponent
-}
-
 Write-Host ""
 Write-Host "Test permissions applied."
-Write-Host "- Accessibility service: toggled off and enabled"
+Write-Host "- Accessibility service: enabled in settings"
 Write-Host "- Appear on top: allowed"
 Write-Host "- Camera: granted"
 Write-Host "- Microphone: granted"
 Write-Host "- Contacts: granted"
 Write-Host "- Make phone calls: granted"
-if (-not $NoLaunch) {
-    Write-Host "- App relaunched"
-}
