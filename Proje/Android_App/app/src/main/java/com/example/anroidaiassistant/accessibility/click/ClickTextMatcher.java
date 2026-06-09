@@ -16,6 +16,7 @@ public final class ClickTextMatcher {
     public ClickTextMatch score(String nodeText, List<String> targetVariants) {
         int bestScore = 0;
         String bestReason = "";
+        String bestTarget = "";
 
         for (String target : targetVariants) {
             if (!TextNormalizer.hasText(target)) {
@@ -26,43 +27,44 @@ public final class ClickTextMatcher {
             if (match.score > bestScore) {
                 bestScore = match.score;
                 bestReason = match.reason;
+                bestTarget = target;
             }
         }
 
-        return new ClickTextMatch(bestScore, bestReason);
+        return new ClickTextMatch(bestScore, bestReason, bestTarget);
     }
 
     private ClickTextMatch scoreOneTarget(String nodeText, String target) {
         if (!TextNormalizer.hasText(nodeText) || !TextNormalizer.hasText(target)) {
-            return new ClickTextMatch(0, "");
+            return new ClickTextMatch(0, "", target);
         }
 
         if (nodeText.equals(target)) {
-            return new ClickTextMatch(EXACT_SCORE, "exact");
+            return new ClickTextMatch(EXACT_SCORE, "exact", target);
         }
         if (target.replace(" ", "").length() < 2) {
-            return new ClickTextMatch(0, "");
+            return new ClickTextMatch(0, "", target);
         }
         if (containsSafePhrase(nodeText, target)) {
-            return new ClickTextMatch(CONTAINS_SCORE, "contains");
+            return new ClickTextMatch(CONTAINS_SCORE, "contains", target);
         }
         if (containsAllTokens(nodeText, target)) {
-            return new ClickTextMatch(ALL_TOKENS_SCORE, "all_tokens");
+            return new ClickTextMatch(ALL_TOKENS_SCORE, "all_tokens", target);
         }
         if (isStrongTokenCoverage(nodeText, target)) {
-            return new ClickTextMatch(TOKEN_COVERAGE_SCORE, "token_coverage");
+            return new ClickTextMatch(TOKEN_COVERAGE_SCORE, "token_coverage", target);
         }
         if (isStrongFuzzyMatch(nodeText, target)) {
-            return new ClickTextMatch(FUZZY_SCORE, "fuzzy");
+            return new ClickTextMatch(FUZZY_SCORE, "fuzzy", target);
         }
         if (hasUsefulTokenOverlap(nodeText, target)) {
-            return new ClickTextMatch(TOKEN_OVERLAP_SCORE, "token_overlap");
+            return new ClickTextMatch(TOKEN_OVERLAP_SCORE, "token_overlap", target);
         }
         if (isSingleUsefulTokenMatch(nodeText, target)) {
-            return new ClickTextMatch(SINGLE_TOKEN_SCORE, "single_token");
+            return new ClickTextMatch(SINGLE_TOKEN_SCORE, "single_token", target);
         }
 
-        return new ClickTextMatch(0, "");
+        return new ClickTextMatch(0, "", target);
     }
 
     private boolean containsSafePhrase(String nodeText, String target) {

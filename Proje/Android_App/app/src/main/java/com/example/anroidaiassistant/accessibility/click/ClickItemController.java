@@ -2,6 +2,7 @@ package com.example.anroidaiassistant.accessibility.click;
 
 import android.graphics.Rect;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
@@ -13,9 +14,11 @@ import java.util.Comparator;
 import java.util.List;
 
 public final class ClickItemController {
-    private static final int DIRECT_MIN_SCORE = 66;
+    private static final String TAG = "ClickItem";
+    private static final int DIRECT_MIN_SCORE = 80;
     private static final int DIRECT_MARGIN = 12;
-    private static final int FALLBACK_MIN_SCORE = 48;
+    private static final int FALLBACK_MIN_SCORE = 58;
+    private static final int FALLBACK_MAX_SCORE_GAP = 12;
     private static final int MAX_FALLBACK_CANDIDATES = 5;
 
     private final MyAccessibilityService service;
@@ -71,16 +74,23 @@ public final class ClickItemController {
         );
 
         candidates.sort(bestMatchComparator());
+        logCandidates("collected", command, candidates);
         ClickCandidate directCandidate = chooseDirectCandidate(candidates);
         if (directCandidate != null) {
+            logCandidate("direct", command, directCandidate);
             return clickCandidate(directCandidate);
         }
 
         if (showFallbackIfUseful(candidates)) {
+            logCandidates("selection", command, topFallbackCandidates(candidates));
             return true;
         }
 
-        return clickTopBarIconFallback(rootNode, command, displayMetrics);
+        boolean fallbackClicked = clickTopBarIconFallback(rootNode, command, displayMetrics);
+        if (!fallbackClicked) {
+            Log.i(TAG, "no_match | target=\"" + command.targetText + "\" | position=\"" + command.position + "\"");
+        }
+        return fallbackClicked;
     }
 
     private ClickCandidate chooseDirectCandidate(List<ClickCandidate> candidates) {
@@ -146,8 +156,10 @@ public final class ClickItemController {
 
     private List<ClickCandidate> topFallbackCandidates(List<ClickCandidate> candidates) {
         List<ClickCandidate> filtered = new ArrayList<>();
+        int topScore = candidates.isEmpty() ? 0 : candidates.get(0).score;
         for (ClickCandidate candidate : candidates) {
-            if (candidate.score >= FALLBACK_MIN_SCORE) {
+            if (candidate.score >= FALLBACK_MIN_SCORE
+                    && (topScore <= 0 || topScore - candidate.score <= FALLBACK_MAX_SCORE_GAP)) {
                 filtered.add(candidate);
             }
         }
@@ -179,7 +191,11 @@ public final class ClickItemController {
             candidate = findTopBarIconCandidate(rootNode, command.position, displayMetrics, false);
         }
 
-        return candidate != null && clickCandidate(candidate);
+        if (candidate != null) {
+            logCandidate("top_bar_fallback", command, candidate);
+            return clickCandidate(candidate);
+        }
+        return false;
     }
 
     private ClickCandidate findTopBarIconCandidate(
@@ -288,6 +304,45 @@ public final class ClickItemController {
 
     private String displaySubtitle(ClickCandidate candidate) {
         return "";
+    }
+
+    private void logCandidates(String stage, ClickCommand command, List<ClickCandidate> candidates) {
+        if (candidates.isEmpty()) {
+            Log.i(TAG, stage + " | target=\"" + command.targetText + "\" | candidates=0");
+            return;
+        }
+
+        StringBuilder builder = new StringBuilder();
+        int count = Math.min(5, candidates.size());
+        for (int i = 0; i < count; i++) {
+            if (i > 0) {
+                builder.append(" || ");
+            }
+            builder.append(formatCandidate(candidates.get(i)));
+        }
+        Log.i(TAG, stage
+                + " | target=\"" + command.targetText + "\""
+                + " | position=\"" + command.position + "\""
+                + " | candidates=" + candidates.size()
+                + " | top=" + builder);
+    }
+
+    private void logCandidate(String stage, ClickCommand command, ClickCandidate candidate) {
+        Log.i(TAG, stage
+                + " | target=\"" + command.targetText + "\""
+                + " | position=\"" + command.position + "\""
+                + " | " + formatCandidate(candidate));
+    }
+
+    private String formatCandidate(ClickCandidate candidate) {
+        return "score=" + candidate.score
+                + ", source=" + candidate.matchSource
+                + ", reason=" + candidate.reason
+                + ", matchedTarget=\"" + candidate.matchedTarget + "\""
+                + ", matchedText=\"" + candidate.matchedText + "\""
+                + ", label=\"" + candidate.label + "\""
+                + ", bounds=" + candidate.bounds.toShortString()
+                + ", actionBounds=" + candidate.actionBounds.toShortString();
     }
 
     private String selectionHint() {

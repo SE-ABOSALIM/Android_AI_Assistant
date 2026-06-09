@@ -189,6 +189,23 @@ public class ClickTextMatcherTest {
     }
 
     @Test
+    public void scoresSemanticResourceIdPhrasesForFavoriteIcons() {
+        ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
+
+        ClickTextMatch favoriteMatch = matcher.score(
+                "btn add to favorites com trendyol id btn add to favorites",
+                aliasMatcher.targetVariants("kalp", "")
+        );
+        ClickTextMatch wishlistMatch = matcher.score(
+                "wishlist button",
+                aliasMatcher.targetVariants("kalbe tikla", "")
+        );
+
+        assertTrue(favoriteMatch.score >= 82);
+        assertTrue(wishlistMatch.score >= 100);
+    }
+
+    @Test
     public void scoresWhatsAppVoiceNoteResourceIdAsMicrophone() {
         ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
 
