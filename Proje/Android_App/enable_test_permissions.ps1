@@ -100,7 +100,11 @@ function Get-EnabledAccessibilityServices {
         return @()
     }
 
-    return @($currentServices.Split(":") | Where-Object { $_ -and $_ -ne "null" })
+    return @(
+        $currentServices.Split(":") |
+                ForEach-Object { $_.Trim() } |
+                Where-Object { $_ -and $_ -ne "null" }
+    )
 }
 
 function Set-EnabledAccessibilityServices {
@@ -119,6 +123,32 @@ function Set-EnabledAccessibilityServices {
 
     Invoke-AdbOptional -AdbPath $AdbPath -Arguments @(
         "shell", "settings", "delete", "secure", "enabled_accessibility_services"
+    ) | Out-Null
+}
+
+function Enable-AccessibilityService {
+    param(
+        [string]$AdbPath,
+        [string]$ServiceComponent
+    )
+
+    $serviceEntries = Get-EnabledAccessibilityServices -AdbPath $AdbPath
+    $serviceEntriesWithoutTarget = @(
+        $serviceEntries |
+                Where-Object { $_ -and $_.Trim().ToLowerInvariant() -ne $ServiceComponent.ToLowerInvariant() }
+    )
+
+    Set-EnabledAccessibilityServices -AdbPath $AdbPath -Services $serviceEntriesWithoutTarget
+    Invoke-Adb -AdbPath $AdbPath -Arguments @(
+        "shell", "settings", "put", "secure", "accessibility_enabled", "1"
+    ) | Out-Null
+
+    Start-Sleep -Milliseconds 350
+
+    $serviceEntriesWithoutTarget += $ServiceComponent
+    Set-EnabledAccessibilityServices -AdbPath $AdbPath -Services $serviceEntriesWithoutTarget
+    Invoke-Adb -AdbPath $AdbPath -Arguments @(
+        "shell", "settings", "put", "secure", "accessibility_enabled", "1"
     ) | Out-Null
 }
 
@@ -156,13 +186,7 @@ foreach ($permission in $runtimePermissions) {
     ) | Out-Null
 }
 
-$serviceEntries = Get-EnabledAccessibilityServices -AdbPath $adbPath
-$serviceEntries += $serviceComponent
-Set-EnabledAccessibilityServices -AdbPath $adbPath -Services $serviceEntries
-
-Invoke-Adb -AdbPath $adbPath -Arguments @(
-    "shell", "settings", "put", "secure", "accessibility_enabled", "1"
-) | Out-Null
+Enable-AccessibilityService -AdbPath $adbPath -ServiceComponent $serviceComponent
 
 Write-Host ""
 Write-Host "Test permissions applied."
