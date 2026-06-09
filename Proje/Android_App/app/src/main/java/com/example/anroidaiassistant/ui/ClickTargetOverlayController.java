@@ -1,24 +1,27 @@
 package com.example.anroidaiassistant.ui;
 
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
-import com.example.anroidaiassistant.R;
 
 import java.util.Collections;
 import java.util.List;
 
 public final class ClickTargetOverlayController {
-    private static final int MARKER_SIZE_DP = 34;
+    private static final int MARKER_WIDTH_DP = 28;
+    private static final int MARKER_HEIGHT_DP = 34;
+    private static final int MARKER_UPWARD_OFFSET_DP = 45;
     private static final int SCREEN_EDGE_PADDING_DP = 4;
 
     private final Context context;
@@ -67,29 +70,32 @@ public final class ClickTargetOverlayController {
     }
 
     private View createMarker(int number, Rect targetBounds) {
-        int markerSize = dp(MARKER_SIZE_DP);
+        int markerWidth = dp(MARKER_WIDTH_DP);
+        int markerHeight = dp(MARKER_HEIGHT_DP);
         int edgePadding = dp(SCREEN_EDGE_PADDING_DP);
 
-        TextView marker = new TextView(context);
-        marker.setText(String.valueOf(number));
-        marker.setTextColor(Color.WHITE);
-        marker.setTextSize(15);
-        marker.setGravity(Gravity.CENTER);
-        marker.setTypeface(marker.getTypeface(), Typeface.BOLD);
-        marker.setBackgroundResource(R.drawable.selection_number_background);
+        View marker = new PinMarkerView(context, number);
         marker.setElevation(dp(8));
 
         Rect safeBounds = targetBounds == null ? new Rect() : targetBounds;
         int screenWidth = context.getResources().getDisplayMetrics().widthPixels;
         int screenHeight = context.getResources().getDisplayMetrics().heightPixels;
-        int left = clamp(safeBounds.left, edgePadding, Math.max(edgePadding, screenWidth - markerSize - edgePadding));
-        int top = clamp(
-                safeBounds.top - markerSize / 3,
+        int targetX = safeBounds.isEmpty() ? safeBounds.left : safeBounds.centerX();
+        int targetY = safeBounds.isEmpty() ? safeBounds.top : safeBounds.centerY();
+        int tipOffsetY = markerHeight - dp(2);
+        int upwardOffset = dp(MARKER_UPWARD_OFFSET_DP);
+        int left = clamp(
+                targetX - markerWidth / 2,
                 edgePadding,
-                Math.max(edgePadding, screenHeight - markerSize - edgePadding)
+                Math.max(edgePadding, screenWidth - markerWidth - edgePadding)
+        );
+        int top = clamp(
+                targetY - tipOffsetY - upwardOffset,
+                edgePadding,
+                Math.max(edgePadding, screenHeight - markerHeight - edgePadding)
         );
 
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(markerSize, markerSize);
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(markerWidth, markerHeight);
         params.leftMargin = left;
         params.topMargin = top;
         marker.setLayoutParams(params);
@@ -102,5 +108,58 @@ public final class ClickTargetOverlayController {
 
     private int dp(int value) {
         return Math.round(value * context.getResources().getDisplayMetrics().density);
+    }
+
+    private int dp(float value) {
+        return Math.round(value * context.getResources().getDisplayMetrics().density);
+    }
+
+    private final class PinMarkerView extends View {
+        private final String numberText;
+        private final Paint strokePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path pinPath = new Path();
+
+        private PinMarkerView(Context context, int number) {
+            super(context);
+            this.numberText = String.valueOf(number);
+
+            strokePaint.setStyle(Paint.Style.STROKE);
+            strokePaint.setStrokeWidth(dp(1.6f));
+            strokePaint.setColor(Color.WHITE);
+            strokePaint.setShadowLayer(dp(2), 0, dp(1), Color.argb(190, 0, 0, 0));
+
+            textPaint.setColor(Color.WHITE);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            textPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+            textPaint.setTextSize(dp(number >= 100 ? 9 : 11));
+            textPaint.setShadowLayer(dp(2), 0, dp(1), Color.argb(220, 0, 0, 0));
+
+            setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            super.onDraw(canvas);
+
+            float width = getWidth();
+            float height = getHeight();
+            float centerX = width / 2f;
+            float headRadius = width * 0.36f;
+            float headCenterY = headRadius + dp(2);
+            float tipY = height - dp(2);
+
+            pinPath.reset();
+            pinPath.addCircle(centerX, headCenterY, headRadius, Path.Direction.CW);
+            pinPath.moveTo(centerX - headRadius * 0.56f, headCenterY + headRadius * 0.82f);
+            pinPath.lineTo(centerX, tipY);
+            pinPath.lineTo(centerX + headRadius * 0.56f, headCenterY + headRadius * 0.82f);
+
+            canvas.drawPath(pinPath, strokePaint);
+
+            Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
+            float textBaseline = headCenterY - (fontMetrics.ascent + fontMetrics.descent) / 2f;
+            canvas.drawText(numberText, centerX, textBaseline, textPaint);
+        }
     }
 }

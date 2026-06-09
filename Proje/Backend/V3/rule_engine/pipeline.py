@@ -6,6 +6,7 @@ from V3.rule_engine.click_item import click_item_command
 from V3.rule_engine.display import display_command
 from V3.rule_engine.gestures import gesture_command
 from V3.rule_engine.grid import grid_command
+from V3.rule_engine.labels import labels_command
 from V3.rule_engine.navigation import navigation_command
 from V3.rule_engine.system_settings import system_settings_command
 from V3.rule_engine.text_controls import text_control_command
@@ -26,6 +27,7 @@ RULE_HANDLERS: List[RuleHandler] = [
     volume_command,
     navigation_command,
     gesture_command,
+    labels_command,
     grid_command,
     text_control_command,
     timer_command,

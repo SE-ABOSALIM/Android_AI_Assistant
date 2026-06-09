@@ -274,6 +274,24 @@ class RuleServiceTests(unittest.TestCase):
                 self.assertEqual(result["parameters"], {"grid_action": action})
                 self.assertEqual(result["rule_matched"], rule_matched)
 
+    def test_show_labels_rule(self):
+        examples = [
+            ("show labels", "EN"),
+            ("show numbers", "EN"),
+            ("etiketleri goster", "TR"),
+            ("numaralari goster", "TR"),
+            ("\u0627\u0638\u0647\u0631 \u0627\u0644\u0627\u0631\u0642\u0627\u0645", "AR"),
+            ("\u0627\u0639\u0631\u0636 \u0627\u0644\u062a\u0633\u0645\u064a\u0627\u062a", "AR"),
+        ]
+
+        for text, language in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, language)
+
+                self.assertEqual(result["intent"], "SHOW_LABELS")
+                self.assertEqual(result["parameters"], {"labels_action": "show"})
+                self.assertEqual(result["rule_matched"], "show_labels")
+
     def test_app_switcher_rule_wins_before_open_app_rule(self):
         result = rule_based_command("open app switcher", "EN")
 

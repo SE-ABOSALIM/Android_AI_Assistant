@@ -21,6 +21,7 @@ import com.example.anroidaiassistant.accessibility.click.ClickItemController;
 import com.example.anroidaiassistant.accessibility.GestureController;
 import com.example.anroidaiassistant.accessibility.QuickSettingsTileController;
 import com.example.anroidaiassistant.accessibility.SearchInputController;
+import com.example.anroidaiassistant.accessibility.ScreenLabelsController;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
@@ -96,6 +97,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private ClickItemController clickItemController;
     private QuickSettingsTileController quickSettingsTileController;
     private SearchInputController searchInputController;
+    private ScreenLabelsController screenLabelsController;
 
     private WindowManager windowManager;
     private ListeningOverlayController listeningOverlayController;
@@ -123,6 +125,7 @@ public class MyAccessibilityService extends AccessibilityService {
         clickItemController = new ClickItemController(this, gestureController);
         quickSettingsTileController = new QuickSettingsTileController(this, mainHandler, gestureController);
         searchInputController = new SearchInputController(this, mainHandler);
+        screenLabelsController = new ScreenLabelsController(this, gestureController);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         listeningOverlayController = new ListeningOverlayController(this, windowManager);
         clickTargetOverlayController = new ClickTargetOverlayController(this, windowManager);
@@ -1059,6 +1062,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean clickItem(String targetText, String position) {
         return clickItemController != null && clickItemController.clickItem(targetText, position);
+    }
+
+    public boolean showScreenLabels() {
+        return screenLabelsController != null && screenLabelsController.showLabels();
     }
 
     public void handleGridAction(String action) {
