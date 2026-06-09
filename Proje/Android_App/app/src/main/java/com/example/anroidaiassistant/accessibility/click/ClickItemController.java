@@ -1,5 +1,6 @@
 package com.example.anroidaiassistant.accessibility.click;
 
+import android.graphics.Rect;
 import android.util.DisplayMetrics;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -75,7 +76,11 @@ public final class ClickItemController {
             return clickCandidate(directCandidate);
         }
 
-        return showFallbackIfUseful(candidates);
+        if (showFallbackIfUseful(candidates)) {
+            return true;
+        }
+
+        return clickTopBarIconFallback(rootNode, command, displayMetrics);
     }
 
     private ClickCandidate chooseDirectCandidate(List<ClickCandidate> candidates) {
@@ -160,6 +165,103 @@ public final class ClickItemController {
         }
 
         return clickNode(candidate.clickNode);
+    }
+
+    private boolean clickTopBarIconFallback(
+            AccessibilityNodeInfo rootNode,
+            ClickCommand command,
+            DisplayMetrics displayMetrics
+    ) {
+        ClickCandidate candidate = null;
+        if (aliasMatcher.isDrawerTarget(command.targetText)) {
+            candidate = findTopBarIconCandidate(rootNode, command.position, displayMetrics, true);
+        } else if (aliasMatcher.isDropdownTarget(command.targetText)) {
+            candidate = findTopBarIconCandidate(rootNode, command.position, displayMetrics, false);
+        }
+
+        return candidate != null && clickCandidate(candidate);
+    }
+
+    private ClickCandidate findTopBarIconCandidate(
+            AccessibilityNodeInfo node,
+            String position,
+            DisplayMetrics displayMetrics,
+            boolean preferRightEdge
+    ) {
+        if (node == null || displayMetrics.widthPixels <= 0 || displayMetrics.heightPixels <= 0) {
+            return null;
+        }
+
+        ClickCandidate best = scoreTopBarIconCandidate(node, position, displayMetrics, preferRightEdge);
+        for (int i = 0; i < node.getChildCount(); i++) {
+            ClickCandidate childBest = findTopBarIconCandidate(
+                    node.getChild(i),
+                    position,
+                    displayMetrics,
+                    preferRightEdge
+            );
+            if (childBest != null && (best == null || childBest.score > best.score)) {
+                best = childBest;
+            }
+        }
+        return best;
+    }
+
+    private ClickCandidate scoreTopBarIconCandidate(
+            AccessibilityNodeInfo node,
+            String position,
+            DisplayMetrics displayMetrics,
+            boolean preferRightEdge
+    ) {
+        if (!node.isVisibleToUser()
+                || !(node.isClickable() || (node.getActions() & AccessibilityNodeInfo.ACTION_CLICK) != 0)) {
+            return null;
+        }
+
+        Rect bounds = new Rect();
+        node.getBoundsInScreen(bounds);
+        if (bounds.isEmpty()
+                || !positionFilter.matches(bounds, position, displayMetrics.widthPixels, displayMetrics.heightPixels)
+                || !isTopBarIconBounds(bounds, displayMetrics, preferRightEdge)) {
+            return null;
+        }
+
+        int score = topBarIconScore(bounds, displayMetrics, preferRightEdge)
+                + positionFilter.score(bounds, position, displayMetrics.widthPixels, displayMetrics.heightPixels);
+        return new ClickCandidate(
+                node,
+                bounds,
+                "Icon at " + bounds.centerX() + ", " + bounds.centerY(),
+                score,
+                preferRightEdge ? "top_right_icon_fallback" : "top_dropdown_icon_fallback"
+        );
+    }
+
+    private boolean isTopBarIconBounds(Rect bounds, DisplayMetrics displayMetrics, boolean preferRightEdge) {
+        float centerX = bounds.centerX() / (float) displayMetrics.widthPixels;
+        float centerY = bounds.centerY() / (float) displayMetrics.heightPixels;
+        float widthRatio = bounds.width() / (float) displayMetrics.widthPixels;
+        float heightRatio = bounds.height() / (float) displayMetrics.heightPixels;
+
+        if (centerY > 0.18f || heightRatio > 0.16f || widthRatio <= 0.01f) {
+            return false;
+        }
+        if (preferRightEdge) {
+            return centerX >= 0.70f && widthRatio <= 0.22f;
+        }
+        return centerX >= 0.30f && centerX <= 0.88f && widthRatio <= 0.50f;
+    }
+
+    private int topBarIconScore(Rect bounds, DisplayMetrics displayMetrics, boolean preferRightEdge) {
+        float centerX = bounds.centerX() / (float) displayMetrics.widthPixels;
+        float centerY = bounds.centerY() / (float) displayMetrics.heightPixels;
+        float widthRatio = bounds.width() / (float) displayMetrics.widthPixels;
+        float targetX = preferRightEdge ? 1.0f : 0.70f;
+
+        int horizontalScore = Math.round((1.0f - Math.abs(targetX - centerX)) * 80);
+        int verticalScore = Math.round((1.0f - centerY) * 20);
+        int compactScore = Math.round((1.0f - Math.min(1.0f, widthRatio * 3.0f)) * 10);
+        return horizontalScore + verticalScore + compactScore;
     }
 
     private boolean clickNode(AccessibilityNodeInfo node) {

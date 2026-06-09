@@ -52,8 +52,14 @@ public class ClickTextMatcherTest {
         ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
 
         assertTrue(aliasMatcher.targetVariants("uc noktaya", "").contains("more options"));
+        assertTrue(aliasMatcher.targetVariants("3 noktaya", "").contains("more options"));
         assertTrue(aliasMatcher.targetVariants("three lines", "").contains("navigation drawer"));
+        assertTrue(aliasMatcher.targetVariants("3 cizgi", "").contains("navigation drawer"));
+        assertTrue(aliasMatcher.targetVariants("3 cizgiye", "").contains("navigation drawer"));
+        assertTrue(aliasMatcher.isDrawerTarget("3 cizgi"));
         assertTrue(aliasMatcher.targetVariants("kalp isareti", "").contains("heart"));
+        assertTrue(aliasMatcher.targetVariants("kalbe", "").contains("favorite button"));
+        assertTrue(aliasMatcher.targetVariants("kalp ikonuna", "").contains("heart icon"));
         assertTrue(aliasMatcher.targetVariants("yorum isareti", "").contains("comment"));
         assertTrue(aliasMatcher.targetVariants("paylas isareti", "").contains("share"));
         assertTrue(aliasMatcher.targetVariants("arama isareti", "").contains("search"));
@@ -65,7 +71,60 @@ public class ClickTextMatcherTest {
         assertTrue(aliasMatcher.targetVariants("emoji isareti", "").contains("emoji"));
         assertTrue(aliasMatcher.targetVariants("sepet isareti", "").contains("shopping cart"));
         assertTrue(aliasMatcher.targetVariants("favori isareti", "").contains("favorite"));
+        assertTrue(aliasMatcher.targetVariants("favoriye", "").contains("add to favorites"));
         assertTrue(aliasMatcher.targetVariants("\u062B\u0644\u0627\u062B \u0646\u0642\u0627\u0637", "").contains("more options"));
+        assertTrue(aliasMatcher.targetVariants("\u0663 \u062E\u0637\u0648\u0637", "").contains("navigation drawer"));
+    }
+
+    @Test
+    public void normalizesHeartSymbolsForIconMatching() {
+        ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
+
+        ClickTextMatch outlineHeart = matcher.score(
+                ClickTextUtils.normalize("\u2661"),
+                aliasMatcher.targetVariants("kalp", "")
+        );
+        ClickTextMatch filledHeart = matcher.score(
+                ClickTextUtils.normalize("\u2665"),
+                aliasMatcher.targetVariants("kalp", "")
+        );
+
+        assertTrue(outlineHeart.score >= 100);
+        assertTrue(filledHeart.score >= 100);
+    }
+
+    @Test
+    public void expandsDropdownArrowAliases() {
+        ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
+
+        assertTrue(aliasMatcher.targetVariants("kucuk ok", "").contains("dropdown arrow"));
+        assertTrue(aliasMatcher.targetVariants("asagi ok isareti", "").contains("chevron down"));
+        assertTrue(aliasMatcher.targetVariants("down arrow", "").contains("dropdown"));
+        assertTrue(aliasMatcher.targetVariants("\u0633\u0647\u0645 \u0644\u0644\u0627\u0633\u0641\u0644", "").contains("dropdown arrow"));
+        assertTrue(aliasMatcher.isDropdownTarget("kucuk ok"));
+    }
+
+    @Test
+    public void expandsAdditionalCommonIconAliases() {
+        ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
+
+        assertTrue(aliasMatcher.targetVariants("ayarlar isareti", "").contains("settings"));
+        assertTrue(aliasMatcher.targetVariants("profil ikonuna", "").contains("profile"));
+        assertTrue(aliasMatcher.targetVariants("bildirim ziline", "").contains("bell"));
+        assertTrue(aliasMatcher.targetVariants("kaydet ikonuna", "").contains("bookmark"));
+        assertTrue(aliasMatcher.targetVariants("filtre isareti", "").contains("filter"));
+        assertTrue(aliasMatcher.targetVariants("sirala ikonuna", "").contains("sort"));
+        assertTrue(aliasMatcher.targetVariants("konum isareti", "").contains("location"));
+        assertTrue(aliasMatcher.targetVariants("telefon ikonuna", "").contains("phone"));
+        assertTrue(aliasMatcher.targetVariants("kalem isareti", "").contains("pencil"));
+        assertTrue(aliasMatcher.targetVariants("cop kutusuna", "").contains("trash"));
+        assertTrue(aliasMatcher.targetVariants("yenile ikonuna", "").contains("refresh"));
+        assertTrue(aliasMatcher.targetVariants("indir ikonuna", "").contains("download"));
+        assertTrue(aliasMatcher.targetVariants("bilgi isareti", "").contains("info"));
+        assertTrue(aliasMatcher.targetVariants("onay isareti", "").contains("check"));
+        assertTrue(aliasMatcher.targetVariants("takvim ikonuna", "").contains("calendar"));
+        assertTrue(aliasMatcher.targetVariants("saat ikonuna", "").contains("clock"));
+        assertTrue(aliasMatcher.targetVariants("mesaj ikonuna", "").contains("message"));
     }
 
     @Test

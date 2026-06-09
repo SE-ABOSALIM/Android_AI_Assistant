@@ -11,7 +11,24 @@ public final class ClickTextUtils {
     private ClickTextUtils() {}
 
     public static String normalize(String value) {
-        return TextNormalizer.normalizeAsciiText(value).toLowerCase(Locale.US);
+        return TextNormalizer.normalizeAsciiText(replaceKnownIconSymbols(value)).toLowerCase(Locale.US);
+    }
+
+    private static String replaceKnownIconSymbols(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value
+                .replace("\uD83E\uDD0D", " heart ")
+                .replace("\uD83D\uDC99", " heart ")
+                .replace("\uD83D\uDC9A", " heart ")
+                .replace("\uD83D\uDC9B", " heart ")
+                .replace("\uD83D\uDC9C", " heart ")
+                .replace("\uD83D\uDDA4", " heart ")
+                .replace("\u2764\uFE0F", " heart ")
+                .replace("\u2665", " heart ")
+                .replace("\u2661", " heart ")
+                .replace("\u2764", " heart ");
     }
 
     public static String joinNodeText(AccessibilityNodeInfo node) {

@@ -371,13 +371,24 @@ public final class ClickIconAliases {
             "menu",
             "options",
             "secenek",
-            "ayar",
             "uc nokta",
+            "uc noktaya",
+            "uc nokta isareti",
+            "3 nokta",
+            "3 noktaya",
+            "3 nokta isareti",
             "three dots",
+            "three dot",
+            "three dot menu",
+            "three vertical dots",
+            "vertical dots",
             "dots",
             "kebab",
+            "kebab menu",
             "overflow",
             "\u062B\u0644\u0627\u062B \u0646\u0642\u0627\u0637",
+            "\u062B\u0644\u0627\u062B\u0629 \u0646\u0642\u0627\u0637",
+            "\u0663 \u0646\u0642\u0627\u0637",
             "\u0646\u0642\u0627\u0637",
             "\u0627\u0644\u0645\u0632\u064A\u062F"
     };
@@ -388,9 +399,11 @@ public final class ClickIconAliases {
             "menu",
             "options",
             "secenekler",
-            "ayarlar",
             "overflow",
             "kebab menu",
+            "three dots",
+            "three dot menu",
+            "3 dots",
             "\u0627\u0644\u0645\u0632\u064A\u062F",
             "\u062E\u064A\u0627\u0631\u0627\u062A",
             "\u0627\u0644\u0642\u0627\u0626\u0645\u0647"
@@ -398,12 +411,30 @@ public final class ClickIconAliases {
 
     public static final String[] DRAWER_TARGETS = {
             "uc cizgi",
+            "uc cizgiye",
+            "uc cizgi isareti",
+            "3 cizgi",
+            "3 cizgiye",
+            "3 cizgi isareti",
+            "uc yatay cizgi",
+            "3 yatay cizgi",
             "three lines",
+            "three line",
+            "three line menu",
+            "three horizontal lines",
+            "3 lines",
+            "3 line",
+            "3 line menu",
+            "hamburger menu",
             "hamburger",
             "drawer",
             "navigation",
+            "navigation menu",
             "menu",
             "\u062B\u0644\u0627\u062B \u062E\u0637\u0648\u0637",
+            "\u062B\u0644\u0627\u062B\u0629 \u062E\u0637\u0648\u0637",
+            "\u0663 \u062E\u0637\u0648\u0637",
+            "\u062B\u0644\u0627\u062B \u0634\u0631\u0637\u0627\u062A",
             "\u062E\u0637\u0648\u0637",
             "\u0627\u0644\u0642\u0627\u0626\u0645\u0647"
     };
@@ -412,10 +443,66 @@ public final class ClickIconAliases {
             "menu",
             "navigation drawer",
             "open navigation drawer",
+            "navigation menu",
+            "menu button",
+            "main menu",
             "drawer",
             "hamburger",
+            "hamburger menu",
+            "three lines",
+            "three horizontal lines",
             "\u0627\u0644\u0642\u0627\u0626\u0645\u0647",
             "\u0641\u062A\u062D \u0627\u0644\u0642\u0627\u0626\u0645\u0647"
+    };
+
+    public static final String[] DROPDOWN_TARGETS = {
+            "kucuk ok",
+            "asagi ok",
+            "asagi oku",
+            "ok isareti",
+            "asagi ok isareti",
+            "down arrow",
+            "arrow down",
+            "dropdown",
+            "dropdown arrow",
+            "chevron",
+            "chevron down",
+            "expand",
+            "expand arrow",
+            "account arrow",
+            "profile arrow",
+            "\u0633\u0647\u0645",
+            "\u0633\u0647\u0645 \u0644\u0644\u0627\u0633\u0641\u0644",
+            "\u0633\u0647\u0645 \u062A\u062D\u062A",
+            "\u0627\u0644\u0633\u0647\u0645",
+            "\u0642\u0627\u0626\u0645\u0647 \u0645\u0646\u0633\u062F\u0644\u0647"
+    };
+
+    public static final String[] DROPDOWN_VARIANTS = {
+            "dropdown",
+            "dropdown arrow",
+            "down arrow",
+            "arrow down",
+            "chevron",
+            "chevron down",
+            "expand",
+            "expand more",
+            "expand button",
+            "collapse",
+            "show more",
+            "switch account",
+            "account switcher",
+            "kucuk ok",
+            "asagi ok",
+            "asagi oku",
+            "ok isareti",
+            "hesap degistir",
+            "\u0633\u0647\u0645",
+            "\u0633\u0647\u0645 \u0644\u0644\u0627\u0633\u0641\u0644",
+            "\u0633\u0647\u0645 \u062A\u062D\u062A",
+            "\u0627\u0644\u0633\u0647\u0645",
+            "\u062A\u0648\u0633\u064A\u0639",
+            "\u0642\u0627\u0626\u0645\u0647 \u0645\u0646\u0633\u062F\u0644\u0647"
     };
 
     public static final String[] LIKE_TARGETS = {
@@ -423,12 +510,24 @@ public final class ClickIconAliases {
             "begeni",
             "begen",
             "kalp",
+            "kalbe",
+            "kalbi",
+            "kalp isareti",
+            "kalp ikonu",
+            "kalp butonu",
             "heart",
+            "heart icon",
+            "heart button",
             "favorite",
+            "favourite",
+            "fav",
             "favori",
+            "favoriye",
             "favoriler",
+            "favorilere",
             "love",
             "wishlist",
+            "wish list",
             "\u0642\u0644\u0628",
             "\u0627\u0639\u062C\u0627\u0628",
             "\u0627\u062D\u0628"
@@ -439,16 +538,43 @@ public final class ClickIconAliases {
             "begeni",
             "begen",
             "heart",
+            "heart icon",
+            "heart button",
+            "heart outline",
+            "empty heart",
             "favorite",
+            "favorite button",
             "favorites",
+            "favourite",
+            "favourites",
+            "fav",
             "favori",
             "favoriler",
+            "favorilere ekle",
             "favorilerime ekle",
+            "favoriye ekle",
+            "favorilerden cikar",
+            "urun favori",
+            "urunu favorilere ekle",
             "add to favorites",
+            "add favorite",
+            "add to favorite",
+            "remove from favorites",
             "wishlist",
             "wish list",
+            "wishlist button",
+            "add to wishlist",
+            "remove from wishlist",
+            "save to wishlist",
             "love",
+            "liked",
+            "unlike",
+            "like button",
             "kalp",
+            "kalp isareti",
+            "kalp ikonu",
+            "kalp butonu",
+            "begen butonu",
             "\u0642\u0644\u0628",
             "\u0627\u0639\u062C\u0627\u0628",
             "\u0627\u062D\u0628"
@@ -502,5 +628,415 @@ public final class ClickIconAliases {
             "\u0639\u0631\u0628\u0647",
             "\u0633\u0644\u0647 \u0627\u0644\u062A\u0633\u0648\u0642",
             "\u0627\u0636\u0641 \u0627\u0644\u0649 \u0627\u0644\u0633\u0644\u0647"
+    };
+
+    public static final String[] SETTINGS_TARGETS = {
+            "settings",
+            "setting",
+            "gear",
+            "cog",
+            "ayar",
+            "ayarlar",
+            "disli",
+            "disli cark",
+            "\u0627\u0639\u062F\u0627\u062F\u0627\u062A",
+            "\u062A\u0631\u0633"
+    };
+
+    public static final String[] SETTINGS_VARIANTS = {
+            "settings",
+            "setting",
+            "gear",
+            "cog",
+            "preferences",
+            "ayar",
+            "ayarlar",
+            "disli",
+            "disli cark",
+            "\u0627\u0639\u062F\u0627\u062F\u0627\u062A",
+            "\u0627\u0644\u0627\u0639\u062F\u0627\u062F\u0627\u062A",
+            "\u062A\u0631\u0633"
+    };
+
+    public static final String[] PROFILE_TARGETS = {
+            "profile",
+            "account",
+            "avatar",
+            "user",
+            "person",
+            "profil",
+            "hesap",
+            "kullanici",
+            "\u0645\u0644\u0641 \u0634\u062E\u0635\u064A",
+            "\u062D\u0633\u0627\u0628",
+            "\u0634\u062E\u0635"
+    };
+
+    public static final String[] PROFILE_VARIANTS = {
+            "profile",
+            "account",
+            "avatar",
+            "user",
+            "person",
+            "profile picture",
+            "profil",
+            "hesap",
+            "kullanici",
+            "\u0645\u0644\u0641 \u0634\u062E\u0635\u064A",
+            "\u062D\u0633\u0627\u0628",
+            "\u0634\u062E\u0635"
+    };
+
+    public static final String[] NOTIFICATION_TARGETS = {
+            "notification",
+            "notifications",
+            "bell",
+            "alert",
+            "bildirim",
+            "bildirimler",
+            "zil",
+            "\u0627\u0634\u0639\u0627\u0631",
+            "\u0627\u0634\u0639\u0627\u0631\u0627\u062A",
+            "\u062C\u0631\u0633"
+    };
+
+    public static final String[] NOTIFICATION_VARIANTS = {
+            "notification",
+            "notifications",
+            "bell",
+            "alert",
+            "alerts",
+            "bildirim",
+            "bildirimler",
+            "zil",
+            "\u0627\u0634\u0639\u0627\u0631",
+            "\u0627\u0634\u0639\u0627\u0631\u0627\u062A",
+            "\u062C\u0631\u0633"
+    };
+
+    public static final String[] BOOKMARK_TARGETS = {
+            "bookmark",
+            "save",
+            "saved",
+            "kaydet",
+            "yer imi",
+            "favorilere kaydet",
+            "\u062D\u0641\u0638",
+            "\u0639\u0644\u0627\u0645\u0647 \u0645\u0631\u062C\u0639\u064A\u0647"
+    };
+
+    public static final String[] BOOKMARK_VARIANTS = {
+            "bookmark",
+            "bookmarks",
+            "save",
+            "saved",
+            "save item",
+            "kaydet",
+            "yer imi",
+            "favorilere kaydet",
+            "\u062D\u0641\u0638",
+            "\u0645\u062D\u0641\u0648\u0638",
+            "\u0639\u0644\u0627\u0645\u0647 \u0645\u0631\u062C\u0639\u064A\u0647"
+    };
+
+    public static final String[] FILTER_TARGETS = {
+            "filter",
+            "filters",
+            "filtre",
+            "filtrele",
+            "\u0641\u0644\u062A\u0631",
+            "\u062A\u0635\u0641\u064A\u0647"
+    };
+
+    public static final String[] FILTER_VARIANTS = {
+            "filter",
+            "filters",
+            "filter list",
+            "filtre",
+            "filtrele",
+            "\u0641\u0644\u062A\u0631",
+            "\u062A\u0635\u0641\u064A\u0647"
+    };
+
+    public static final String[] SORT_TARGETS = {
+            "sort",
+            "order",
+            "sirala",
+            "siralama",
+            "\u062A\u0631\u062A\u064A\u0628",
+            "\u0641\u0631\u0632"
+    };
+
+    public static final String[] SORT_VARIANTS = {
+            "sort",
+            "sort by",
+            "order",
+            "sirala",
+            "siralama",
+            "\u062A\u0631\u062A\u064A\u0628",
+            "\u0641\u0631\u0632"
+    };
+
+    public static final String[] LOCATION_TARGETS = {
+            "location",
+            "map",
+            "pin",
+            "map pin",
+            "konum",
+            "harita",
+            "adres",
+            "\u0645\u0648\u0642\u0639",
+            "\u062E\u0631\u064A\u0637\u0647",
+            "\u062F\u0628\u0648\u0633"
+    };
+
+    public static final String[] LOCATION_VARIANTS = {
+            "location",
+            "map",
+            "pin",
+            "map pin",
+            "place",
+            "konum",
+            "harita",
+            "adres",
+            "\u0645\u0648\u0642\u0639",
+            "\u062E\u0631\u064A\u0637\u0647",
+            "\u062F\u0628\u0648\u0633"
+    };
+
+    public static final String[] PHONE_TARGETS = {
+            "phone",
+            "call",
+            "voice call",
+            "telefon",
+            "arama telefonu",
+            "\u0647\u0627\u062A\u0641",
+            "\u0627\u062A\u0635\u0627\u0644",
+            "\u0645\u0643\u0627\u0644\u0645\u0647"
+    };
+
+    public static final String[] PHONE_VARIANTS = {
+            "phone",
+            "call",
+            "voice call",
+            "audio call",
+            "telefon",
+            "arama telefonu",
+            "\u0647\u0627\u062A\u0641",
+            "\u0627\u062A\u0635\u0627\u0644",
+            "\u0645\u0643\u0627\u0644\u0645\u0647"
+    };
+
+    public static final String[] EDIT_TARGETS = {
+            "edit",
+            "pencil",
+            "compose",
+            "duzenle",
+            "kalem",
+            "yaz",
+            "\u062A\u0639\u062F\u064A\u0644",
+            "\u0642\u0644\u0645",
+            "\u0627\u0646\u0634\u0627\u0621"
+    };
+
+    public static final String[] EDIT_VARIANTS = {
+            "edit",
+            "pencil",
+            "compose",
+            "write",
+            "duzenle",
+            "kalem",
+            "yaz",
+            "\u062A\u0639\u062F\u064A\u0644",
+            "\u0642\u0644\u0645",
+            "\u0627\u0646\u0634\u0627\u0621"
+    };
+
+    public static final String[] DELETE_TARGETS = {
+            "delete",
+            "remove",
+            "trash",
+            "bin",
+            "sil",
+            "cop",
+            "cop kutusu",
+            "\u062D\u0630\u0641",
+            "\u0633\u0644\u0647 \u0627\u0644\u0645\u0647\u0645\u0644\u0627\u062A"
+    };
+
+    public static final String[] DELETE_VARIANTS = {
+            "delete",
+            "remove",
+            "trash",
+            "bin",
+            "sil",
+            "cop",
+            "cop kutusu",
+            "\u062D\u0630\u0641",
+            "\u0627\u0632\u0627\u0644\u0647",
+            "\u0633\u0644\u0647 \u0627\u0644\u0645\u0647\u0645\u0644\u0627\u062A"
+    };
+
+    public static final String[] REFRESH_TARGETS = {
+            "refresh",
+            "reload",
+            "sync",
+            "yenile",
+            "guncelle",
+            "\u062A\u062D\u062F\u064A\u062B",
+            "\u0627\u0639\u0627\u062F\u0647 \u062A\u062D\u0645\u064A\u0644"
+    };
+
+    public static final String[] REFRESH_VARIANTS = {
+            "refresh",
+            "reload",
+            "sync",
+            "yenile",
+            "guncelle",
+            "\u062A\u062D\u062F\u064A\u062B",
+            "\u0627\u0639\u0627\u062F\u0647 \u062A\u062D\u0645\u064A\u0644"
+    };
+
+    public static final String[] DOWNLOAD_TARGETS = {
+            "download",
+            "indir",
+            "download file",
+            "\u062A\u062D\u0645\u064A\u0644",
+            "\u062A\u0646\u0632\u064A\u0644"
+    };
+
+    public static final String[] DOWNLOAD_VARIANTS = {
+            "download",
+            "download file",
+            "indir",
+            "\u062A\u062D\u0645\u064A\u0644",
+            "\u062A\u0646\u0632\u064A\u0644"
+    };
+
+    public static final String[] UPLOAD_TARGETS = {
+            "upload",
+            "yukle",
+            "upload file",
+            "\u0631\u0641\u0639"
+    };
+
+    public static final String[] UPLOAD_VARIANTS = {
+            "upload",
+            "upload file",
+            "yukle",
+            "\u0631\u0641\u0639"
+    };
+
+    public static final String[] INFO_TARGETS = {
+            "info",
+            "information",
+            "details",
+            "bilgi",
+            "detay",
+            "\u0645\u0639\u0644\u0648\u0645\u0627\u062A",
+            "\u062A\u0641\u0627\u0635\u064A\u0644"
+    };
+
+    public static final String[] INFO_VARIANTS = {
+            "info",
+            "information",
+            "details",
+            "bilgi",
+            "detay",
+            "\u0645\u0639\u0644\u0648\u0645\u0627\u062A",
+            "\u062A\u0641\u0627\u0635\u064A\u0644"
+    };
+
+    public static final String[] CHECK_TARGETS = {
+            "check",
+            "done",
+            "confirm",
+            "ok",
+            "tick",
+            "onay",
+            "tamam",
+            "tik",
+            "\u062A\u0627\u0643\u064A\u062F",
+            "\u062A\u0645",
+            "\u0635\u062D"
+    };
+
+    public static final String[] CHECK_VARIANTS = {
+            "check",
+            "done",
+            "confirm",
+            "ok",
+            "tick",
+            "onay",
+            "tamam",
+            "tik",
+            "\u062A\u0627\u0643\u064A\u062F",
+            "\u062A\u0645",
+            "\u0635\u062D"
+    };
+
+    public static final String[] CALENDAR_TARGETS = {
+            "calendar",
+            "date",
+            "takvim",
+            "tarih",
+            "\u062A\u0642\u0648\u064A\u0645",
+            "\u062A\u0627\u0631\u064A\u062E"
+    };
+
+    public static final String[] CALENDAR_VARIANTS = {
+            "calendar",
+            "date",
+            "takvim",
+            "tarih",
+            "\u062A\u0642\u0648\u064A\u0645",
+            "\u062A\u0627\u0631\u064A\u062E"
+    };
+
+    public static final String[] CLOCK_TARGETS = {
+            "clock",
+            "time",
+            "alarm",
+            "saat",
+            "zaman",
+            "\u0633\u0627\u0639\u0647",
+            "\u0648\u0642\u062A",
+            "\u0645\u0646\u0628\u0647"
+    };
+
+    public static final String[] CLOCK_VARIANTS = {
+            "clock",
+            "time",
+            "alarm",
+            "saat",
+            "zaman",
+            "\u0633\u0627\u0639\u0647",
+            "\u0648\u0642\u062A",
+            "\u0645\u0646\u0628\u0647"
+    };
+
+    public static final String[] MESSAGE_TARGETS = {
+            "message",
+            "chat",
+            "conversation",
+            "mesaj",
+            "sohbet",
+            "\u0631\u0633\u0627\u0644\u0647",
+            "\u062F\u0631\u062F\u0634\u0647",
+            "\u0645\u062D\u0627\u062F\u062B\u0647"
+    };
+
+    public static final String[] MESSAGE_VARIANTS = {
+            "message",
+            "messages",
+            "chat",
+            "conversation",
+            "mesaj",
+            "mesajlar",
+            "sohbet",
+            "\u0631\u0633\u0627\u0644\u0647",
+            "\u0631\u0633\u0627\u0626\u0644",
+            "\u062F\u0631\u062F\u0634\u0647",
+            "\u0645\u062D\u0627\u062F\u062B\u0647"
     };
 }

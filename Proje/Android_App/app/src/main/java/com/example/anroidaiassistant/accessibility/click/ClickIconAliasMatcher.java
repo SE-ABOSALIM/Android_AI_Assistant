@@ -61,13 +61,40 @@ public final class ClickIconAliasMatcher {
         addIfMatched(normalizedTarget, variants, ClickIconAliases.HOME_TARGETS, ClickIconAliases.HOME_VARIANTS);
         addIfMatched(normalizedTarget, variants, ClickIconAliases.MORE_TARGETS, ClickIconAliases.MORE_VARIANTS);
         addIfMatched(normalizedTarget, variants, ClickIconAliases.DRAWER_TARGETS, ClickIconAliases.DRAWER_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.DROPDOWN_TARGETS, ClickIconAliases.DROPDOWN_VARIANTS);
         addIfMatched(normalizedTarget, variants, ClickIconAliases.LIKE_TARGETS, ClickIconAliases.LIKE_VARIANTS);
         addIfMatched(normalizedTarget, variants, ClickIconAliases.COMMENT_TARGETS, ClickIconAliases.COMMENT_VARIANTS);
         addIfMatched(normalizedTarget, variants, ClickIconAliases.CART_TARGETS, ClickIconAliases.CART_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.SETTINGS_TARGETS, ClickIconAliases.SETTINGS_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.PROFILE_TARGETS, ClickIconAliases.PROFILE_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.NOTIFICATION_TARGETS, ClickIconAliases.NOTIFICATION_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.BOOKMARK_TARGETS, ClickIconAliases.BOOKMARK_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.FILTER_TARGETS, ClickIconAliases.FILTER_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.SORT_TARGETS, ClickIconAliases.SORT_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.LOCATION_TARGETS, ClickIconAliases.LOCATION_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.PHONE_TARGETS, ClickIconAliases.PHONE_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.EDIT_TARGETS, ClickIconAliases.EDIT_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.DELETE_TARGETS, ClickIconAliases.DELETE_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.REFRESH_TARGETS, ClickIconAliases.REFRESH_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.DOWNLOAD_TARGETS, ClickIconAliases.DOWNLOAD_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.UPLOAD_TARGETS, ClickIconAliases.UPLOAD_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.INFO_TARGETS, ClickIconAliases.INFO_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.CHECK_TARGETS, ClickIconAliases.CHECK_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.CALENDAR_TARGETS, ClickIconAliases.CALENDAR_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.CLOCK_TARGETS, ClickIconAliases.CLOCK_VARIANTS);
+        addIfMatched(normalizedTarget, variants, ClickIconAliases.MESSAGE_TARGETS, ClickIconAliases.MESSAGE_VARIANTS);
     }
 
     private boolean isVideoCallTarget(String normalizedTarget) {
         return isAny(normalizedTarget, ClickIconAliases.VIDEO_CALL_TARGETS);
+    }
+
+    public boolean isDrawerTarget(String targetText) {
+        return isAny(ClickTextUtils.normalize(targetText), ClickIconAliases.DRAWER_TARGETS);
+    }
+
+    public boolean isDropdownTarget(String targetText) {
+        return isAny(ClickTextUtils.normalize(targetText), ClickIconAliases.DROPDOWN_TARGETS);
     }
 
     private void addIfMatched(
