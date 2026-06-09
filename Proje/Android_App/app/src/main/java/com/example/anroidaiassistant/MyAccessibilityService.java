@@ -56,7 +56,8 @@ public class MyAccessibilityService extends AccessibilityService {
     private static MyAccessibilityService instance;
     private static final int RESTART_DELAY_FAST_MS = 200;
     private static final int RESTART_DELAY_SLOW_MS = 800;
-    private static final int CLOSE_APP_SECOND_BACK_DELAY_MS = 500;
+    private static final int CLOSE_APP_BACK_RETRY_DELAY_MS = 450;
+    private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 5;
     private static final int[] STREAMS_TO_MUTE = {
             AudioManager.STREAM_SYSTEM
     };
@@ -977,13 +978,27 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public void performCloseApp() {
         String initialPackageName = getActivePackageName();
+        if (!TextNormalizer.hasText(initialPackageName)) {
+            performBack();
+            return;
+        }
+
+        performCloseAppBackAttempt(initialPackageName, 1);
+    }
+
+    private void performCloseAppBackAttempt(String initialPackageName, int attempt) {
         performBack();
         mainHandler.postDelayed(() -> {
             String currentPackageName = getActivePackageName();
-            if (initialPackageName == null || initialPackageName.equals(currentPackageName)) {
-                performBack();
+            if (!initialPackageName.equals(currentPackageName)) {
+                return;
             }
-        }, CLOSE_APP_SECOND_BACK_DELAY_MS);
+            if (attempt >= CLOSE_APP_MAX_BACK_ATTEMPTS) {
+                showFeedback("App could not be closed.");
+                return;
+            }
+            performCloseAppBackAttempt(initialPackageName, attempt + 1);
+        }, CLOSE_APP_BACK_RETRY_DELAY_MS);
     }
 
     public void performRecents() {
