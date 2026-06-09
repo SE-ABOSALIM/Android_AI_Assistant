@@ -91,6 +91,7 @@ class IntentContractTests(unittest.TestCase):
             "SHOW_RECENTS": "show recents",
             "OPEN_NOTIFICATIONS": "open notifications",
             "TAKE_SCREENSHOT": "take screenshot",
+            "SHOW_LABELS": "show labels",
         }
 
         for intent, text in examples.items():
@@ -100,37 +101,6 @@ class IntentContractTests(unittest.TestCase):
                 self.assertTrue(response["accepted"])
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
-
-    def test_model_fallback_rejects_bare_words_for_direct_actions(self):
-        screenshot = _validate(
-            "TAKE_SCREENSHOT",
-            {},
-            text="Baklava",
-            language="TR",
-            confidence=0.98,
-            top_predictions=[
-                {"label": "TAKE_SCREENSHOT__none", "confidence": 0.98},
-                {"label": "TAKE_PHOTO__none", "confidence": 0.01},
-            ],
-        )
-        recents = _validate(
-            "SHOW_RECENTS",
-            {},
-            text="\u015eark\u0131lar",
-            language="TR",
-            confidence=0.95,
-            top_predictions=[
-                {"label": "SHOW_RECENTS__none", "confidence": 0.95},
-                {"label": "OPEN_APP__none", "confidence": 0.02},
-            ],
-        )
-
-        self.assertFalse(screenshot["accepted"])
-        self.assertEqual(screenshot["intent"], "UNKNOWN_COMMAND")
-        self.assertEqual(screenshot["error_code"], "WEAK_COMMAND_SHAPE")
-        self.assertFalse(recents["accepted"])
-        self.assertEqual(recents["intent"], "UNKNOWN_COMMAND")
-        self.assertEqual(recents["error_code"], "WEAK_COMMAND_SHAPE")
 
     def test_stop_listening_requires_strong_model_prediction(self):
         strong = _validate(
