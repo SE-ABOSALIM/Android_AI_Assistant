@@ -73,7 +73,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "ADJUST_VOLUME": _contract(
         "ADJUST_VOLUME",
-        threshold=0.85,
+        threshold=0.92,
         one_of=(("volume_action", "volume_level"),),
         android_supported=True,
         android_one_of=(("volume_action", "volume_level"),),
