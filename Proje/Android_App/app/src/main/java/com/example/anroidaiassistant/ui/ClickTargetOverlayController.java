@@ -40,6 +40,7 @@ public final class ClickTargetOverlayController {
         overlayView = new FrameLayout(context);
         overlayView.setClipChildren(false);
         overlayView.setClipToPadding(false);
+        overlayView.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
 
         List<MyAccessibilityService.ClickTargetChoice> safeChoices =
                 choices == null ? Collections.emptyList() : choices;
@@ -56,7 +57,7 @@ public final class ClickTargetOverlayController {
                         | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT
         );
-        params.gravity = Gravity.TOP | Gravity.START;
+        params.gravity = Gravity.TOP | Gravity.LEFT;
         windowManager.addView(overlayView, params);
     }
 
@@ -76,6 +77,7 @@ public final class ClickTargetOverlayController {
 
         View marker = new PinMarkerView(context, number);
         marker.setElevation(dp(8));
+        marker.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
 
         Rect safeBounds = targetBounds == null ? new Rect() : targetBounds;
         int screenWidth = context.getResources().getDisplayMetrics().widthPixels;

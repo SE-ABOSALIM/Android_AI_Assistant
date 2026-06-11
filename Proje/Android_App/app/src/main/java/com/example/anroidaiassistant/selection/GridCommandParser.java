@@ -70,7 +70,7 @@ public final class GridCommandParser {
 
         String commandWordsRemoved = normalized
                 .replaceAll("\\b(?:tap|click|press|select|cell|grid|box|number|on|the|double|hold|long|bas|tikla|sec|hucre|kare|numara|cift|uzun|basili|tut)\\b", " ")
-                .replaceAll("(?:^|\\s)(?:\u0627\u0636\u063a\u0637|\u0627\u0646\u0642\u0631|\u0627\u062e\u062a\u0631|\u062d\u062f\u062f|\u062e\u0644\u064a\u0647|\u062e\u0627\u0646\u0647|\u0645\u0631\u0628\u0639|\u0631\u0642\u0645|\u0639\u0644\u0649|\u0639\u0644\u064a|\u0645\u0631\u062a\u064a\u0646|\u0636\u063a\u0637\u0647|\u0636\u063a\u0637)(?=\\s|$)", " ")
+                .replaceAll("(?:^|\\s)(?:\u0627\u0636\u063a\u0637|\u0627\u0646\u0642\u0631|\u0627\u062e\u062a\u0631|\u062d\u062f\u062f|\u062e\u0644\u064a\u0647|\u062e\u0627\u0646\u0647|\u0645\u0631\u0628\u0639|\u0631\u0642\u0645|\u0639\u0644\u0649|\u0639\u0644\u064a|\u0645\u0631\u062a\u064a\u0646|\u0636\u063a\u0637\u0647|\u0636\u063a\u0637|\u0645\u0637\u0648\u0644|\u0645\u0637\u0648\u0644\u0627|\u0645\u0637\u0648\u0644\u0647|\u0637\u0648\u064a\u0644|\u0637\u0648\u064a\u0644\u0647|\u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u0627\u0633\u062a\u0645\u0631)(?=\\s|$)", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
 
@@ -105,6 +105,13 @@ public final class GridCommandParser {
                 "press and hold",
                 "uzun bas",
                 "basili tut",
+                "\u0645\u0637\u0648\u0644",
+                "\u0645\u0637\u0648\u0644\u0627",
+                "\u0645\u0637\u0648\u0644\u0647",
+                "\u0637\u0648\u064a\u0644",
+                "\u0637\u0648\u064a\u0644\u0647",
+                "\u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631",
+                "\u0627\u0633\u062a\u0645\u0631\u0627\u0631",
                 "\u0636\u063a\u0637\u0647 \u0645\u0637\u0648\u0644\u0647",
                 "\u0627\u0636\u063a\u0637 \u0645\u0637\u0648\u0644\u0627")) {
             return "hold";

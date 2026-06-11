@@ -46,11 +46,7 @@ public final class ScreenLabelsController {
                 displayMetrics.heightPixels
         );
         activeTargets.addAll(dedupeTargets(collectedTargets));
-        activeTargets.sort(Comparator
-                .comparingInt((LabelTarget target) -> target.bounds.top)
-                .thenComparingInt(target -> target.bounds.left)
-                .thenComparingInt(target -> target.bounds.height())
-                .thenComparingInt(target -> target.bounds.width()));
+        activeTargets.sort(targetOrderComparator());
 
         if (activeTargets.isEmpty()) {
             return false;
@@ -99,6 +95,19 @@ public final class ScreenLabelsController {
             ));
         }
         return choices;
+    }
+
+    private Comparator<LabelTarget> targetOrderComparator() {
+        Comparator<LabelTarget> comparator = Comparator
+                .comparingInt((LabelTarget target) -> target.bounds.top)
+                .thenComparingInt(target -> isArabicUi() ? -target.bounds.right : target.bounds.left)
+                .thenComparingInt(target -> target.bounds.height())
+                .thenComparingInt(target -> target.bounds.width());
+        return comparator;
+    }
+
+    private boolean isArabicUi() {
+        return "AR".equalsIgnoreCase(service.getSelectedLanguage());
     }
 
     private void collectTargets(

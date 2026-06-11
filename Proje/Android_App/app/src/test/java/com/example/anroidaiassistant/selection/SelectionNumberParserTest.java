@@ -27,6 +27,13 @@ public class SelectionNumberParserTest {
     }
 
     @Test
+    public void parsesArabicArticleNumberWords() {
+        assertEquals(Integer.valueOf(4), parser.parseSelectionNumber("\u062e\u0645\u0633\u0629", 10));
+        assertEquals(Integer.valueOf(4), parser.parseSelectionNumber("\u0627\u0644\u062e\u0645\u0633\u0629", 10));
+        assertEquals(Integer.valueOf(4), parser.parseSelectionNumber("\u0648\u0627\u0644\u062e\u0645\u0633\u0629", 10));
+    }
+
+    @Test
     public void parsesCompositeNumbersForGridSelections() {
         assertEquals(Integer.valueOf(24), parser.parseSelectionNumber("yirmi bes", 100));
         assertEquals(Integer.valueOf(24), parser.parseSelectionNumber("twenty five", 100));

@@ -65,13 +65,51 @@ public final class SelectionNumberParser {
         if (directValue != null) {
             return directValue;
         }
+        Integer normalizedArabicValue = normalizedArabicNumberToValue(token);
+        if (normalizedArabicValue != null) {
+            return normalizedArabicValue;
+        }
         if (token != null && token.length() > 1 && token.charAt(0) == '\u0648') {
-            return SelectionAliases.NUMBER_WORDS.get(token.substring(1));
+            String withoutConjunction = token.substring(1);
+            Integer value = SelectionAliases.NUMBER_WORDS.get(withoutConjunction);
+            return value != null ? value : normalizedArabicNumberToValue(withoutConjunction);
         }
         Integer suffixedTurkishValue = turkishSuffixedNumberToValue(token);
         if (suffixedTurkishValue != null) {
             return suffixedTurkishValue;
         }
+        return null;
+    }
+
+    private Integer normalizedArabicNumberToValue(String token) {
+        if (!hasText(token)) {
+            return null;
+        }
+
+        String candidate = token;
+        if (candidate.startsWith("\u0627\u0644") && candidate.length() > 2) {
+            candidate = candidate.substring(2);
+        }
+
+        Integer value = SelectionAliases.NUMBER_WORDS.get(candidate);
+        if (value != null) {
+            return value;
+        }
+
+        if (candidate.endsWith("\u0629")) {
+            value = SelectionAliases.NUMBER_WORDS.get(candidate.substring(0, candidate.length() - 1) + "\u0647");
+            if (value != null) {
+                return value;
+            }
+        }
+
+        if (candidate.endsWith("\u0647")) {
+            value = SelectionAliases.NUMBER_WORDS.get(candidate.substring(0, candidate.length() - 1) + "\u0629");
+            if (value != null) {
+                return value;
+            }
+        }
+
         return null;
     }
 
