@@ -14,7 +14,9 @@ public final class SearchInputAliases {
     public static final String[] EXACT_SEARCH_BUTTON_LABELS = {
             "search",
             "ara",
-            "arama"
+            "arama",
+            "\u0628\u062d\u062b",
+            "\u0627\u0628\u062d\u062b"
     };
 
     public static final String[] SECONDARY_SEARCH_ACTION_KEYWORDS = {

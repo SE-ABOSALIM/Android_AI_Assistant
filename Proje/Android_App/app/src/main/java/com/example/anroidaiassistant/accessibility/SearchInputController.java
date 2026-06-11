@@ -15,15 +15,23 @@ import java.util.List;
 
 public final class SearchInputController {
     private static final int SEARCH_FIELD_RETRY_DELAY_MS = 450;
+    private static final int SEARCH_FIELD_MAX_RETRIES = 5;
     private static final int SUBMIT_AFTER_SET_TEXT_DELAY_MS = 500;
+    private static final int MIN_DIRECT_SEARCH_INPUT_SCORE = 8;
     private static final int MIN_SEARCH_BUTTON_SCORE = 8;
 
     private final MyAccessibilityService service;
     private final Handler mainHandler;
+    private final GestureController gestureController;
 
-    public SearchInputController(MyAccessibilityService service, Handler mainHandler) {
+    public SearchInputController(
+            MyAccessibilityService service,
+            Handler mainHandler,
+            GestureController gestureController
+    ) {
         this.service = service;
         this.mainHandler = mainHandler;
+        this.gestureController = gestureController;
     }
 
     public boolean performSearch(String query) {
@@ -36,7 +44,7 @@ public final class SearchInputController {
             return false;
         }
 
-        AccessibilityNodeInfo searchInput = findBestSearchInput(rootNode);
+        AccessibilityNodeInfo searchInput = findBestSearchInput(rootNode, MIN_DIRECT_SEARCH_INPUT_SCORE);
         if (searchInput != null) {
             return writeQueryAndSubmit(searchInput, query);
         }
@@ -46,13 +54,7 @@ public final class SearchInputController {
             return false;
         }
 
-        mainHandler.postDelayed(() -> {
-            AccessibilityNodeInfo refreshedRoot = service.getRootInActiveWindow();
-            AccessibilityNodeInfo refreshedInput = findBestSearchInput(refreshedRoot);
-            if (refreshedInput != null) {
-                writeQueryAndSubmit(refreshedInput, query);
-            }
-        }, SEARCH_FIELD_RETRY_DELAY_MS);
+        retrySearchAfterButtonClick(query, 1);
         return true;
     }
 
@@ -62,7 +64,7 @@ public final class SearchInputController {
             return false;
         }
 
-        return findBestSearchInput(rootNode) != null || findSearchButton(rootNode) != null;
+        return findBestSearchInput(rootNode, MIN_DIRECT_SEARCH_INPUT_SCORE) != null || findSearchButton(rootNode) != null;
     }
 
     public boolean writeText(String text) {
@@ -101,6 +103,25 @@ public final class SearchInputController {
         return true;
     }
 
+    private void retrySearchAfterButtonClick(String query, int attempt) {
+        mainHandler.postDelayed(() -> {
+            AccessibilityNodeInfo refreshedRoot = service.getRootInActiveWindow();
+            AccessibilityNodeInfo refreshedInput = findBestSearchInput(refreshedRoot, MIN_DIRECT_SEARCH_INPUT_SCORE);
+            if (refreshedInput == null) {
+                refreshedInput = findBestWritableInput();
+            }
+
+            if (refreshedInput != null) {
+                writeQueryAndSubmit(refreshedInput, query);
+                return;
+            }
+
+            if (attempt < SEARCH_FIELD_MAX_RETRIES) {
+                retrySearchAfterButtonClick(query, attempt + 1);
+            }
+        }, SEARCH_FIELD_RETRY_DELAY_MS);
+    }
+
     private boolean setText(AccessibilityNodeInfo inputNode, String text) {
         inputNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
         inputNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
@@ -124,7 +145,12 @@ public final class SearchInputController {
     }
 
     private AccessibilityNodeInfo findBestSearchInput(AccessibilityNodeInfo node) {
-        return findBestSearchInput(node, null, -1);
+        return findBestSearchInput(node, 0);
+    }
+
+    private AccessibilityNodeInfo findBestSearchInput(AccessibilityNodeInfo node, int minScore) {
+        SearchResult result = findBestSearchInputResult(node, null, -1);
+        return result.score >= minScore ? result.node : null;
     }
 
     private AccessibilityNodeInfo findBestSearchInput(
@@ -263,7 +289,7 @@ public final class SearchInputController {
 
         Rect bounds = new Rect();
         clickableNode.getBoundsInScreen(bounds);
-        int score = 4;
+        int score = 6;
         if (equalsAny(nodeText, SearchInputAliases.EXACT_SEARCH_BUTTON_LABELS)) {
             score += 8;
         }
@@ -278,7 +304,13 @@ public final class SearchInputController {
 
     private boolean clickNode(AccessibilityNodeInfo node) {
         AccessibilityNodeInfo clickableNode = findClickableNode(node);
-        return clickableNode != null && clickableNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        if (clickableNode == null) {
+            return false;
+        }
+        if (clickableNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+            return true;
+        }
+        return gestureController != null && gestureController.tapNodeCenter(clickableNode);
     }
 
     private AccessibilityNodeInfo findClickableNode(AccessibilityNodeInfo node) {

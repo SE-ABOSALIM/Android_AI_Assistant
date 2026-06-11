@@ -124,7 +124,7 @@ public class MyAccessibilityService extends AccessibilityService {
         cameraCaptureController = new CameraCaptureController(this, mainHandler, gestureController);
         clickItemController = new ClickItemController(this, gestureController);
         quickSettingsTileController = new QuickSettingsTileController(this, mainHandler, gestureController);
-        searchInputController = new SearchInputController(this, mainHandler);
+        searchInputController = new SearchInputController(this, mainHandler, gestureController);
         screenLabelsController = new ScreenLabelsController(this, gestureController);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         listeningOverlayController = new ListeningOverlayController(this, windowManager);
