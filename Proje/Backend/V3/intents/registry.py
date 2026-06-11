@@ -67,63 +67,63 @@ def _contract(
 INTENT_CONTRACTS: Dict[str, IntentContract] = {
     "ADJUST_BRIGHTNESS": _contract(
         "ADJUST_BRIGHTNESS",
-        threshold=0.80,
+        threshold=0.85,
         required=("brightness",),
         android_supported=True,
     ),
     "ADJUST_VOLUME": _contract(
         "ADJUST_VOLUME",
-        threshold=0.80,
+        threshold=0.85,
         one_of=(("volume_action", "volume_level"),),
         android_supported=True,
         android_one_of=(("volume_action", "volume_level"),),
     ),
     "CALL_CONTACT": _contract(
         "CALL_CONTACT",
-        threshold=0.80,
+        threshold=0.85,
         required=("contact_name",),
         android_supported=True,
     ),
     "CLEAR_TEXT": _contract(
         "CLEAR_TEXT",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True,
     ),
     "CLICK_ITEM": _contract(
         "CLICK_ITEM",
-        threshold=0.80,
+        threshold=0.85,
         required=("target_text",),
         optional=("position",),
         android_supported=True,
     ),
     "CLOSE_APP": _contract(
         "CLOSE_APP",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True
     ),
     "DOUBLE_TAP": _contract(
         "DOUBLE_TAP",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True,
     ),
     "GO_BACK": _contract(
         "GO_BACK",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True
     ),
     "GO_HOME": _contract(
         "GO_HOME",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True
     ),
     "HOLD_SCREEN": _contract(
         "HOLD_SCREEN",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True,
     ),
     "OPEN_APP": _contract(
         "OPEN_APP",
-        threshold=0.80,
+        threshold=0.85,
         required=("app_name",
                   "app_package_name"
                   ),
@@ -135,7 +135,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "OPEN_APP_INFO": _contract(
         "OPEN_APP_INFO",
-        threshold=0.80,
+        threshold=0.85,
         required=("app_name",
                   "app_package_name"
                   ),
@@ -147,12 +147,12 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "OPEN_NOTIFICATIONS": _contract(
         "OPEN_NOTIFICATIONS",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True
     ),
     "SCROLL_SCREEN": _contract(
         "SCROLL_SCREEN",
-        threshold=0.80,
+        threshold=0.85,
         required=("direction",),
         android_supported=True,
     ),
@@ -164,32 +164,32 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_ALARM": _contract(
         "SET_ALARM",
-        threshold=0.80,
+        threshold=0.85,
         required=("alarm_hour",),
         optional=("alarm_minute", "period", "day", "alarm_text"),
         android_supported=True,
     ),
     "SET_BLUETOOTH": _contract(
         "SET_BLUETOOTH",
-        threshold=0.80,
+        threshold=0.85,
         required=("state",),
         android_supported=True,
     ),
     "SET_FLASHLIGHT": _contract(
         "SET_FLASHLIGHT",
-        threshold=0.80,
+        threshold=0.85,
         required=("state",),
         android_supported=True,
     ),
     "SET_KEYBOARD": _contract(
         "SET_KEYBOARD",
-        threshold=0.80,
+        threshold=0.85,
         required=("state",),
         android_supported=True,
     ),
     "SET_LOCATION": _contract(
         "SET_LOCATION",
-        threshold=0.80,
+        threshold=0.85,
         required=("state",),
         android_supported=True,
     ),
@@ -201,19 +201,19 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_MOBILE_HOTSPOT": _contract(
         "SET_MOBILE_HOTSPOT",
-        threshold=0.80,
+        threshold=0.85,
         required=("state",),
         android_supported=True,
     ),
     "SET_SOUND_MODE": _contract(
         "SET_SOUND_MODE",
-        threshold=0.80,
+        threshold=0.85,
         required=("sound_mode",),
         android_supported=True,
     ),
     "SET_TIMER": _contract(
         "SET_TIMER",
-        threshold=0.80,
+        threshold=0.85,
         required=("duration_value",
                   "duration_unit",
                   "duration_seconds"
@@ -222,41 +222,41 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_WIFI": _contract(
         "SET_WIFI",
-        threshold=0.80,
+        threshold=0.85,
         required=("state",),
         android_supported=True,
     ),
     "SHOW_RECENTS": _contract(
         "SHOW_RECENTS",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True
     ),
     "SHOW_GRID": _contract(
         "SHOW_GRID",
-        threshold=0.80,
+        threshold=0.85,
         optional=("grid_action",),
         android_supported=True,
     ),
     "SHOW_LABELS": _contract(
         "SHOW_LABELS",
-        threshold=0.80,
+        threshold=0.85,
         optional=("labels_action",),
         android_supported=True,
     ),
     "STOP_LISTENING": _contract(
         "STOP_LISTENING",
-        threshold=0.80,
+        threshold=0.85,
         android_supported=True
     ),
     "SWIPE_GESTURE": _contract(
         "SWIPE_GESTURE",
-        threshold=0.80,
+        threshold=0.85,
         required=("direction",),
         android_supported=True,
     ),
     "TAKE_PHOTO": _contract(
         "TAKE_PHOTO",
-        threshold=0.80,
+        threshold=0.85,
         optional=("camera",),
         android_supported=True,
     ),
@@ -267,7 +267,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "UNINSTALL_APP": _contract(
         "UNINSTALL_APP",
-        threshold=0.80,
+        threshold=0.85,
         required=("app_name",
                   "app_package_name"
                   ),
@@ -279,13 +279,13 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "WRITE_TEXT": _contract(
         "WRITE_TEXT",
-        threshold=0.80,
+        threshold=0.85,
         required=("text",),
         android_supported=True,
     ),
     "UNKNOWN_COMMAND": _contract(
         "UNKNOWN_COMMAND",
-        threshold=0.80
+        threshold=0.85
     ),
 }
 
