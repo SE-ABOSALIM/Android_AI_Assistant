@@ -26,6 +26,15 @@ public final class AppChoicePresenter {
             CommandExecutionContext executionContext,
             SelectionCallback callback
     ) {
+        if (matches == null || matches.isEmpty() || callback == null) {
+            return;
+        }
+
+        if (matches.size() == 1) {
+            callback.onSelected(matches.get(0));
+            return;
+        }
+
         MyAccessibilityService service = MyAccessibilityService.getInstance();
         if (service == null || !service.isContinuousListeningActive()) {
             executionContext.showMessage("Multiple apps match. Start listening and say the number.");

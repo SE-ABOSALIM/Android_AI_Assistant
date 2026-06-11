@@ -121,6 +121,15 @@ public final class ClickItemController {
             return false;
         }
 
+        if (fallbackCandidates.size() == 1) {
+            ClickCandidate singleCandidate = fallbackCandidates.get(0);
+            Log.i(TAG, "single_fallback_direct | " + formatCandidate(singleCandidate));
+            if (!clickCandidate(singleCandidate)) {
+                service.showFeedback("Item could not be clicked");
+            }
+            return true;
+        }
+
         List<MyAccessibilityService.ClickTargetChoice> choices = new ArrayList<>();
         for (ClickCandidate candidate : fallbackCandidates) {
             choices.add(new MyAccessibilityService.ClickTargetChoice(
