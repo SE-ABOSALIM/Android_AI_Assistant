@@ -43,6 +43,31 @@ def extract_alarm(text: str, language: str) -> Dict[str, object]:
     return params
 
 
+def is_bare_alarm_time_expression(text: str) -> bool:
+    normalized = normalized_lower(normalize_text(text))
+    if not normalized:
+        return False
+
+    digit_match = re.fullmatch(r"\d{1,2}(?:\s*[:.]\s*(\d{1,2}))?", normalized)
+    if digit_match:
+        hour = int(normalized.split(":", 1)[0].split(".", 1)[0].strip())
+        minute = int(digit_match.group(1) or 0)
+        return 0 <= hour <= 24 and 0 <= minute <= 59
+
+    if re.search(r"\d", normalized):
+        return False
+
+    tokens = re.findall(r"[a-zA-Z\u0600-\u06FF]+", normalized)
+    if not tokens:
+        return False
+
+    if len(tokens) == 1 and tokens[0] in {"zero", "sifir", "\u0635\u0641\u0631"}:
+        return True
+
+    value = words_to_number(tokens, allow_article_number=False)
+    return value is not None and 0 <= value <= 24
+
+
 def _extract_alarm_time(normalized_text: str) -> Optional[Tuple[int, int]]:
     digit_match = re.search(r"\b(\d{1,2})(?:\s*[:.]\s*(\d{1,2}))?\b", normalized_text)
     if digit_match:

@@ -491,6 +491,22 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(scheduled_day["parameters"]["alarm_hour"], 17)
         self.assertEqual(scheduled_day["parameters"]["day"], "monday")
 
+    def test_rejects_bare_alarm_numbers(self):
+        examples = [
+            ("5", "TR"),
+            ("bes", "TR"),
+            ("on", "TR"),
+            ("twenty four", "EN"),
+            ("\u0665", "AR"),
+        ]
+
+        for text, language in examples:
+            with self.subTest(text=text):
+                response = _validate("SET_ALARM", {}, text=text, language=language)
+
+                self.assertFalse(response["accepted"])
+                self.assertEqual(response["error_code"], "BARE_ALARM_TIME")
+
     def test_predict_take_photo_rule_enriches_camera_parameter(self):
         examples = [
             ("arka kamera ile fotograf cek", "TR", "back"),

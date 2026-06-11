@@ -1,6 +1,6 @@
 from typing import Callable, Dict
 
-from V3.extraction.alarm import extract_alarm
+from V3.extraction.alarm import extract_alarm, is_bare_alarm_time_expression
 from V3.extraction.click import (
     extract_click_position,
     extract_click_target,
@@ -67,6 +67,13 @@ def enrich_click_item(context: ValidationContext) -> None:
 
 
 def enrich_alarm(context: ValidationContext) -> None:
+    if is_bare_alarm_time_expression(context.original_text):
+        context.reject(
+            "BARE_ALARM_TIME",
+            "A bare number is not enough to set an alarm.",
+        )
+        return
+
     alarm_params = extract_alarm(context.original_text, context.language)
     for key, value in alarm_params.items():
         if value is None:
