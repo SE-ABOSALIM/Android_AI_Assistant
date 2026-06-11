@@ -10,6 +10,10 @@ def app_command(context: RuleContext) -> Optional[Dict[str, Any]]:
     if app_name:
         return command("OPEN_APP_INFO", "open_app_info", {"app_name": app_name})
 
+    app_name = extract_app_name_for_intent(context.original, context.language, "UNINSTALL_APP")
+    if app_name:
+        return command("UNINSTALL_APP", "uninstall_app", {"app_name": app_name})
+
     app_name = extract_app_name_for_intent(context.original, context.language, "OPEN_APP")
     if not app_name:
         return None

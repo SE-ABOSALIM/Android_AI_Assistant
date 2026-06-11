@@ -56,5 +56,6 @@ def _looks_like_turkish_merged_click(context: RuleContext) -> bool:
     return (
         words[-1].endswith("yamaz")
         or words[-1].endswith("yemez")
+        or words[-1] == "kapatamaz"
         or words[-1] in {"sebas", "sebasin"}
     )

@@ -6,6 +6,7 @@ from V3.validation.context import ValidationContext
 from V3.validation.enrichers import INTENT_ENRICHERS
 from V3.validation.response import build_response
 from V3.validation.search_call_resolver import resolve_turkish_search_call_conflict
+from V3.validation.stop_listening import is_rule_prediction
 
 
 def validate_and_build_response(
@@ -29,9 +30,27 @@ def validate_and_build_response(
         parameters=dict(model_parameters or {}),
         has_search_input=has_search_input,
     )
+    top_predictions = top_predictions or []
+    if model_intent == "STOP_LISTENING" and not is_rule_prediction(raw_label):
+        return build_response(
+            original_text=original_text,
+            language=language,
+            intent="UNKNOWN_COMMAND",
+            parameters={},
+            accepted=False,
+            missing_slots=[],
+            error_code="MODEL_STOP_LISTENING_DISABLED",
+            error_message="Stop listening can only be triggered by explicit rule commands.",
+            needs_confirmation=False,
+            confidence=confidence,
+            threshold=get_threshold("UNKNOWN_COMMAND"),
+            raw_label=raw_label,
+            top_predictions=top_predictions,
+            contract=get_intent_contract("UNKNOWN_COMMAND"),
+        )
+
     threshold = get_threshold(model_intent)
     contract = get_intent_contract(model_intent)
-    top_predictions = top_predictions or []
 
     if confidence < threshold:
         return build_response(

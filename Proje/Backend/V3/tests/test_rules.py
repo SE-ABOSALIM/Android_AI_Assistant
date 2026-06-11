@@ -79,6 +79,13 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"target_text": "sepeti onayla"})
         self.assertEqual(result["rule_matched"], "click_item")
 
+    def test_click_item_rule_repairs_turkish_kapatamaz_stt(self):
+        result = rule_based_command("T\u00fcm\u00fcn\u00fc kapatamaz", "TR")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "tumunu kapat"})
+        self.assertEqual(result["rule_matched"], "click_item")
+
     def test_click_item_rule_repairs_turkish_sebas_stt(self):
         result = rule_based_command("Real Sebas", "TR")
 
@@ -172,6 +179,21 @@ class RuleServiceTests(unittest.TestCase):
         for text, query in examples.items():
             with self.subTest(text=text):
                 result = rule_based_command(text, "TR")
+
+                self.assertEqual(result["intent"], "SEARCH_QUERY")
+                self.assertEqual(result["parameters"], {"query": query})
+                self.assertEqual(result["rule_matched"], "search_query")
+
+    def test_arabic_search_query_rules_strip_prepositions(self):
+        examples = {
+            "\u0627\u0639\u062b\u0631 \u0639\u0644\u0649 \u0627\u0644\u0637\u0642\u0633": "\u0627\u0644\u0637\u0642\u0633",
+            "\u0627\u0628\u062d\u062b \u062d\u0648\u0644 \u0627\u0644\u0637\u0642\u0633": "\u0627\u0644\u0637\u0642\u0633",
+            "\u0627\u0628\u062d\u062b \u0639\u0646 \u0627\u0644\u0637\u0642\u0633": "\u0627\u0644\u0637\u0642\u0633",
+        }
+
+        for text, query in examples.items():
+            with self.subTest(text=text):
+                result = rule_based_command(text, "AR")
 
                 self.assertEqual(result["intent"], "SEARCH_QUERY")
                 self.assertEqual(result["parameters"], {"query": query})
@@ -304,6 +326,23 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "STOP_LISTENING")
         self.assertEqual(result["rule_matched"], "stop_listening")
 
+    def test_stop_listening_expanded_rules(self):
+        examples = [
+            ("cancel command", "EN"),
+            ("turn off voice assistant", "EN"),
+            ("komutu iptal et", "TR"),
+            ("sesli komutlari kapat", "TR"),
+            ("\u0627\u0644\u063a \u0627\u0644\u0627\u0645\u0631", "AR"),
+            ("\u0627\u0648\u0642\u0641 \u0627\u0644\u0645\u0633\u0627\u0639\u062f", "AR"),
+        ]
+
+        for text, language in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, language)
+
+                self.assertEqual(result["intent"], "STOP_LISTENING")
+                self.assertEqual(result["rule_matched"], "stop_listening")
+
     def test_arabic_scroll_rule(self):
         result = rule_based_command("مرر للأسفل", "AR")
 
@@ -395,12 +434,26 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"app_name": "كاب هيروس"})
         self.assertEqual(result["rule_matched"], "open_app")
 
+    def test_arabic_enter_open_app_rule(self):
+        result = rule_based_command("\u0627\u062f\u062e\u0644 \u064a\u0648\u062a\u064a\u0648\u0628", "AR")
+
+        self.assertEqual(result["intent"], "OPEN_APP")
+        self.assertEqual(result["parameters"], {"app_name": "\u064a\u0648\u062a\u064a\u0648\u0628"})
+        self.assertEqual(result["rule_matched"], "open_app")
+
     def test_app_info_rule_wins_before_open_app(self):
         result = rule_based_command("open app info for chrome", "EN")
 
         self.assertEqual(result["intent"], "OPEN_APP_INFO")
         self.assertEqual(result["parameters"], {"app_name": "chrome"})
         self.assertEqual(result["rule_matched"], "open_app_info")
+
+    def test_arabic_uninstall_app_rule_wins_before_open_app(self):
+        result = rule_based_command("\u0627\u0644\u063a\u0627\u0621 \u062a\u062b\u0628\u064a\u062a \u064a\u0648\u062a\u064a\u0648\u0628", "AR")
+
+        self.assertEqual(result["intent"], "UNINSTALL_APP")
+        self.assertEqual(result["parameters"], {"app_name": "\u064a\u0648\u062a\u064a\u0648\u0628"})
+        self.assertEqual(result["rule_matched"], "uninstall_app")
 
     def test_timer_rule_wins_before_start_app_rule(self):
         result = rule_based_command("start timing 10 minutes", "EN")

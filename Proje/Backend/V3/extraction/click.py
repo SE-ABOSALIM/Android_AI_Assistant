@@ -97,6 +97,9 @@ def _extract_turkish_merged_click_target(normalized_text: str) -> Optional[str]:
 
 
 def _repair_turkish_merged_click_word(word: str) -> Optional[str]:
+    if word == "kapatamaz":
+        return "kapat"
+
     for suffix, repaired_ending in (
         ("yamaz", ""),
         ("yemez", ""),

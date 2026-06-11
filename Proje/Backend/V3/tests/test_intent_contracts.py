@@ -102,36 +102,35 @@ class IntentContractTests(unittest.TestCase):
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
 
-    def test_stop_listening_requires_strong_model_prediction(self):
-        strong = _validate(
+    def test_stop_listening_rejects_model_prediction(self):
+        model_prediction = _validate(
             "STOP_LISTENING",
             {},
             text="stop listening",
             language="EN",
-            confidence=0.93,
+            confidence=0.99,
             top_predictions=[
-                {"label": "STOP_LISTENING__none", "confidence": 0.93},
-                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.30},
+                {"label": "STOP_LISTENING__none", "confidence": 0.99},
+                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.01},
             ],
         )
 
-        self.assertTrue(strong["accepted"])
-        self.assertTrue(strong["android_supported"])
+        self.assertFalse(model_prediction["accepted"])
+        self.assertEqual(model_prediction["intent"], "UNKNOWN_COMMAND")
+        self.assertEqual(model_prediction["error_code"], "MODEL_STOP_LISTENING_DISABLED")
 
-        weak = _validate(
+    def test_stop_listening_accepts_rule_prediction(self):
+        rule_prediction = _validate(
             "STOP_LISTENING",
             {},
-            text="Just once sabas",
+            text="stop listening",
             language="EN",
-            confidence=0.72,
-            top_predictions=[
-                {"label": "STOP_LISTENING__none", "confidence": 0.72},
-                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.48},
-            ],
+            confidence=1.0,
+            raw_label="RULE::stop_listening",
         )
 
-        self.assertFalse(weak["accepted"])
-        self.assertEqual(weak["error_code"], "WEAK_STOP_LISTENING_COMMAND")
+        self.assertTrue(rule_prediction["accepted"])
+        self.assertTrue(rule_prediction["android_supported"])
 
     def test_stop_listening_rejects_single_word_commands(self):
         examples = ["bas", "git", "kapat"]
@@ -144,6 +143,7 @@ class IntentContractTests(unittest.TestCase):
                     text=text,
                     language="TR",
                     confidence=0.99,
+                    raw_label="RULE::stop_listening",
                     top_predictions=[
                         {"label": "STOP_LISTENING__none", "confidence": 0.99},
                         {"label": "UNKNOWN_COMMAND__none", "confidence": 0.01},
@@ -154,7 +154,7 @@ class IntentContractTests(unittest.TestCase):
                 self.assertEqual(response["error_code"], "STOP_LISTENING_TOO_SHORT")
 
     def test_stop_listening_rejects_ambiguous_model_prediction(self):
-        ambiguous = _validate(
+        model_prediction = _validate(
             "STOP_LISTENING",
             {},
             text="stop something",
@@ -166,8 +166,9 @@ class IntentContractTests(unittest.TestCase):
             ],
         )
 
-        self.assertFalse(ambiguous["accepted"])
-        self.assertEqual(ambiguous["error_code"], "WEAK_STOP_LISTENING_COMMAND")
+        self.assertFalse(model_prediction["accepted"])
+        self.assertEqual(model_prediction["intent"], "UNKNOWN_COMMAND")
+        self.assertEqual(model_prediction["error_code"], "MODEL_STOP_LISTENING_DISABLED")
 
     def test_text_and_center_gesture_intents_are_android_supported(self):
         examples = {
@@ -361,6 +362,18 @@ class IntentContractTests(unittest.TestCase):
             text="\u0627\u0628\u062d\u062b \u0627\u0644\u0637\u0642\u0633",
             language="AR",
         )
+        arabic_search_find_on = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="\u0627\u0639\u062b\u0631 \u0639\u0644\u0649 \u0627\u0644\u0637\u0642\u0633",
+            language="AR",
+        )
+        arabic_search_about = _validate(
+            "SEARCH_QUERY",
+            {},
+            text="\u0627\u0628\u062d\u062b \u062d\u0648\u0644 \u0627\u0644\u0637\u0642\u0633",
+            language="AR",
+        )
         turkish_search_for = _validate(
             "SEARCH_QUERY",
             {},
@@ -382,6 +395,10 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(arabic_search["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
         self.assertTrue(arabic_search_without_preposition["accepted"])
         self.assertEqual(arabic_search_without_preposition["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
+        self.assertTrue(arabic_search_find_on["accepted"])
+        self.assertEqual(arabic_search_find_on["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
+        self.assertTrue(arabic_search_about["accepted"])
+        self.assertEqual(arabic_search_about["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
         self.assertTrue(turkish_search_for["accepted"])
         self.assertEqual(turkish_search_for["parameters"]["query"], "ahmet kaya")
         self.assertTrue(turkish_search_this["accepted"])

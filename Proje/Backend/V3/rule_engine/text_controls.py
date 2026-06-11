@@ -1,9 +1,9 @@
 from typing import Any, Dict, Optional
 
 from V3.extraction.common import clean_free_text, extract_first_match
-from V3.extraction.text import clean_search_query
+from V3.extraction.text import extract_search_query
 from V3.patterns.commands.text_controls import CLEAR_TEXT_PATTERNS, DOUBLE_TAP_PATTERNS, HOLD_SCREEN_PATTERNS
-from V3.patterns.extraction.text import SEARCH_QUERY_PATTERNS, WRITE_TEXT_PATTERNS
+from V3.patterns.extraction.text import WRITE_TEXT_PATTERNS
 from V3.rule_engine.context import RuleContext
 from V3.rule_engine.pattern_rules import PatternRule, match_first_pattern_rule
 from V3.rule_engine.result import command
@@ -31,15 +31,7 @@ def text_control_command(context: RuleContext) -> Optional[Dict[str, Any]]:
 
 
 def _search_query_command(context: RuleContext) -> Optional[Dict[str, Any]]:
-    if str(context.language or "").upper() != "TR":
-        return None
-
-    query = extract_first_match(
-        normalize_text(context.original),
-        patterns_for_language(SEARCH_QUERY_PATTERNS, context.language),
-        ignore_case=True,
-    )
-    query = clean_search_query(query, context.language)
+    query = extract_search_query(context.original, context.language)
     if not query:
         return None
 

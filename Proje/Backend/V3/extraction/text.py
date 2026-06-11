@@ -3,6 +3,7 @@ from typing import Optional
 
 from V3.extraction.common import clean_free_text, extract_first_match, extract_quoted_text
 from V3.patterns.extraction.text import (
+    ARABIC_LEADING_SEARCH_QUERY_NOISE_PATTERN,
     SEARCH_QUERY_PATTERNS,
     TRAILING_SEARCH_QUERY_NOISE_PATTERN,
     WRITE_TEXT_PATTERNS,
@@ -46,5 +47,7 @@ def clean_search_query(query: Optional[str], language: str) -> Optional[str]:
 
     if str(language or "").upper() == "TR":
         cleaned = re.sub(TRAILING_SEARCH_QUERY_NOISE_PATTERN, "", cleaned, flags=re.IGNORECASE).strip()
+    elif str(language or "").upper() == "AR":
+        cleaned = re.sub(ARABIC_LEADING_SEARCH_QUERY_NOISE_PATTERN, "", cleaned, flags=re.IGNORECASE).strip()
 
     return clean_free_text(cleaned)
