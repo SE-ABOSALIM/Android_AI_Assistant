@@ -47,9 +47,11 @@ def predict(request: PredictRequest):
     print(
         "[predict] "
         f"{response['processing_time_ms']:.2f} ms | "
+        f"text='{request.text}' | "
         f"language={request.language.upper()} | "
         f"intent={response.get('intent')} | "
-        f"accepted={response.get('accepted')}",
+        f"accepted={response.get('accepted')} | "
+        f"confidence={response.get('confidence')}",
         flush=True,
     )
     return response
