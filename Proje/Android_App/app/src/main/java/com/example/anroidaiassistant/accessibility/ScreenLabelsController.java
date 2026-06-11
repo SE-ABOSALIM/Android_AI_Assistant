@@ -1,6 +1,7 @@
 package com.example.anroidaiassistant.accessibility;
 
 import android.graphics.Rect;
+import android.util.DisplayMetrics;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
@@ -36,7 +37,14 @@ public final class ScreenLabelsController {
 
         activeTargets.clear();
         List<LabelTarget> collectedTargets = new ArrayList<>();
-        collectTargets(rootNode, collectedTargets, new HashSet<>());
+        DisplayMetrics displayMetrics = service.getResources().getDisplayMetrics();
+        collectTargets(
+                rootNode,
+                collectedTargets,
+                new HashSet<>(),
+                displayMetrics.widthPixels,
+                displayMetrics.heightPixels
+        );
         activeTargets.addAll(dedupeTargets(collectedTargets));
         activeTargets.sort(Comparator
                 .comparingInt((LabelTarget target) -> target.bounds.top)
@@ -96,7 +104,9 @@ public final class ScreenLabelsController {
     private void collectTargets(
             AccessibilityNodeInfo node,
             List<LabelTarget> targets,
-            Set<String> seenBounds
+            Set<String> seenBounds,
+            int screenWidth,
+            int screenHeight
     ) {
         if (node == null || targets.size() >= MAX_LABELS * 3 || !node.isVisibleToUser()) {
             return;
@@ -105,16 +115,39 @@ public final class ScreenLabelsController {
         Rect bounds = new Rect();
         node.getBoundsInScreen(bounds);
         if (isUsableTarget(node, bounds)) {
-            String boundsKey = bounds.flattenToString();
+            LabelTarget target = buildLabelTarget(node, bounds, screenWidth, screenHeight);
+            String boundsKey = target.bounds.flattenToString();
             if (!seenBounds.contains(boundsKey)) {
                 seenBounds.add(boundsKey);
-                targets.add(new LabelTarget(node, bounds, nodeTitle(node)));
+                targets.add(target);
             }
         }
 
         for (int i = 0; i < node.getChildCount() && targets.size() < MAX_LABELS * 3; i++) {
-            collectTargets(node.getChild(i), targets, seenBounds);
+            collectTargets(node.getChild(i), targets, seenBounds, screenWidth, screenHeight);
         }
+    }
+
+    private LabelTarget buildLabelTarget(
+            AccessibilityNodeInfo node,
+            Rect bounds,
+            int screenWidth,
+            int screenHeight
+    ) {
+        if (isIndependentControl(node, bounds, screenWidth, screenHeight)) {
+            return new LabelTarget(node, bounds, nodeTitle(node));
+        }
+
+        ActionGroup actionGroup = findActionGroup(node, bounds, screenWidth, screenHeight);
+        if (actionGroup == null) {
+            return new LabelTarget(node, bounds, nodeTitle(node));
+        }
+
+        String title = nodeTitle(actionGroup.node);
+        if (!TextNormalizer.hasText(title) || "Item".equals(title)) {
+            title = nodeTitle(node);
+        }
+        return new LabelTarget(actionGroup.node, actionGroup.bounds, title);
     }
 
     private List<LabelTarget> dedupeTargets(List<LabelTarget> targets) {
@@ -200,6 +233,63 @@ public final class ScreenLabelsController {
         return node.isClickable() || supportsAction(node, AccessibilityNodeInfo.ACTION_CLICK);
     }
 
+    private ActionGroup findActionGroup(
+            AccessibilityNodeInfo node,
+            Rect nodeBounds,
+            int screenWidth,
+            int screenHeight
+    ) {
+        AccessibilityNodeInfo current = node.getParent();
+        ActionGroup best = null;
+        while (current != null) {
+            Rect parentBounds = new Rect();
+            current.getBoundsInScreen(parentBounds);
+            if (isUsableTarget(current, parentBounds)
+                    && parentBounds.contains(nodeBounds)
+                    && isReasonableActionGroup(parentBounds, screenWidth, screenHeight)) {
+                best = new ActionGroup(current, parentBounds);
+            }
+            current = current.getParent();
+        }
+        return best;
+    }
+
+    private boolean isReasonableActionGroup(Rect bounds, int screenWidth, int screenHeight) {
+        if (bounds == null || bounds.isEmpty() || screenWidth <= 0 || screenHeight <= 0) {
+            return false;
+        }
+
+        int screenArea = screenWidth * screenHeight;
+        int boundsArea = area(bounds);
+        if (boundsArea <= 0 || boundsArea > screenArea * 0.65f) {
+            return false;
+        }
+
+        return bounds.width() <= screenWidth
+                && bounds.height() <= screenHeight * 0.55f
+                && bounds.width() >= dp(72)
+                && bounds.height() >= dp(48);
+    }
+
+    private boolean isIndependentControl(
+            AccessibilityNodeInfo node,
+            Rect bounds,
+            int screenWidth,
+            int screenHeight
+    ) {
+        if (bounds == null || bounds.isEmpty() || screenWidth <= 0 || screenHeight <= 0) {
+            return false;
+        }
+
+        boolean compactControl = bounds.width() <= dp(96) && bounds.height() <= dp(96);
+        boolean rightEdgeControl = bounds.centerX() >= screenWidth * 0.80f;
+        boolean hasControlSemanticName = hasControlSemanticName(node);
+        boolean classLooksLikeButton = className(node).contains("button")
+                || className(node).contains("imagebutton");
+
+        return compactControl && (rightEdgeControl || hasControlSemanticName || classLooksLikeButton);
+    }
+
     private boolean clickTarget(LabelTarget target) {
         if (target.node != null && target.node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
             return true;
@@ -215,6 +305,59 @@ public final class ScreenLabelsController {
 
         for (AccessibilityNodeInfo.AccessibilityAction action : actions) {
             if (action != null && action.getId() == actionId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasControlSemanticName(AccessibilityNodeInfo node) {
+        String combined = TextNormalizer.normalizeAsciiText(
+                nodeTitle(node) + " " + charSequenceToString(node.getContentDescription()) + " " + node.getViewIdResourceName()
+        );
+        return containsAny(
+                combined,
+                "back",
+                "geri",
+                "close",
+                "kapat",
+                "menu",
+                "more",
+                "options",
+                "search",
+                "ara",
+                "home",
+                "shorts",
+                "subscriptions",
+                "share",
+                "paylas",
+                "like",
+                "comment",
+                "play",
+                "pause",
+                "mute",
+                "unmute",
+                "caption",
+                "captions",
+                "cc",
+                "install",
+                "watch",
+                "signup",
+                "sign up"
+        );
+    }
+
+    private String className(AccessibilityNodeInfo node) {
+        CharSequence className = node.getClassName();
+        return className == null ? "" : className.toString().toLowerCase();
+    }
+
+    private boolean containsAny(String value, String... candidates) {
+        if (!TextNormalizer.hasText(value)) {
+            return false;
+        }
+        for (String candidate : candidates) {
+            if (value.contains(candidate)) {
                 return true;
             }
         }
@@ -309,6 +452,16 @@ public final class ScreenLabelsController {
             this.node = node;
             this.bounds = new Rect(bounds);
             this.title = title;
+        }
+    }
+
+    private static final class ActionGroup {
+        private final AccessibilityNodeInfo node;
+        private final Rect bounds;
+
+        private ActionGroup(AccessibilityNodeInfo node, Rect bounds) {
+            this.node = node;
+            this.bounds = new Rect(bounds);
         }
     }
 }

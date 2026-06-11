@@ -125,7 +125,7 @@ public final class ClickTargetOverlayController {
             this.numberText = String.valueOf(number);
 
             strokePaint.setStyle(Paint.Style.STROKE);
-            strokePaint.setStrokeWidth(dp(1.6f));
+            strokePaint.setStrokeWidth(dp(2.2f));
             strokePaint.setColor(Color.WHITE);
             strokePaint.setShadowLayer(dp(2), 0, dp(1), Color.argb(190, 0, 0, 0));
 
@@ -145,20 +145,24 @@ public final class ClickTargetOverlayController {
             float width = getWidth();
             float height = getHeight();
             float centerX = width / 2f;
-            float headRadius = width * 0.36f;
-            float headCenterY = headRadius + dp(2);
-            float tipY = height - dp(2);
+            float inset = dp(2.5f);
+            float top = inset;
+            float left = inset;
+            float right = width - inset;
+            float tipY = height - inset;
+            float headCenterY = height * 0.30f;
 
             pinPath.reset();
-            pinPath.addCircle(centerX, headCenterY, headRadius, Path.Direction.CW);
-            pinPath.moveTo(centerX - headRadius * 0.56f, headCenterY + headRadius * 0.82f);
-            pinPath.lineTo(centerX, tipY);
-            pinPath.lineTo(centerX + headRadius * 0.56f, headCenterY + headRadius * 0.82f);
+            pinPath.moveTo(centerX, tipY);
+            pinPath.cubicTo(width * 0.40f, height * 0.72f, left, height * 0.50f, left, height * 0.34f);
+            pinPath.cubicTo(left, height * 0.15f, width * 0.28f, top, centerX, top);
+            pinPath.cubicTo(width * 0.72f, top, right, height * 0.15f, right, height * 0.34f);
+            pinPath.cubicTo(right, height * 0.50f, width * 0.60f, height * 0.72f, centerX, tipY);
 
             canvas.drawPath(pinPath, strokePaint);
 
             Paint.FontMetrics fontMetrics = textPaint.getFontMetrics();
-            float textBaseline = headCenterY - (fontMetrics.ascent + fontMetrics.descent) / 2f;
+            float textBaseline = headCenterY + dp(2) - (fontMetrics.ascent + fontMetrics.descent) / 2f;
             canvas.drawText(numberText, centerX, textBaseline, textPaint);
         }
     }
