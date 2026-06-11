@@ -239,10 +239,12 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!isServiceListening) {
-            service.updateLanguage(selectedLanguage);
-            service.startContinuousListening();
-            isServiceListening = true;
-            refreshListeningUiState();
+            ensureAppCatalogThen(() -> {
+                service.updateLanguage(selectedLanguage);
+                service.startContinuousListening();
+                isServiceListening = true;
+                refreshListeningUiState();
+            });
         } else {
             service.stopContinuousListening();
             isServiceListening = false;

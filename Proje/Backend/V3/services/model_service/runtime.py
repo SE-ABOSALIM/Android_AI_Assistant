@@ -24,6 +24,10 @@ def get_device_name() -> str:
         return "unknown"
 
 
+def preload_model() -> None:
+    get_model_bundle()
+
+
 def get_model_bundle() -> Tuple[Any, Any, Any, Any]:
     global _device, _model, _tokenizer
 
