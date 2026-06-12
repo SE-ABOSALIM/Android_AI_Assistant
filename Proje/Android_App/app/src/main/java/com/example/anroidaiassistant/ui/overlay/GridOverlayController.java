@@ -1,4 +1,4 @@
-package com.example.anroidaiassistant.ui;
+package com.example.anroidaiassistant.ui.overlay;
 
 import android.content.Context;
 import android.graphics.Canvas;

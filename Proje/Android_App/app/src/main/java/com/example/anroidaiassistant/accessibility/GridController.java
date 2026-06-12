@@ -3,7 +3,7 @@ package com.example.anroidaiassistant.accessibility;
 import android.graphics.Rect;
 import android.util.DisplayMetrics;
 
-import com.example.anroidaiassistant.ui.GridOverlayController;
+import com.example.anroidaiassistant.ui.overlay.GridOverlayController;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.Locale;
