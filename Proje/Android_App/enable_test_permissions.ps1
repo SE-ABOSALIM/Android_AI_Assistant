@@ -173,6 +173,10 @@ Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
     "shell", "appops", "set", $PackageName, "WRITE_SETTINGS", "allow"
 ) | Out-Null
 
+Invoke-AdbOptional -AdbPath $adbPath -Arguments @(
+    "shell", "cmd", "notification", "allow_dnd", $PackageName
+) | Out-Null
+
 $runtimePermissions = @(
     "android.permission.CAMERA",
     "android.permission.RECORD_AUDIO",
@@ -192,6 +196,7 @@ Write-Host ""
 Write-Host "Test permissions applied."
 Write-Host "- Accessibility service: enabled in settings"
 Write-Host "- Appear on top: allowed"
+Write-Host "- Do Not Disturb access: allowed when supported by device"
 Write-Host "- Camera: granted"
 Write-Host "- Microphone: granted"
 Write-Host "- Contacts: granted"

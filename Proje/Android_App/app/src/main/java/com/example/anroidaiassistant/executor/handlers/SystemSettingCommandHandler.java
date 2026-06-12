@@ -1,10 +1,12 @@
 package com.example.anroidaiassistant.executor.handlers;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
 import android.media.AudioManager;
+import android.os.Build;
 import android.util.Log;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
@@ -111,14 +113,16 @@ public final class SystemSettingCommandHandler implements CommandHandler {
 
         switch (soundMode) {
             case "normal":
+                setInterruptionFilterIfAllowed(androidContext, NotificationManager.INTERRUPTION_FILTER_ALL);
                 setRingerMode(audioManager, AudioManager.RINGER_MODE_NORMAL, context);
                 unmuteAudibleStreams(audioManager);
                 break;
             case "mute":
             case "silent":
-                muteAudibleStreams(audioManager);
+                setSilentRingerMode(androidContext, audioManager, context);
                 break;
             case "vibrate":
+                setInterruptionFilterIfAllowed(androidContext, NotificationManager.INTERRUPTION_FILTER_ALL);
                 setRingerMode(audioManager, AudioManager.RINGER_MODE_VIBRATE, context);
                 break;
             default:
@@ -127,16 +131,80 @@ public final class SystemSettingCommandHandler implements CommandHandler {
         }
     }
 
+    private void setSilentRingerMode(
+            Context androidContext,
+            AudioManager audioManager,
+            CommandExecutionContext context
+    ) {
+        if (trySetRingerMode(audioManager, AudioManager.RINGER_MODE_SILENT)) {
+            return;
+        }
+
+        if (setInterruptionFilterIfAllowed(androidContext, NotificationManager.INTERRUPTION_FILTER_NONE)
+                && trySetRingerMode(audioManager, AudioManager.RINGER_MODE_SILENT)) {
+            return;
+        }
+
+        if (tryMuteRingStream(audioManager) || audioManager.getRingerMode() == AudioManager.RINGER_MODE_SILENT) {
+            return;
+        }
+
+        context.showMessage("Do Not Disturb access is required for silent mode");
+    }
+
     private void setRingerMode(
             AudioManager audioManager,
             int ringerMode,
             CommandExecutionContext context
     ) {
+        if (trySetRingerMode(audioManager, ringerMode)) {
+            return;
+        }
+
+        context.showMessage("Sound mode permission is unavailable on this device");
+    }
+
+    private boolean trySetRingerMode(AudioManager audioManager, int ringerMode) {
         try {
             audioManager.setRingerMode(ringerMode);
+            return audioManager.getRingerMode() == ringerMode;
         } catch (SecurityException exception) {
             Log.e(TAG, "Failed to set sound mode", exception);
-            context.showMessage("Sound mode permission is unavailable on this device");
+            return false;
+        }
+    }
+
+    private boolean setInterruptionFilterIfAllowed(Context androidContext, int interruptionFilter) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return false;
+        }
+
+        NotificationManager notificationManager =
+                (NotificationManager) androidContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (notificationManager == null || !notificationManager.isNotificationPolicyAccessGranted()) {
+            return false;
+        }
+
+        try {
+            notificationManager.setInterruptionFilter(interruptionFilter);
+            return notificationManager.getCurrentInterruptionFilter() == interruptionFilter;
+        } catch (SecurityException exception) {
+            Log.e(TAG, "Failed to set interruption filter", exception);
+            return false;
+        }
+    }
+
+    private boolean tryMuteRingStream(AudioManager audioManager) {
+        try {
+            audioManager.adjustStreamVolume(
+                    AudioManager.STREAM_RING,
+                    AudioManager.ADJUST_MUTE,
+                    AudioManager.FLAG_SHOW_UI
+            );
+            return audioManager.getRingerMode() == AudioManager.RINGER_MODE_SILENT;
+        } catch (SecurityException exception) {
+            Log.e(TAG, "Failed to mute ring stream", exception);
+            return false;
         }
     }
 

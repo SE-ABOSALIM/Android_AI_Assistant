@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.provider.Settings;
 import android.util.Log;
 
+import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.resources.AppSourceAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
@@ -77,12 +78,17 @@ public final class AppLauncher {
             return false;
         }
 
-        Intent intent = new Intent(Intent.ACTION_DELETE);
+        Intent intent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
         intent.setData(Uri.parse("package:" + packageName));
+        intent.putExtra(Intent.EXTRA_RETURN_RESULT, false);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         try {
             context.startActivity(intent);
+            MyAccessibilityService service = MyAccessibilityService.getInstance();
+            if (service != null) {
+                service.confirmSystemUninstallDialog(packageName, label);
+            }
             return true;
         } catch (Exception exception) {
             Log.e(TAG, "Failed to request uninstall: " + packageName, exception);

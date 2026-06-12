@@ -22,6 +22,7 @@ import com.example.anroidaiassistant.accessibility.GestureController;
 import com.example.anroidaiassistant.accessibility.QuickSettingsTileController;
 import com.example.anroidaiassistant.accessibility.SearchInputController;
 import com.example.anroidaiassistant.accessibility.ScreenLabelsController;
+import com.example.anroidaiassistant.accessibility.SystemUninstallController;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
@@ -98,6 +99,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private QuickSettingsTileController quickSettingsTileController;
     private SearchInputController searchInputController;
     private ScreenLabelsController screenLabelsController;
+    private SystemUninstallController systemUninstallController;
 
     private WindowManager windowManager;
     private ListeningOverlayController listeningOverlayController;
@@ -126,6 +128,7 @@ public class MyAccessibilityService extends AccessibilityService {
         quickSettingsTileController = new QuickSettingsTileController(this, mainHandler, gestureController);
         searchInputController = new SearchInputController(this, mainHandler, gestureController);
         screenLabelsController = new ScreenLabelsController(this, gestureController);
+        systemUninstallController = new SystemUninstallController(this, mainHandler);
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         listeningOverlayController = new ListeningOverlayController(this, windowManager);
         clickTargetOverlayController = new ClickTargetOverlayController(this, windowManager);
@@ -1122,6 +1125,12 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean clearFocusedInputText() {
         return searchInputController != null && searchInputController.clearText();
+    }
+
+    public void confirmSystemUninstallDialog(String packageName, String label) {
+        if (systemUninstallController != null) {
+            systemUninstallController.confirmNextSystemUninstallDialog(packageName, label);
+        }
     }
 
     private String getActivePackageName() {
