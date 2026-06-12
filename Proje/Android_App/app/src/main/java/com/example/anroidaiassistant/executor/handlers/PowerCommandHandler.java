@@ -5,8 +5,6 @@ import com.example.anroidaiassistant.accessibility.DevicePowerController;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.executor.CommandHandler;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public final class PowerCommandHandler implements CommandHandler {
@@ -32,13 +30,13 @@ public final class PowerCommandHandler implements CommandHandler {
         }
 
         String language = service.getSelectedLanguage();
-        List<MyAccessibilityService.NumberedChoice> choices = new ArrayList<>();
-        choices.add(new MyAccessibilityService.NumberedChoice(yesText(language), ""));
-        choices.add(new MyAccessibilityService.NumberedChoice(noText(language), ""));
-
-        service.startConfirmationSelection(
+        service.startActionConfirmation(
+                actionName(language),
+                null,
                 confirmationTitle(language),
-                choices,
+                yesText(language),
+                noText(language),
+                confirmationHintText(language),
                 new MyAccessibilityService.NumberSelectionCallback() {
                     @Override
                     public void onSelected(int selectedIndex) {
@@ -60,6 +58,22 @@ public final class PowerCommandHandler implements CommandHandler {
         );
     }
 
+    private String actionName(String language) {
+        if ("EN".equalsIgnoreCase(language)) {
+            return action == DevicePowerController.Action.RESTART
+                    ? "Restart phone"
+                    : "Power off phone";
+        }
+        if ("AR".equalsIgnoreCase(language)) {
+            return action == DevicePowerController.Action.RESTART
+                    ? "\u0627\u0639\u0627\u062f\u0629 \u062a\u0634\u063a\u064a\u0644 \u0627\u0644\u0647\u0627\u062a\u0641"
+                    : "\u0627\u064a\u0642\u0627\u0641 \u062a\u0634\u063a\u064a\u0644 \u0627\u0644\u0647\u0627\u062a\u0641";
+        }
+        return action == DevicePowerController.Action.RESTART
+                ? "Telefonu yeniden baslat"
+                : "Telefonu kapat";
+    }
+
     private String confirmationTitle(String language) {
         if ("EN".equalsIgnoreCase(language)) {
             return action == DevicePowerController.Action.RESTART
@@ -74,6 +88,16 @@ public final class PowerCommandHandler implements CommandHandler {
         return action == DevicePowerController.Action.RESTART
                 ? "Telefonu yeniden baslatmak istiyor musunuz?"
                 : "Telefonu kapatmak istiyor musunuz?";
+    }
+
+    private String confirmationHintText(String language) {
+        if ("EN".equalsIgnoreCase(language)) {
+            return "Say yes or no.";
+        }
+        if ("AR".equalsIgnoreCase(language)) {
+            return "\u0642\u0644 \u0646\u0639\u0645 \u0627\u0648 \u0644\u0627.";
+        }
+        return "Evet veya hayir deyin.";
     }
 
     private String yesText(String language) {

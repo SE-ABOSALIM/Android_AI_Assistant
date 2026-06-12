@@ -803,13 +803,25 @@ public class MyAccessibilityService extends AccessibilityService {
             String hint,
             NumberSelectionCallback callback
     ) {
+        startActionConfirmation(appName, appIcon, question, yesText, noText, hint, callback);
+    }
+
+    public void startActionConfirmation(
+            String actionName,
+            Drawable actionIcon,
+            String question,
+            String yesText,
+            String noText,
+            String hint,
+            NumberSelectionCallback callback
+    ) {
         if (callback == null) {
             return;
         }
 
         List<NumberedChoice> choices = new ArrayList<>();
-        choices.add(new NumberedChoice(yesText, appName, appIcon));
-        choices.add(new NumberedChoice(noText, appName, appIcon));
+        choices.add(new NumberedChoice(yesText, actionName, actionIcon));
+        choices.add(new NumberedChoice(noText, actionName, actionIcon));
 
         isSpellAppMode = false;
         hideGrid();
@@ -820,8 +832,8 @@ public class MyAccessibilityService extends AccessibilityService {
         numberSelectionCallback = callback;
         numberSelectionChoices.clear();
         numberSelectionChoices.addAll(choices);
-        uninstallConfirmationAppName = appName;
-        uninstallConfirmationIcon = appIcon;
+        uninstallConfirmationAppName = actionName;
+        uninstallConfirmationIcon = actionIcon;
         uninstallConfirmationQuestion = question;
         uninstallConfirmationYesText = yesText;
         uninstallConfirmationNoText = noText;
