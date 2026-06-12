@@ -1,12 +1,16 @@
 package com.example.anroidaiassistant.ui.screens;
 
+import android.content.Context;
 import android.content.res.ColorStateList;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
+import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,10 +20,11 @@ import androidx.fragment.app.Fragment;
 import com.example.anroidaiassistant.MainActivity;
 import com.example.anroidaiassistant.R;
 import com.example.anroidaiassistant.settings.AssistantSettings;
+import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 public final class SettingsFragment extends Fragment {
-    private RadioGroup languageGroup;
-    private RadioGroup themeGroup;
+    private TextView languageValueView;
+    private TextView themeValueView;
 
     @Nullable
     @Override
@@ -34,91 +39,143 @@ public final class SettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        languageGroup = view.findViewById(R.id.languageGroup);
-        themeGroup = view.findViewById(R.id.themeGroup);
+        languageValueView = view.findViewById(R.id.settingsLanguageValue);
+        themeValueView = view.findViewById(R.id.settingsThemeValue);
 
-        tintRadioButtons(languageGroup);
-        tintRadioButtons(themeGroup);
-        bindLanguageSettings();
-        bindThemeSettings();
+        view.findViewById(R.id.settingsLanguageCard).setOnClickListener(v -> showLanguageSheet());
+        view.findViewById(R.id.settingsThemeCard).setOnClickListener(v -> showThemeSheet());
+        updateDisplayedValues();
     }
 
-    private void bindLanguageSettings() {
+    private void showLanguageSheet() {
         String language = AssistantSettings.getLanguage(requireContext());
-        languageGroup.check(languageButtonId(language));
-        languageGroup.setOnCheckedChangeListener((group, checkedId) -> {
-            String selectedLanguage = languageFromButtonId(checkedId);
-            AssistantSettings.setLanguage(requireContext(), selectedLanguage);
-
-            if (getActivity() instanceof MainActivity) {
-                ((MainActivity) getActivity()).updateSelectedLanguage(selectedLanguage);
-            }
-        });
+        showSelectionSheet(
+                "Language",
+                new SelectionOption[]{
+                        new SelectionOption(AssistantSettings.LANGUAGE_EN, "English"),
+                        new SelectionOption(AssistantSettings.LANGUAGE_TR, "Türkçe"),
+                        new SelectionOption(AssistantSettings.LANGUAGE_AR, "العربية")
+                },
+                language,
+                selectedLanguage -> {
+                    if (getActivity() instanceof MainActivity) {
+                        ((MainActivity) getActivity()).updateSelectedLanguage(selectedLanguage);
+                    } else {
+                        AssistantSettings.setLanguage(requireContext(), selectedLanguage);
+                    }
+                    updateDisplayedValues();
+                }
+        );
     }
 
-    private void bindThemeSettings() {
+    private void showThemeSheet() {
         String theme = AssistantSettings.getTheme(requireContext());
-        themeGroup.check(themeButtonId(theme));
-        themeGroup.setOnCheckedChangeListener((group, checkedId) ->
-                AssistantSettings.setTheme(requireContext(), themeFromButtonId(checkedId)));
+        showSelectionSheet(
+                "Theme",
+                new SelectionOption[]{
+                        new SelectionOption(AssistantSettings.THEME_SYSTEM, "System default"),
+                        new SelectionOption(AssistantSettings.THEME_LIGHT, "Light"),
+                        new SelectionOption(AssistantSettings.THEME_DARK, "Dark")
+                },
+                theme,
+                selectedTheme -> {
+                    AssistantSettings.setTheme(requireContext(), selectedTheme);
+                    updateDisplayedValues();
+                }
+        );
     }
 
-    private int languageButtonId(String language) {
-        if (AssistantSettings.LANGUAGE_EN.equals(language)) {
-            return R.id.rbLanguageEnglish;
-        }
-        if (AssistantSettings.LANGUAGE_AR.equals(language)) {
-            return R.id.rbLanguageArabic;
-        }
-        return R.id.rbLanguageTurkish;
+    private void updateDisplayedValues() {
+        languageValueView.setText(AssistantSettings.languageLabel(AssistantSettings.getLanguage(requireContext())));
+        themeValueView.setText(AssistantSettings.themeLabel(AssistantSettings.getTheme(requireContext())));
     }
 
-    private String languageFromButtonId(int checkedId) {
-        if (checkedId == R.id.rbLanguageEnglish) {
-            return AssistantSettings.LANGUAGE_EN;
+    private void showSelectionSheet(
+            String title,
+            SelectionOption[] options,
+            String selectedValue,
+            SelectionCallback callback
+    ) {
+        Context context = requireContext();
+        BottomSheetDialog dialog = new BottomSheetDialog(context);
+        LinearLayout root = new LinearLayout(context);
+        root.setOrientation(LinearLayout.VERTICAL);
+        root.setPadding(dp(20), dp(18), dp(20), dp(26));
+
+        TextView titleView = new TextView(context);
+        titleView.setText(title);
+        titleView.setTextColor(ContextCompat.getColor(context, R.color.app_text_primary));
+        titleView.setTextSize(20);
+        titleView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        root.addView(titleView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        LinearLayout optionsContainer = new LinearLayout(context);
+        optionsContainer.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        containerParams.topMargin = dp(12);
+        root.addView(optionsContainer, containerParams);
+
+        ColorStateList tint = radioTint();
+        for (SelectionOption option : options) {
+            RadioButton button = new RadioButton(context);
+            button.setText(option.label);
+            button.setTextColor(ContextCompat.getColor(context, R.color.app_text_primary));
+            button.setTextSize(17);
+            button.setMinHeight(dp(54));
+            button.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
+            button.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
+            button.setTextDirection(View.TEXT_DIRECTION_LTR);
+            button.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            button.setButtonTintList(tint);
+            button.setChecked(option.value.equals(selectedValue));
+            button.setPadding(0, 0, 0, 0);
+            button.setOnClickListener(v -> {
+                dialog.dismiss();
+                callback.onSelected(option.value);
+            });
+            optionsContainer.addView(button, new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+            ));
         }
-        if (checkedId == R.id.rbLanguageArabic) {
-            return AssistantSettings.LANGUAGE_AR;
-        }
-        return AssistantSettings.LANGUAGE_TR;
+
+        dialog.setContentView(root);
+        dialog.show();
     }
 
-    private int themeButtonId(String theme) {
-        if (AssistantSettings.THEME_LIGHT.equals(theme)) {
-            return R.id.rbThemeLight;
-        }
-        if (AssistantSettings.THEME_DARK.equals(theme)) {
-            return R.id.rbThemeDark;
-        }
-        return R.id.rbThemeSystem;
-    }
-
-    private String themeFromButtonId(int checkedId) {
-        if (checkedId == R.id.rbThemeLight) {
-            return AssistantSettings.THEME_LIGHT;
-        }
-        if (checkedId == R.id.rbThemeDark) {
-            return AssistantSettings.THEME_DARK;
-        }
-        return AssistantSettings.THEME_SYSTEM;
-    }
-
-    private void tintRadioButtons(RadioGroup group) {
+    private ColorStateList radioTint() {
         int checkedColor = ContextCompat.getColor(requireContext(), R.color.app_primary);
         int uncheckedColor = ContextCompat.getColor(requireContext(), R.color.bottom_nav_inactive);
-        ColorStateList tint = new ColorStateList(
+        return new ColorStateList(
                 new int[][]{
                         new int[]{android.R.attr.state_checked},
                         new int[]{}
                 },
                 new int[]{checkedColor, uncheckedColor}
         );
+    }
 
-        for (int i = 0; i < group.getChildCount(); i++) {
-            View child = group.getChildAt(i);
-            if (child instanceof RadioButton) {
-                ((RadioButton) child).setButtonTintList(tint);
-            }
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private interface SelectionCallback {
+        void onSelected(String value);
+    }
+
+    private static final class SelectionOption {
+        private final String value;
+        private final String label;
+
+        private SelectionOption(String value, String label) {
+            this.value = value;
+            this.label = label;
         }
     }
 }

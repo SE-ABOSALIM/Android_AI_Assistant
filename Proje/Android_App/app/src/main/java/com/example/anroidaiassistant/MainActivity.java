@@ -57,6 +57,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         AssistantSettings.applySavedTheme(this);
+        AssistantSettings.applySavedLanguage(this);
         super.onCreate(savedInstanceState);
         selectedLanguage = AssistantSettings.getLanguage(this);
         setContentView(R.layout.activity_main);
