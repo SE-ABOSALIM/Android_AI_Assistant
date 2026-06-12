@@ -1,4 +1,4 @@
-package com.example.anroidaiassistant.ui.overlay;
+package com.example.anroidaiassistant.ui;
 
 import android.content.Context;
 import android.graphics.Color;
