@@ -5,10 +5,12 @@ import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.ui.screens.HomeFragment;
 import com.example.anroidaiassistant.ui.screens.PermissionsFragment;
 import com.example.anroidaiassistant.ui.screens.PlaceholderFragment;
+import com.example.anroidaiassistant.ui.screens.SettingsFragment;
 
 import android.os.Bundle;
 import android.provider.Settings;
@@ -54,7 +56,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        AssistantSettings.applySavedTheme(this);
         super.onCreate(savedInstanceState);
+        selectedLanguage = AssistantSettings.getLanguage(this);
         setContentView(R.layout.activity_main);
         instance = this;
 
@@ -86,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (itemId == R.id.nav_guide) {
             fragment = PlaceholderFragment.newInstance("Supported Commands");
         } else if (itemId == R.id.nav_settings) {
-            fragment = PlaceholderFragment.newInstance("Settings");
+            fragment = new SettingsFragment();
         } else {
             fragment = new HomeFragment();
         }
@@ -102,6 +106,16 @@ public class MainActivity extends AppCompatActivity {
             bottomNavigationView.setSelectedItemId(R.id.nav_permissions);
         } else {
             showSection(R.id.nav_permissions);
+        }
+    }
+
+    public void updateSelectedLanguage(String language) {
+        selectedLanguage = AssistantSettings.normalizeLanguage(language);
+        AssistantSettings.setLanguage(this, selectedLanguage);
+
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service != null) {
+            service.updateLanguage(selectedLanguage);
         }
     }
 

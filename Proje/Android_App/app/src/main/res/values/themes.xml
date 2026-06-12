@@ -10,4 +10,14 @@
     <style name="Widget.AnroidAIAssistant.BottomNav.ActiveIndicator" parent="">
         <item name="android:color">@color/app_primary_soft</item>
     </style>
+
+    <style name="Widget.AnroidAIAssistant.SettingsRadioButton" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">46dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:textColor">@color/app_text_primary</item>
+        <item name="android:textSize">16sp</item>
+    </style>
 </resources>

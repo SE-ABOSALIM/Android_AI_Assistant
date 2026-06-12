@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="app_background">#0F172A</color>
+    <color name="app_surface">#111827</color>
+    <color name="app_surface_muted">#1F2937</color>
+    <color name="app_primary">#60A5FA</color>
+    <color name="app_primary_dark">#3B82F6</color>
+    <color name="app_primary_soft">#172B4D</color>
+    <color name="app_primary_soft_strong">#1E3A8A</color>
+    <color name="app_power_circle">#1F2937</color>
+    <color name="app_power_icon">#94A3B8</color>
+    <color name="app_success">#22C55E</color>
+    <color name="app_danger">#F87171</color>
+    <color name="app_warning">#FBBF24</color>
+    <color name="app_warning_soft">#422006</color>
+    <color name="app_warning_progress_track">#78350F</color>
+    <color name="app_text_primary">#F8FAFC</color>
+    <color name="app_text_secondary">#CBD5E1</color>
+    <color name="bottom_nav_inactive">#94A3B8</color>
+    <color name="app_card_border">#253044</color>
+    <color name="app_chip_off_bg">#1F2937</color>
+    <color name="app_chip_off_icon">#94A3B8</color>
+    <color name="app_switch_track_off">#334155</color>
+    <color name="app_progress_track">#1E3A8A</color>
+    <color name="app_summary_label">#CBD5E1</color>
+</resources>
