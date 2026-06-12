@@ -257,6 +257,10 @@ public class MainActivity extends AppCompatActivity {
         addMissingPermission(missingPermissions, android.Manifest.permission.RECORD_AUDIO);
         addMissingPermission(missingPermissions, android.Manifest.permission.READ_CONTACTS);
         addMissingPermission(missingPermissions, android.Manifest.permission.CALL_PHONE);
+        addMissingPermission(missingPermissions, android.Manifest.permission.READ_PHONE_STATE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            addMissingPermission(missingPermissions, android.Manifest.permission.ANSWER_PHONE_CALLS);
+        }
         addMissingPermission(missingPermissions, android.Manifest.permission.CAMERA);
 
         if (missingPermissions.isEmpty()) {

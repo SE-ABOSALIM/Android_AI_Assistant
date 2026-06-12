@@ -8,6 +8,7 @@ import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.selection.GridCommandParser;
 import com.example.anroidaiassistant.selection.SelectionNumberParser;
+import com.example.anroidaiassistant.telephony.CallStateMonitor;
 import com.example.anroidaiassistant.ui.ListeningOverlayController;
 import com.example.anroidaiassistant.ui.ClickTargetOverlayController;
 import com.example.anroidaiassistant.ui.GridOverlayController;
@@ -16,6 +17,7 @@ import com.example.anroidaiassistant.ui.UninstallConfirmationOverlayController;
 import com.example.anroidaiassistant.util.TextNormalizer;
 import com.example.anroidaiassistant.accessibility.AccessibilityActionController;
 import com.example.anroidaiassistant.accessibility.CameraCaptureController;
+import com.example.anroidaiassistant.accessibility.DevicePowerController;
 import com.example.anroidaiassistant.accessibility.GridController;
 import com.example.anroidaiassistant.accessibility.click.ClickItemController;
 import com.example.anroidaiassistant.accessibility.GestureController;
@@ -72,6 +74,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private boolean isConfirmationSelectionMode = false;
     private boolean isRecognitionSessionActive = false;
     private boolean areRecognizerSoundsMuted = false;
+    private boolean isPausedForPhoneCall = false;
     private final Map<Integer, Boolean> streamMuteStateBeforeRecognizer = new HashMap<>();
     private final List<NumberedChoice> numberSelectionChoices = new ArrayList<>();
     private final SelectionNumberParser selectionNumberParser = new SelectionNumberParser();
@@ -88,12 +91,14 @@ public class MyAccessibilityService extends AccessibilityService {
     
     private ApiService apiService;
     private Call<AppCatalogResponse> appCatalogSyncCall;
+    private CallStateMonitor callStateMonitor;
     private PendingPrediction pendingPrediction;
     private CommandExecutor commandExecutor;
     private AudioManager audioManager;
     private AccessibilityActionController accessibilityActionController;
     private GestureController gestureController;
     private CameraCaptureController cameraCaptureController;
+    private DevicePowerController devicePowerController;
     private GridController gridController;
     private ClickItemController clickItemController;
     private QuickSettingsTileController quickSettingsTileController;
@@ -120,10 +125,12 @@ public class MyAccessibilityService extends AccessibilityService {
         instance = this;
         
         apiService = RetrofitClient.getClient().create(ApiService.class);
+        callStateMonitor = new CallStateMonitor(this, this::onCallActiveChanged);
         commandExecutor = new CommandExecutor(this);
         accessibilityActionController = new AccessibilityActionController(this);
         gestureController = new GestureController(this);
         cameraCaptureController = new CameraCaptureController(this, mainHandler, gestureController);
+        devicePowerController = new DevicePowerController(this, mainHandler);
         clickItemController = new ClickItemController(this, gestureController);
         quickSettingsTileController = new QuickSettingsTileController(this, mainHandler, gestureController);
         searchInputController = new SearchInputController(this, mainHandler, gestureController);
@@ -207,6 +214,9 @@ public class MyAccessibilityService extends AccessibilityService {
             @Override
             public void onError(int error) {
                 isRecognitionSessionActive = false;
+                if (isPausedForPhoneCall) {
+                    return;
+                }
                 if (!isListening) {
                     return;
                 }
@@ -294,6 +304,9 @@ public class MyAccessibilityService extends AccessibilityService {
         if (!isListening || speechRecognizer == null || isRecognitionSessionActive) {
             return;
         }
+        if (isPausedForPhoneCall) {
+            return;
+        }
 
         try {
             isRecognitionSessionActive = true;
@@ -306,7 +319,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void scheduleListeningRestart(int delayMillis) {
-        if (!isListening) {
+        if (!isListening || isPausedForPhoneCall) {
             return;
         }
 
@@ -371,6 +384,11 @@ public class MyAccessibilityService extends AccessibilityService {
     public void startContinuousListening() {
         mainHandler.removeCallbacks(restartListeningRunnable);
         isListening = true;
+        startCallStateMonitoringIfAllowed();
+        if (callStateMonitor != null && callStateMonitor.isCallActive()) {
+            pauseListeningForPhoneCall();
+            return;
+        }
         setRecognizerSoundsMuted(true);
         showOverlay();
         if (speechRecognizer == null) {
@@ -381,6 +399,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public void stopContinuousListening() {
         isListening = false;
+        isPausedForPhoneCall = false;
         isSpellAppMode = false;
         clearNumberSelection();
         hideGrid();
@@ -398,6 +417,64 @@ public class MyAccessibilityService extends AccessibilityService {
             } catch (Exception ignored) {}
         }
         hideOverlay();
+    }
+
+    private void startCallStateMonitoringIfAllowed() {
+        if (callStateMonitor != null) {
+            callStateMonitor.start();
+        }
+    }
+
+    private void onCallActiveChanged(boolean active) {
+        mainHandler.post(() -> {
+            if (active) {
+                pauseListeningForPhoneCall();
+            } else {
+                resumeListeningAfterPhoneCall();
+            }
+        });
+    }
+
+    private void pauseListeningForPhoneCall() {
+        if (!isListening || isPausedForPhoneCall) {
+            return;
+        }
+
+        isPausedForPhoneCall = true;
+        isSpellAppMode = false;
+        clearNumberSelection(false);
+        hideGrid();
+        mainHandler.removeCallbacks(restartListeningRunnable);
+        isRecognitionSessionActive = false;
+        if (speechRecognizer != null) {
+            try {
+                speechRecognizer.stopListening();
+            } catch (Exception ignored) {}
+            try {
+                speechRecognizer.cancel();
+            } catch (Exception ignored) {}
+        }
+        setRecognizerSoundsMuted(false);
+        hideOverlay();
+    }
+
+    private void resumeListeningAfterPhoneCall() {
+        if (!isPausedForPhoneCall) {
+            return;
+        }
+
+        isPausedForPhoneCall = false;
+        if (!isListening) {
+            return;
+        }
+
+        setRecognizerSoundsMuted(true);
+        showOverlay();
+        updateOverlayText("Listening...");
+        if (speechRecognizer == null) {
+            setupSpeechRecognizer();
+        }
+        startListeningSession();
     }
 
     private void showOverlay() {
@@ -620,6 +697,7 @@ public class MyAccessibilityService extends AccessibilityService {
     public void onDestroy() {
         super.onDestroy();
         isListening = false;
+        isPausedForPhoneCall = false;
         isSpellAppMode = false;
         clearNumberSelection();
         hideGrid();
@@ -628,6 +706,9 @@ public class MyAccessibilityService extends AccessibilityService {
         hideOverlay();
         setRecognizerSoundsMuted(false);
         destroySpeechRecognizer();
+        if (callStateMonitor != null) {
+            callStateMonitor.stop();
+        }
         instance = null;
     }
 
@@ -1069,6 +1150,11 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean showScreenLabels() {
         return screenLabelsController != null && screenLabelsController.showLabels();
+    }
+
+    public boolean performDevicePowerAction(DevicePowerController.Action action) {
+        hideOverlay();
+        return devicePowerController != null && devicePowerController.perform(action);
     }
 
     public void handleGridAction(String action) {

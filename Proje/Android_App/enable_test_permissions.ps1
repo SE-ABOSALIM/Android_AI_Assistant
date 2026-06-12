@@ -181,7 +181,9 @@ $runtimePermissions = @(
     "android.permission.CAMERA",
     "android.permission.RECORD_AUDIO",
     "android.permission.READ_CONTACTS",
-    "android.permission.CALL_PHONE"
+    "android.permission.CALL_PHONE",
+    "android.permission.ANSWER_PHONE_CALLS",
+    "android.permission.READ_PHONE_STATE"
 )
 
 foreach ($permission in $runtimePermissions) {

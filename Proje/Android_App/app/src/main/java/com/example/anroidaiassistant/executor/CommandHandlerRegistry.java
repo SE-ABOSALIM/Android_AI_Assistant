@@ -1,9 +1,11 @@
 package com.example.anroidaiassistant.executor;
 
+import com.example.anroidaiassistant.accessibility.DevicePowerController;
 import com.example.anroidaiassistant.apps.AppOpenController;
 import com.example.anroidaiassistant.executor.handlers.AlarmCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.AppCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.BrightnessCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.CallControlCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.CameraCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.CenterGestureCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ClearTextCommandHandler;
@@ -13,6 +15,7 @@ import com.example.anroidaiassistant.executor.handlers.GridCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.LabelsCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.NavigationCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.OpenAppCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.PowerCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ScrollCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.SearchCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.StopListeningCommandHandler;
@@ -30,6 +33,14 @@ public final class CommandHandlerRegistry {
     public static CommandDispatcher createDefaultDispatcher(AppOpenController appOpenController) {
         return new CommandDispatcher(Arrays.asList(
                 new OpenAppCommandHandler(appOpenController),
+                new CallControlCommandHandler(
+                        "ANSWER_CALL",
+                        CallControlCommandHandler.Action.ANSWER
+                ),
+                new CallControlCommandHandler(
+                        "REJECT_CALL",
+                        CallControlCommandHandler.Action.REJECT
+                ),
                 new AppCommandHandler(
                         "OPEN_APP_INFO",
                         AppOpenController.AppAction.OPEN_INFO,
@@ -58,6 +69,8 @@ public final class CommandHandlerRegistry {
                 new NavigationCommandHandler("SHOW_RECENTS", NavigationCommandHandler.Action.RECENTS),
                 new NavigationCommandHandler("OPEN_NOTIFICATIONS", NavigationCommandHandler.Action.NOTIFICATIONS),
                 new NavigationCommandHandler("TAKE_SCREENSHOT", NavigationCommandHandler.Action.SCREENSHOT),
+                new PowerCommandHandler("POWER_OFF", DevicePowerController.Action.POWER_OFF),
+                new PowerCommandHandler("RESTART_DEVICE", DevicePowerController.Action.RESTART),
                 new GridCommandHandler(),
                 new LabelsCommandHandler(),
                 new TimerCommandHandler(),
