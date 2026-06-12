@@ -86,10 +86,14 @@ class IntentContractTests(unittest.TestCase):
 
     def test_navigation_intents_are_android_supported(self):
         examples = {
+            "ANSWER_CALL": "answer call",
             "GO_BACK": "go back",
             "CLOSE_APP": "close app",
             "SHOW_RECENTS": "show recents",
             "OPEN_NOTIFICATIONS": "open notifications",
+            "POWER_OFF": "power off phone",
+            "REJECT_CALL": "reject call",
+            "RESTART_DEVICE": "restart phone",
             "TAKE_SCREENSHOT": "take screenshot",
             "SHOW_LABELS": "show labels",
         }

@@ -1,10 +1,14 @@
 from typing import Any, Dict, Optional
 
 from V3.patterns.commands.navigation import (
+    ANSWER_CALL_PATTERNS,
     CLOSE_APP_PATTERNS,
     GO_BACK_PATTERNS,
     GO_HOME_PATTERNS,
     OPEN_NOTIFICATIONS_PATTERNS,
+    POWER_OFF_PATTERNS,
+    REJECT_CALL_PATTERNS,
+    RESTART_DEVICE_PATTERNS,
     SHOW_RECENTS_PATTERNS,
     STOP_LISTENING_PATTERNS,
     TAKE_PHOTO_PATTERNS,
@@ -18,6 +22,10 @@ NAVIGATION_RULES = [
     PatternRule("GO_HOME", "go_home", GO_HOME_PATTERNS),
     PatternRule("GO_BACK", "go_back", GO_BACK_PATTERNS),
     PatternRule("OPEN_NOTIFICATIONS", "open_notifications", OPEN_NOTIFICATIONS_PATTERNS),
+    PatternRule("ANSWER_CALL", "answer_call", ANSWER_CALL_PATTERNS),
+    PatternRule("REJECT_CALL", "reject_call", REJECT_CALL_PATTERNS),
+    PatternRule("POWER_OFF", "power_off", POWER_OFF_PATTERNS),
+    PatternRule("RESTART_DEVICE", "restart_device", RESTART_DEVICE_PATTERNS),
     PatternRule("SHOW_RECENTS", "show_recents", SHOW_RECENTS_PATTERNS),
     PatternRule("CLOSE_APP", "close_app", CLOSE_APP_PATTERNS),
     PatternRule("TAKE_SCREENSHOT", "take_screenshot", TAKE_SCREENSHOT_PATTERNS),

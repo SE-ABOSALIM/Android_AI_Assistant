@@ -44,6 +44,24 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "GO_HOME")
         self.assertEqual(result["rule_matched"], "go_home")
 
+    def test_call_control_rules(self):
+        answer = rule_based_command("answer the call", "EN")
+        reject = rule_based_command("aramayi reddet", "TR")
+
+        self.assertEqual(answer["intent"], "ANSWER_CALL")
+        self.assertEqual(answer["rule_matched"], "answer_call")
+        self.assertEqual(reject["intent"], "REJECT_CALL")
+        self.assertEqual(reject["rule_matched"], "reject_call")
+
+    def test_device_power_rules(self):
+        power_off = rule_based_command("telefonu kapat", "TR")
+        restart = rule_based_command("restart the phone", "EN")
+
+        self.assertEqual(power_off["intent"], "POWER_OFF")
+        self.assertEqual(power_off["rule_matched"], "power_off")
+        self.assertEqual(restart["intent"], "RESTART_DEVICE")
+        self.assertEqual(restart["rule_matched"], "restart_device")
+
     def test_click_item_rule_wins_for_tap_notifications(self):
         result = rule_based_command("tap notifications", "EN")
 

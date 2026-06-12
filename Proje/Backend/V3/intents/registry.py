@@ -78,6 +78,11 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         android_supported=True,
         android_one_of=(("volume_action", "volume_level"),),
     ),
+    "ANSWER_CALL": _contract(
+        "ANSWER_CALL",
+        threshold=0.92,
+        android_supported=True,
+    ),
     "CALL_CONTACT": _contract(
         "CALL_CONTACT",
         threshold=0.92,
@@ -149,6 +154,21 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         "OPEN_NOTIFICATIONS",
         threshold=0.92,
         android_supported=True
+    ),
+    "POWER_OFF": _contract(
+        "POWER_OFF",
+        threshold=0.92,
+        android_supported=True,
+    ),
+    "REJECT_CALL": _contract(
+        "REJECT_CALL",
+        threshold=0.92,
+        android_supported=True,
+    ),
+    "RESTART_DEVICE": _contract(
+        "RESTART_DEVICE",
+        threshold=0.92,
+        android_supported=True,
     ),
     "SCROLL_SCREEN": _contract(
         "SCROLL_SCREEN",

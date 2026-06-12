@@ -109,6 +109,107 @@ OPEN_NOTIFICATIONS_PATTERNS = {
     ],
 }
 
+ANSWER_CALL_PATTERNS = {
+    "EN": [
+        "answer call",
+        "answer the call",
+        "pick up",
+        "pick up the call",
+        "accept call",
+        "accept the call",
+    ],
+    "TR": [
+        "aramayi cevapla",
+        "aramaya cevap ver",
+        "gelen aramayi cevapla",
+        "cagriyi cevapla",
+        "cagriya cevap ver",
+        "telefonu ac",
+    ],
+    "AR": [
+        "اجب على المكالمة",
+        "اجب المكالمة",
+        "رد على المكالمة",
+        "اقبل المكالمة",
+        "ارفع السماعة",
+    ],
+}
+
+REJECT_CALL_PATTERNS = {
+    "EN": [
+        "reject call",
+        "reject the call",
+        "decline call",
+        "decline the call",
+        "hang up call",
+        "end call",
+    ],
+    "TR": [
+        "aramayi reddet",
+        "gelen aramayi reddet",
+        "aramayi kapat",
+        "cagriyi reddet",
+        "cagriyi kapat",
+        "mesgule at",
+        "cevap verme",
+    ],
+    "AR": [
+        "ارفض المكالمة",
+        "ارفض الاتصال",
+        "اقفل المكالمة",
+        "انه المكالمة",
+        "لا ترد على المكالمة",
+    ],
+}
+
+POWER_OFF_PATTERNS = {
+    "EN": [
+        "power off phone",
+        "power off the phone",
+        "turn off phone",
+        "turn off the phone",
+        "shut down phone",
+        "shut down the phone",
+    ],
+    "TR": [
+        "telefonu kapat",
+        "telefonu tamamen kapat",
+        "cihazi kapat",
+        "cihazi tamamen kapat",
+        "telefonu kapali konuma getir",
+    ],
+    "AR": [
+        "اطفئ الهاتف",
+        "اطفي الهاتف",
+        "اغلق الهاتف",
+        "اقفل الهاتف",
+        "ايقاف تشغيل الهاتف",
+    ],
+}
+
+RESTART_DEVICE_PATTERNS = {
+    "EN": [
+        "restart phone",
+        "restart the phone",
+        "reboot phone",
+        "reboot the phone",
+        "restart device",
+        "reboot device",
+    ],
+    "TR": [
+        "telefonu yeniden baslat",
+        "cihazi yeniden baslat",
+        "telefonu reboot et",
+        "cihazi reboot et",
+    ],
+    "AR": [
+        "اعد تشغيل الهاتف",
+        "اعادة تشغيل الهاتف",
+        "اعد تشغيل الجهاز",
+        "اعادة تشغيل الجهاز",
+    ],
+}
+
 SHOW_RECENTS_PATTERNS = {
     "EN": [
         "show recent apps",
