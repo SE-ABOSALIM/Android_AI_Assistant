@@ -6,23 +6,21 @@ import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.ui.screens.HomeFragment;
+import com.example.anroidaiassistant.ui.screens.PermissionsFragment;
+import com.example.anroidaiassistant.ui.screens.PlaceholderFragment;
 
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Spinner;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,11 +33,6 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
 
-    private Spinner spinnerLanguage;
-    private TextView tvResult;
-    private Button btnSpeak;
-    private EditText etCommand;
-    private Button btnPredict;
     private String selectedLanguage = "TR";
     private ApiService apiService;
     private CommandExecutor commandExecutor;
@@ -48,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private Call<AppCatalogResponse> appCatalogSyncCall;
     private AlertDialog spellingSuggestionDialog;
     private Runnable pendingPermissionAction;
+    private HomeFragment homeFragment;
+    private BottomNavigationView bottomNavigationView;
 
     private static MainActivity instance;
 
@@ -56,7 +51,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private static final int REQUEST_CODE_RUNTIME_PERMISSIONS = 200;
-    private static final int REQUEST_CODE_OVERLAY_PERMISSION = 300;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,68 +58,86 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         instance = this;
 
-        spinnerLanguage = findViewById(R.id.spinnerLanguage);
-        tvResult = findViewById(R.id.tvResult);
-        btnSpeak = findViewById(R.id.btnSpeak);
-        etCommand = findViewById(R.id.etCommand);
-        btnPredict = findViewById(R.id.btnPredict);
         apiService = RetrofitClient.getClient().create(ApiService.class);
         commandExecutor = new CommandExecutor(this);
+        setupBottomNavigation(savedInstanceState);
 
-        String[] languages = {"TR", "EN", "AR"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_item,
-                languages
-        );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerLanguage.setAdapter(adapter);
-
-        spinnerLanguage.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                selectedLanguage = languages[position];
-                MyAccessibilityService service = MyAccessibilityService.getInstance();
-                if (service != null) {
-                    service.updateLanguage(selectedLanguage);
-                }
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-
-        btnSpeak.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                toggleListening();
-            }
-        });
-
-        btnPredict.setOnClickListener(view -> triggerTestCommand());
-
-        checkOverlayPermission();
-        if (!isAccessibilityServiceEnabled()) {
-            checkAccessibilityPermission();
-        }
         refreshListeningUiState();
     }
 
-    private void triggerTestCommand() {
-        String commandText = etCommand.getText() == null
-                ? ""
-                : etCommand.getText().toString().trim();
+    private void setupBottomNavigation(Bundle savedInstanceState) {
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView.setOnItemSelectedListener(item -> {
+            showSection(item.getItemId());
+            return true;
+        });
+
+        if (savedInstanceState == null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_home);
+        }
+    }
+
+    private void showSection(int itemId) {
+        Fragment fragment;
+        if (itemId == R.id.nav_permissions) {
+            fragment = new PermissionsFragment();
+        } else if (itemId == R.id.nav_history) {
+            fragment = PlaceholderFragment.newInstance("History");
+        } else if (itemId == R.id.nav_guide) {
+            fragment = PlaceholderFragment.newInstance("Supported Commands");
+        } else if (itemId == R.id.nav_settings) {
+            fragment = PlaceholderFragment.newInstance("Settings");
+        } else {
+            fragment = new HomeFragment();
+        }
+
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.main_content_container, fragment)
+                .commit();
+    }
+
+    public void showPermissionsPage() {
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_permissions);
+        } else {
+            showSection(R.id.nav_permissions);
+        }
+    }
+
+    public void attachHomeFragment(HomeFragment fragment) {
+        homeFragment = fragment;
+        refreshListeningUiState();
+    }
+
+    public void detachHomeFragment(HomeFragment fragment) {
+        if (homeFragment == fragment) {
+            homeFragment = null;
+        }
+    }
+
+    public void toggleListeningFromHome() {
+        toggleListening();
+    }
+
+    public void runManualCommandFromHome(String commandText) {
+        triggerTestCommand(commandText);
+    }
+
+    private void triggerTestCommand(String commandText) {
+        commandText = commandText == null ? "" : commandText.trim();
 
         if (commandText.isEmpty()) {
             Toast.makeText(this, "Type a command first", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (!ensureRuntimePermissions(this::triggerTestCommand)) {
+        final String finalCommandText = commandText;
+        if (!ensureRuntimePermissions(() -> triggerTestCommand(finalCommandText))) {
             return;
         }
 
-        ensureAppCatalogThen(() -> sendManualPredictionRequest(commandText));
+        ensureAppCatalogThen(() -> sendManualPredictionRequest(finalCommandText));
     }
 
     private void sendManualPredictionRequest(String text) {
@@ -172,19 +184,7 @@ public class MainActivity extends AppCompatActivity {
         instance = null;
     }
 
-    private void checkOverlayPermission() {
-        if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "Ekran ustu izin gerekli", Toast.LENGTH_SHORT).show();
-            // Temporarily disabled: do not redirect to the "Appear on top" settings screen.
-            // Intent intent = new Intent(
-            //         Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-            //         Uri.parse("package:" + getPackageName())
-            // );
-            // startActivityForResult(intent, REQUEST_CODE_OVERLAY_PERMISSION);
-        }
-    }
-
-    private boolean isAccessibilityServiceEnabled() {
+    public boolean isAssistantAccessibilityServiceEnabled() {
         String enabledServices = Settings.Secure.getString(
                 getContentResolver(),
                 Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
@@ -197,14 +197,32 @@ public class MainActivity extends AppCompatActivity {
                 && enabledServices.contains(MyAccessibilityService.class.getSimpleName());
     }
 
-    private void checkAccessibilityPermission() {
-        Toast.makeText(
-                this,
-                "Lutfen erisilebilirlik servisini kapatip tekrar acin.",
-                Toast.LENGTH_LONG
-        ).show();
-        // Intent intent = new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-        // startActivity(intent);
+    private boolean hasRequiredAssistantPermissions() {
+        return missingRuntimePermissions().isEmpty()
+                && Settings.canDrawOverlays(this)
+                && isAssistantAccessibilityServiceEnabled();
+    }
+
+    private List<String> missingRuntimePermissions() {
+        List<String> missingPermissions = new ArrayList<>();
+        addMissingPermission(missingPermissions, android.Manifest.permission.RECORD_AUDIO);
+        addMissingPermission(missingPermissions, android.Manifest.permission.READ_CONTACTS);
+        addMissingPermission(missingPermissions, android.Manifest.permission.CALL_PHONE);
+        addMissingPermission(missingPermissions, android.Manifest.permission.READ_PHONE_STATE);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            addMissingPermission(missingPermissions, android.Manifest.permission.ANSWER_PHONE_CALLS);
+        }
+        addMissingPermission(missingPermissions, android.Manifest.permission.CAMERA);
+        return missingPermissions;
+    }
+
+    private void showPermissionRequiredDialog() {
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("İzinler eksik")
+                .setMessage("Asistanı başlatmak için gerekli izinleri Permissions sayfasından aktifleştirmeniz gerekiyor.")
+                .setPositiveButton("Hemen aktifleştir", (dialog, which) -> showPermissionsPage())
+                .setNegativeButton("Iptal", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     private void toggleListening() {
@@ -213,17 +231,8 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (!ensureRuntimePermissions(this::toggleListening)) {
-            return;
-        }
-
-        if (!Settings.canDrawOverlays(this)) {
-            checkOverlayPermission();
-            return;
-        }
-
-        if (!isAccessibilityServiceEnabled()) {
-            checkAccessibilityPermission();
+        if (!hasRequiredAssistantPermissions()) {
+            showPermissionRequiredDialog();
             return;
         }
 
@@ -234,7 +243,6 @@ public class MainActivity extends AppCompatActivity {
                     "Servis bagli degil. Ayarlardan servisi kapatip tekrar acin.",
                     Toast.LENGTH_LONG
             ).show();
-            checkAccessibilityPermission();
             return;
         }
 
@@ -293,8 +301,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void syncAppCatalogForSession(String sessionId, Runnable onSuccess) {
         isCatalogSyncInProgress = true;
-        btnSpeak.setEnabled(false);
-        tvResult.setText("Uygulama listesi gonderiliyor...");
+        if (homeFragment != null) {
+            homeFragment.setSpeakButtonEnabled(false);
+            homeFragment.setBackendState("Syncing");
+            homeFragment.setStatusText("Uygulama listesi gonderiliyor...");
+        }
 
         appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(this, apiService, sessionId, selectedLanguage, (success, message) -> runOnUiThread(() -> {
             if (isFinishing() || isDestroyed()) {
@@ -307,7 +318,10 @@ public class MainActivity extends AppCompatActivity {
 
             isCatalogSyncInProgress = false;
             appCatalogSyncCall = null;
-            btnSpeak.setEnabled(true);
+            if (homeFragment != null) {
+                homeFragment.setSpeakButtonEnabled(true);
+                homeFragment.setBackendState(success ? "Ready" : "Error");
+            }
 
             if (success) {
                 onSuccess.run();
@@ -321,7 +335,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (appCatalogSyncCall == null) {
             isCatalogSyncInProgress = false;
-            btnSpeak.setEnabled(true);
+            if (homeFragment != null) {
+                homeFragment.setSpeakButtonEnabled(true);
+                homeFragment.setBackendState("Error");
+            }
             closeCurrentBackendSession();
             refreshListeningUiState();
         }
@@ -348,20 +365,13 @@ public class MainActivity extends AppCompatActivity {
         MyAccessibilityService service = MyAccessibilityService.getInstance();
         isServiceListening = service != null && service.isContinuousListeningActive();
 
-        if (isServiceListening) {
-            btnSpeak.setText("Durdur");
-            btnSpeak.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(android.graphics.Color.RED)
-            );
-            tvResult.setText("Arka planda dinleniyor...");
-        } else {
-            btnSpeak.setText("Konus (Baslat)");
-            btnSpeak.setBackgroundTintList(
-                    android.content.res.ColorStateList.valueOf(
-                            android.graphics.Color.parseColor("#6200EE")
-                    )
-            );
-            tvResult.setText("Dinleme durduruldu.");
+        if (homeFragment != null) {
+            homeFragment.setListeningState(isServiceListening);
+            homeFragment.setSpeakButtonEnabled(!isCatalogSyncInProgress);
+            homeFragment.setBackendState(isCatalogSyncInProgress ? "Syncing" : "Ready");
+            homeFragment.setStatusText(isServiceListening
+                    ? "Arka planda dinleniyor..."
+                    : "Dinleme durduruldu.");
         }
     }
 
@@ -370,7 +380,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showAssistantMessage(String message) {
-        runOnUiThread(() -> tvResult.setText(message));
+        runOnUiThread(() -> {
+            if (homeFragment != null) {
+                homeFragment.setStatusText(message);
+            }
+        });
     }
 
     public void showSpellingSuggestionDialog() {
@@ -393,7 +407,7 @@ public class MainActivity extends AppCompatActivity {
                         MyAccessibilityService service = MyAccessibilityService.getInstance();
                         if (service != null) {
                             service.enableSpellAppMode();
-                            tvResult.setText("Spell mode aktif. Uygulama adini harf harf soyle.");
+                            showAssistantMessage("Spell mode aktif. Uygulama adini harf harf soyle.");
                         }
                     })
                     .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
@@ -406,15 +420,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateResultUI(PredictResponse response) {
         runOnUiThread(() -> {
-            String responseInfo = "intent: " + response.getIntent() + "\n"
-                    + "language: " + response.getLanguage() + "\n"
-                    + "confidence: " + response.getConfidence() + "\n"
-                    + "accepted: " + response.isAccepted() + "\n"
-                    + "parameters: " + response.getParameters() + "\n"
-                    + "missing_slots: " + response.getMissingSlots() + "\n"
-                    + "error_code: " + response.getErrorCode() + "\n"
-                    + "error_message: " + response.getErrorMessage();
-            tvResult.setText(responseInfo);
+            if (homeFragment != null) {
+                homeFragment.showPredictionResult(response);
+            }
         });
     }
 

@@ -6,4 +6,8 @@
     </style>
 
     <style name="Theme.AnroidAIAssistant" parent="Base.Theme.AnroidAIAssistant" />
+
+    <style name="Widget.AnroidAIAssistant.BottomNav.ActiveIndicator" parent="">
+        <item name="android:color">@color/app_primary_soft</item>
+    </style>
 </resources>

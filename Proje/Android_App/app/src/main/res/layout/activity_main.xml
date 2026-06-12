@@ -1,49 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:gravity="center_horizontal">
+    android:background="@color/app_background"
+    android:orientation="vertical">
 
-    <Spinner
-        android:id="@+id/spinnerLanguage"
+    <FrameLayout
+        android:id="@+id/main_content_container"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp" />
-
-    <Button
-        android:id="@+id/btnSpeak"
-        android:layout_width="200dp"
-        android:layout_height="200dp"
-        android:layout_marginTop="50dp"
-        android:text="Konuş"
-        android:textSize="24sp"
-        android:backgroundTint="@color/design_default_color_primary"/>
-
-    <EditText
-        android:id="@+id/etCommand"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:hint="Type a test command"
-        android:inputType="text"
-        android:singleLine="true" />
-
-    <Button
-        android:id="@+id/btnPredict"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Run test command" />
-
-    <TextView
-        android:id="@+id/tvResult"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Komut bekleniyor..."
-        android:textSize="18sp"
-        android:textAlignment="center" />
-
+        android:background="@color/app_surface"
+        app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemTextColor="@color/bottom_nav_item_color"
+        app:itemActiveIndicatorStyle="@style/Widget.AnroidAIAssistant.BottomNav.ActiveIndicator"
+        app:labelVisibilityMode="labeled"
+        app:menu="@menu/main_bottom_nav_menu" />
 </LinearLayout>

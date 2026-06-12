@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="72dp"
+    android:height="72dp"
+    android:viewportWidth="72"
+    android:viewportHeight="72">
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/app_power_icon"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M36,11 V34" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/app_power_icon"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M23,21 C16,25.5 12,33 12,42 C12,55 22,65 36,65 C50,65 60,55 60,42 C60,33 56,25.5 49,21" />
+</vector>
