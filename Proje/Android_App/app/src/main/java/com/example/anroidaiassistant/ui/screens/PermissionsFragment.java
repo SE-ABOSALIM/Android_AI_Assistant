@@ -25,6 +25,7 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.view.ViewCompat;
 import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
 
@@ -38,6 +39,8 @@ import java.util.List;
 public final class PermissionsFragment extends Fragment {
     private static final int REQUEST_RUNTIME_PERMISSION = 610;
 
+    private LinearLayout summaryCard;
+    private ImageView summaryIcon;
     private TextView summaryCount;
     private ProgressBar summaryProgress;
     private LinearLayout contentContainer;
@@ -58,6 +61,8 @@ public final class PermissionsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        summaryCard = view.findViewById(R.id.summary_card);
+        summaryIcon = view.findViewById(R.id.summary_icon);
         summaryCount = view.findViewById(R.id.summary_count);
         summaryProgress = view.findViewById(R.id.summary_progress);
         contentContainer = view.findViewById(R.id.permissions_content_container);
@@ -150,8 +155,10 @@ public final class PermissionsFragment extends Fragment {
         ));
 
         TextView count = new TextView(context);
-        count.setText(grantedCount(group.items) + "/" + group.items.size() + " granted");
-        count.setTextColor(context.getColor(R.color.app_primary));
+        int granted = grantedCount(group.items);
+        boolean complete = granted == group.items.size();
+        count.setText(granted + "/" + group.items.size() + " granted");
+        count.setTextColor(statusColor(complete));
         count.setTextSize(12);
         count.setTypeface(count.getTypeface(), android.graphics.Typeface.BOLD);
         header.addView(count);
@@ -181,14 +188,20 @@ public final class PermissionsFragment extends Fragment {
         cardParams.setMargins(0, dp(10), 0, 0);
         card.setLayoutParams(cardParams);
 
+        int granted = grantedCount(group.items);
+        boolean complete = granted == group.items.size();
+        int accentColor = statusColor(complete);
+        int softAccentColor = statusSoftColor(complete);
+
         ImageView icon = new ImageView(context);
         icon.setImageResource(group.iconRes);
         icon.setBackgroundResource(R.drawable.permission_chip_on_bg);
+        ViewCompat.setBackgroundTintList(icon, ColorStateList.valueOf(softAccentColor));
         icon.setPadding(dp(11), dp(11), dp(11), dp(11));
         icon.setScaleType(ImageView.ScaleType.FIT_CENTER);
         ImageViewCompat.setImageTintList(
                 icon,
-                ColorStateList.valueOf(context.getColor(R.color.app_primary))
+                ColorStateList.valueOf(accentColor)
         );
         card.addView(icon, new LinearLayout.LayoutParams(dp(44), dp(44)));
 
@@ -222,8 +235,8 @@ public final class PermissionsFragment extends Fragment {
         card.addView(textColumn, textParams);
 
         TextView count = new TextView(context);
-        count.setText(grantedCount(group.items) + "/" + group.items.size());
-        count.setTextColor(context.getColor(R.color.app_primary));
+        count.setText(granted + "/" + group.items.size());
+        count.setTextColor(accentColor);
         count.setTextSize(18);
         count.setTypeface(count.getTypeface(), android.graphics.Typeface.BOLD);
         count.setGravity(Gravity.CENTER);
@@ -267,9 +280,26 @@ public final class PermissionsFragment extends Fragment {
     private void refresh(PermissionGroup appPermissions, PermissionGroup advancedAccess) {
         int total = appPermissions.items.size() + advancedAccess.items.size();
         int granted = grantedCount(appPermissions.items) + grantedCount(advancedAccess.items);
+        boolean complete = granted == total;
+        int accentColor = statusColor(complete);
 
+        ViewCompat.setBackgroundTintList(summaryCard, ColorStateList.valueOf(statusSoftColor(complete)));
         summaryCount.setText(granted + "/" + total);
+        summaryCount.setTextColor(accentColor);
         summaryProgress.setProgress(total == 0 ? 0 : Math.round(granted * 100f / total));
+        summaryProgress.setProgressTintList(ColorStateList.valueOf(accentColor));
+        summaryProgress.setProgressBackgroundTintList(ColorStateList.valueOf(
+                complete
+                        ? requireContext().getColor(R.color.app_progress_track)
+                        : requireContext().getColor(R.color.app_warning_progress_track)
+        ));
+
+        summaryIcon.setImageResource(complete ? R.drawable.ic_perm_checklist : R.drawable.ic_perm_warning);
+        summaryIcon.setBackgroundResource(R.drawable.summary_icon_bg);
+        ViewCompat.setBackgroundTintList(summaryIcon, ColorStateList.valueOf(accentColor));
+        ImageViewCompat.setImageTintList(summaryIcon, complete
+                ? ColorStateList.valueOf(requireContext().getColor(R.color.white))
+                : null);
 
         for (RowHolder holder : rowHolders) {
             holder.bind(holder.item.isGranted(requireContext(), this));
@@ -450,6 +480,14 @@ public final class PermissionsFragment extends Fragment {
 
     private int dp(int value) {
         return Math.round(value * requireContext().getResources().getDisplayMetrics().density);
+    }
+
+    private int statusColor(boolean complete) {
+        return requireContext().getColor(complete ? R.color.app_primary : R.color.app_warning);
+    }
+
+    private int statusSoftColor(boolean complete) {
+        return requireContext().getColor(complete ? R.color.app_primary_soft : R.color.app_warning_soft);
     }
 
     private enum GroupKind {

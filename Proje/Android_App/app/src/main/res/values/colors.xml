@@ -8,10 +8,14 @@
     <color name="app_primary">#2F7DF6</color>
     <color name="app_primary_dark">#2563EB</color>
     <color name="app_primary_soft">#EAF2FF</color>
+    <color name="app_primary_soft_strong">#D8E8FF</color>
     <color name="app_power_circle">#DEE3EB</color>
     <color name="app_power_icon">#94A0B1</color>
     <color name="app_success">#16A34A</color>
     <color name="app_danger">#DC2626</color>
+    <color name="app_warning">#F59E0B</color>
+    <color name="app_warning_soft">#FEF3C7</color>
+    <color name="app_warning_progress_track">#FDE68A</color>
     <color name="app_text_primary">#111827</color>
     <color name="app_text_secondary">#6B7280</color>
     <color name="bottom_nav_inactive">#8B95A5</color>

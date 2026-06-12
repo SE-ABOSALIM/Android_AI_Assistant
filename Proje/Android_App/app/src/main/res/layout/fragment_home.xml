@@ -44,6 +44,7 @@
             android:background="@drawable/home_power_circle_background">
 
             <ImageView
+                android:id="@+id/powerIcon"
                 android:layout_width="78dp"
                 android:layout_height="78dp"
                 android:layout_gravity="center"

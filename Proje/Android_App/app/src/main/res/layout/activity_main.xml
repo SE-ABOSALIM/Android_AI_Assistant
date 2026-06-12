@@ -18,7 +18,9 @@
         android:layout_height="wrap_content"
         android:background="@color/app_surface"
         app:itemIconTint="@color/bottom_nav_item_color"
+        app:itemIconSize="28dp"
         app:itemTextColor="@color/bottom_nav_item_color"
+        app:activeIndicatorLabelPadding="0dp"
         app:itemActiveIndicatorStyle="@style/Widget.AnroidAIAssistant.BottomNav.ActiveIndicator"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/main_bottom_nav_menu" />
