@@ -11,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.TextView;
+import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -39,8 +40,16 @@ public final class SettingsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        view.setLayoutDirection(AssistantSettings.isRtl(requireContext())
+                ? View.LAYOUT_DIRECTION_RTL
+                : View.LAYOUT_DIRECTION_LTR);
         languageValueView = view.findViewById(R.id.settingsLanguageValue);
         themeValueView = view.findViewById(R.id.settingsThemeValue);
+        boolean rtl = AssistantSettings.isRtl(requireContext());
+        ((ImageView) view.findViewById(R.id.settingsLanguageArrow))
+                .setImageResource(rtl ? R.drawable.ic_chevron_left : R.drawable.ic_chevron_right);
+        ((ImageView) view.findViewById(R.id.settingsThemeArrow))
+                .setImageResource(rtl ? R.drawable.ic_chevron_left : R.drawable.ic_chevron_right);
 
         view.findViewById(R.id.settingsLanguageCard).setOnClickListener(v -> showLanguageSheet());
         view.findViewById(R.id.settingsThemeCard).setOnClickListener(v -> showThemeSheet());
@@ -50,7 +59,7 @@ public final class SettingsFragment extends Fragment {
     private void showLanguageSheet() {
         String language = AssistantSettings.getLanguage(requireContext());
         showSelectionSheet(
-                "Language",
+                getString(R.string.settings_language_title),
                 new SelectionOption[]{
                         new SelectionOption(AssistantSettings.LANGUAGE_EN, "English"),
                         new SelectionOption(AssistantSettings.LANGUAGE_TR, "Türkçe"),
@@ -71,11 +80,11 @@ public final class SettingsFragment extends Fragment {
     private void showThemeSheet() {
         String theme = AssistantSettings.getTheme(requireContext());
         showSelectionSheet(
-                "Theme",
+                getString(R.string.settings_theme_title),
                 new SelectionOption[]{
-                        new SelectionOption(AssistantSettings.THEME_SYSTEM, "System default"),
-                        new SelectionOption(AssistantSettings.THEME_LIGHT, "Light"),
-                        new SelectionOption(AssistantSettings.THEME_DARK, "Dark")
+                        new SelectionOption(AssistantSettings.THEME_SYSTEM, getString(R.string.settings_theme_system)),
+                        new SelectionOption(AssistantSettings.THEME_LIGHT, getString(R.string.settings_theme_light)),
+                        new SelectionOption(AssistantSettings.THEME_DARK, getString(R.string.settings_theme_dark))
                 },
                 theme,
                 selectedTheme -> {
@@ -87,7 +96,7 @@ public final class SettingsFragment extends Fragment {
 
     private void updateDisplayedValues() {
         languageValueView.setText(AssistantSettings.languageLabel(AssistantSettings.getLanguage(requireContext())));
-        themeValueView.setText(AssistantSettings.themeLabel(AssistantSettings.getTheme(requireContext())));
+        themeValueView.setText(AssistantSettings.themeLabel(requireContext(), AssistantSettings.getTheme(requireContext())));
     }
 
     private void showSelectionSheet(
@@ -97,9 +106,11 @@ public final class SettingsFragment extends Fragment {
             SelectionCallback callback
     ) {
         Context context = requireContext();
+        boolean rtl = AssistantSettings.isRtl(context);
         BottomSheetDialog dialog = new BottomSheetDialog(context);
         LinearLayout root = new LinearLayout(context);
         root.setOrientation(LinearLayout.VERTICAL);
+        root.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         root.setPadding(dp(20), dp(18), dp(20), dp(26));
 
         TextView titleView = new TextView(context);
@@ -107,6 +118,8 @@ public final class SettingsFragment extends Fragment {
         titleView.setTextColor(ContextCompat.getColor(context, R.color.app_text_primary));
         titleView.setTextSize(20);
         titleView.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        titleView.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        titleView.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         root.addView(titleView, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -129,8 +142,8 @@ public final class SettingsFragment extends Fragment {
             button.setTextSize(17);
             button.setMinHeight(dp(54));
             button.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
-            button.setLayoutDirection(View.LAYOUT_DIRECTION_LTR);
-            button.setTextDirection(View.TEXT_DIRECTION_LTR);
+            button.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+            button.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
             button.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
             button.setButtonTintList(tint);
             button.setChecked(option.value.equals(selectedValue));

@@ -81,7 +81,7 @@ public final class HomeFragment extends Fragment {
             return;
         }
 
-        btnSpeak.setText(listening ? "Turn Off" : "Turn On");
+        btnSpeak.setText(listening ? R.string.home_turn_off : R.string.home_turn_on);
         btnSpeak.setBackgroundResource(listening
                 ? R.drawable.home_turn_off_button_background
                 : R.drawable.home_turn_on_button_background);
@@ -101,11 +101,11 @@ public final class HomeFragment extends Fragment {
                         ? R.color.white
                         : R.color.app_power_icon)
         ));
-        tvResult.setText(listening ? "Assistant is Active" : "Assistant is Inactive");
+        tvResult.setText(listening ? R.string.home_active : R.string.home_inactive);
         tvResult.setTextColor(requireContext().getColor(R.color.app_text_primary));
         tvHomeHelper.setText(listening
-                ? "Listening for voice commands"
-                : "Enable to start using voice commands");
+                ? getString(R.string.home_helper_active)
+                : getString(R.string.home_helper_inactive));
     }
 
     public void setSpeakButtonEnabled(boolean enabled) {
@@ -127,7 +127,7 @@ public final class HomeFragment extends Fragment {
 
     public void showPredictionResult(PredictResponse response) {
         if (response == null) {
-            setStatusText("No response from backend");
+            setStatusText(getString(R.string.backend_no_response));
             return;
         }
 

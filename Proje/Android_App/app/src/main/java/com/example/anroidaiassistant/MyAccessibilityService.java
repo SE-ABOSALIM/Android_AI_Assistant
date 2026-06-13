@@ -172,14 +172,14 @@ public class MyAccessibilityService extends AccessibilityService {
         audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         
         setupSpeechRecognizer();
-        Toast.makeText(this, "Accessibility Service Connected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.accessibility_service_connected, Toast.LENGTH_SHORT).show();
     }
 
     private void setupSpeechRecognizer() {
         destroySpeechRecognizer();
 
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            Toast.makeText(this, "Speech recognizer mevcut değil.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.speech_recognizer_unavailable, Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -646,13 +646,13 @@ public class MyAccessibilityService extends AccessibilityService {
                     commandExecutor.executeCommand(body);
                 } else {
                     Log.e(TAG, "Prediction failed. httpCode=" + response.code());
-                    showRequestError("No response from backend");
+                    showRequestError(getString(R.string.backend_no_response));
                 }
             }
             @Override
             public void onFailure(Call<PredictResponse> call, Throwable t) {
                 Log.e(TAG, "Prediction request failed", t);
-                showRequestError("Backend unavailable");
+                showRequestError(getString(R.string.backend_unavailable));
             }
         });
     }
@@ -916,7 +916,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 return;
             }
 
-            Toast.makeText(this, "Sadece listedeki numarayi soyle.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.selection_number_only, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -943,7 +943,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 gridController.getCellCount()
         );
         if (selectedIndex == null) {
-            Toast.makeText(this, "Grid numarasini soyle.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.grid_number_required, Toast.LENGTH_SHORT).show();
             return true;
         }
 
@@ -952,7 +952,7 @@ public class MyAccessibilityService extends AccessibilityService {
             return true;
         }
 
-        Toast.makeText(this, "Grid cell could not be tapped.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.grid_cell_tap_failed, Toast.LENGTH_SHORT).show();
         return true;
     }
 

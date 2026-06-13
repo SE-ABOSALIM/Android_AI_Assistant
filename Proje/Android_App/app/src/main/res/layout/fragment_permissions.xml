@@ -19,7 +19,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Permissions"
+            android:text="@string/permissions_title"
             android:textColor="@color/app_text_primary"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:text="Manage assistant access &amp; permissions"
+            android:text="@string/permissions_subtitle"
             android:textColor="@color/app_text_secondary"
             android:textSize="14sp" />
 
@@ -52,7 +52,7 @@
                     android:layout_width="48dp"
                     android:layout_height="48dp"
                     android:background="@drawable/summary_icon_bg"
-                    android:contentDescription="Permissions summary"
+                    android:contentDescription="@string/permissions_summary_content_description"
                     android:padding="9dp"
                     android:scaleType="fitCenter"
                     android:src="@drawable/ic_perm_checklist"
@@ -78,7 +78,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="Permissions Granted"
+                        android:text="@string/permissions_granted_label"
                         android:textColor="@color/app_summary_label"
                         android:textSize="13sp" />
                 </LinearLayout>

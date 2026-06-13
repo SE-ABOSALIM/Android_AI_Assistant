@@ -17,7 +17,7 @@
             android:id="@+id/tv_home_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="AI Assistant"
+            android:text="@string/home_title"
             android:textColor="@color/app_text_primary"
             android:textSize="28sp"
             android:textStyle="bold" />
@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Control your Android"
+            android:text="@string/home_subtitle"
             android:textColor="@color/app_text_secondary"
             android:textSize="16sp" />
 
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="34dp"
             android:gravity="center"
-            android:text="Assistant is Inactive"
+            android:text="@string/home_inactive"
             android:textColor="@color/app_text_primary"
             android:textSize="22sp"
             android:textStyle="bold" />
@@ -69,7 +69,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:gravity="center"
-            android:text="Enable to start using voice commands"
+            android:text="@string/home_helper_inactive"
             android:textColor="@color/app_text_secondary"
             android:textSize="15sp" />
 
@@ -81,7 +81,7 @@
             android:layout_marginTop="44dp"
             android:background="@drawable/home_turn_on_button_background"
             android:elevation="6dp"
-            android:text="Turn On"
+            android:text="@string/home_turn_on"
             android:textAllCaps="false"
             android:textColor="@color/white"
             android:textSize="16sp"

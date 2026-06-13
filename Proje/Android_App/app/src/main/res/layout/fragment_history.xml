@@ -29,7 +29,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="History"
+                    android:text="@string/history_title"
                     android:textColor="@color/app_text_primary"
                     android:textSize="28sp"
                     android:textStyle="bold" />
@@ -38,7 +38,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:text="Your command history"
+                    android:text="@string/history_subtitle"
                     android:textColor="@color/app_text_secondary"
                     android:textSize="15sp" />
             </LinearLayout>
@@ -50,7 +50,7 @@
                 android:gravity="center"
                 android:paddingStart="12dp"
                 android:paddingEnd="2dp"
-                android:text="Clear All"
+                android:text="@string/history_clear_all"
                 android:textColor="@color/app_danger"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -64,7 +64,7 @@
             android:background="@drawable/history_search_background"
             android:drawableStart="@drawable/ic_history_search"
             android:drawablePadding="10dp"
-            android:hint="Search commands..."
+            android:hint="@string/history_search_hint"
             android:inputType="text"
             android:paddingStart="14dp"
             android:paddingEnd="14dp"
@@ -102,7 +102,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Successful"
+                    android:text="@string/history_successful"
                     android:textColor="@color/app_text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -134,7 +134,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Failed"
+                    android:text="@string/history_failed"
                     android:textColor="@color/app_text_secondary"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -161,7 +161,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="34dp"
             android:gravity="center"
-            android:text="No commands yet"
+            android:text="@string/history_empty"
             android:textColor="@color/app_text_secondary"
             android:textSize="15sp"
             android:visibility="gone" />
@@ -172,7 +172,7 @@
             android:layout_height="48dp"
             android:layout_marginTop="14dp"
             android:background="@drawable/history_load_more_background"
-            android:text="Load more commands"
+            android:text="@string/history_load_more"
             android:textAllCaps="false"
             android:textColor="@color/app_primary"
             android:textSize="15sp"

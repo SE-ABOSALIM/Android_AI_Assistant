@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.os.LocaleListCompat;
 
+import com.example.anroidaiassistant.R;
+
 import java.util.Locale;
 
 public final class AssistantSettings {
@@ -113,6 +115,22 @@ public final class AssistantSettings {
             default:
                 return "System default";
         }
+    }
+
+    public static String themeLabel(Context context, String theme) {
+        switch (normalizeTheme(theme)) {
+            case THEME_LIGHT:
+                return context.getString(R.string.settings_theme_light);
+            case THEME_DARK:
+                return context.getString(R.string.settings_theme_dark);
+            case THEME_SYSTEM:
+            default:
+                return context.getString(R.string.settings_theme_system);
+        }
+    }
+
+    public static boolean isRtl(Context context) {
+        return LANGUAGE_AR.equals(getLanguage(context));
     }
 
     private static String normalizeTheme(String theme) {

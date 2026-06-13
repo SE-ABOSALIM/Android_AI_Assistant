@@ -7,10 +7,10 @@ import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.ui.screens.GuideFragment;
 import com.example.anroidaiassistant.ui.screens.HomeFragment;
 import com.example.anroidaiassistant.ui.screens.HistoryFragment;
 import com.example.anroidaiassistant.ui.screens.PermissionsFragment;
-import com.example.anroidaiassistant.ui.screens.PlaceholderFragment;
 import com.example.anroidaiassistant.ui.screens.SettingsFragment;
 import com.example.anroidaiassistant.util.DeviceIdentity;
 
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
         } else if (itemId == R.id.nav_history) {
             fragment = new HistoryFragment();
         } else if (itemId == R.id.nav_guide) {
-            fragment = PlaceholderFragment.newInstance("Supported Commands");
+            fragment = new GuideFragment();
         } else if (itemId == R.id.nav_settings) {
             fragment = new SettingsFragment();
         } else {
@@ -177,13 +177,13 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 Log.e(TAG, "Manual prediction failed. httpCode=" + response.code());
-                showAssistantMessage("No response from backend");
+                showAssistantMessage(getString(R.string.backend_no_response));
             }
 
             @Override
             public void onFailure(Call<PredictResponse> call, Throwable t) {
                 Log.e(TAG, "Manual prediction request failed", t);
-                showAssistantMessage("Backend unavailable");
+                showAssistantMessage(getString(R.string.backend_unavailable));
             }
         });
     }
@@ -242,16 +242,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void showPermissionRequiredDialog() {
         new MaterialAlertDialogBuilder(this)
-                .setTitle("İzinler eksik")
-                .setMessage("Asistanı başlatmak için gerekli izinleri Permissions sayfasından aktifleştirmeniz gerekiyor.")
-                .setPositiveButton("Hemen aktifleştir", (dialog, which) -> showPermissionsPage())
-                .setNegativeButton("Iptal", (dialog, which) -> dialog.dismiss())
+                .setTitle(R.string.permission_required_title)
+                .setMessage(R.string.permission_required_message)
+                .setPositiveButton(R.string.permission_required_action, (dialog, which) -> showPermissionsPage())
+                .setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
     private void toggleListening() {
         if (isCatalogSyncInProgress) {
-            Toast.makeText(this, "Uygulama listesi gonderiliyor...", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.catalog_syncing, Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -264,7 +264,7 @@ public class MainActivity extends AppCompatActivity {
         if (service == null) {
             Toast.makeText(
                     this,
-                    "Servis bagli degil. Ayarlardan servisi kapatip tekrar acin.",
+                    R.string.accessibility_service_disconnected,
                     Toast.LENGTH_LONG
             ).show();
             return;
@@ -327,8 +327,8 @@ public class MainActivity extends AppCompatActivity {
         isCatalogSyncInProgress = true;
         if (homeFragment != null) {
             homeFragment.setSpeakButtonEnabled(false);
-            homeFragment.setBackendState("Syncing");
-            homeFragment.setStatusText("Uygulama listesi gonderiliyor...");
+            homeFragment.setBackendState(getString(R.string.backend_state_syncing));
+            homeFragment.setStatusText(getString(R.string.catalog_syncing));
         }
 
         appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(this, apiService, sessionId, selectedLanguage, (success, message) -> runOnUiThread(() -> {
@@ -344,7 +344,9 @@ public class MainActivity extends AppCompatActivity {
             appCatalogSyncCall = null;
             if (homeFragment != null) {
                 homeFragment.setSpeakButtonEnabled(true);
-                homeFragment.setBackendState(success ? "Ready" : "Error");
+                homeFragment.setBackendState(success
+                        ? getString(R.string.backend_state_ready)
+                        : getString(R.string.backend_state_error));
             }
 
             if (success) {
@@ -361,7 +363,7 @@ public class MainActivity extends AppCompatActivity {
             isCatalogSyncInProgress = false;
             if (homeFragment != null) {
                 homeFragment.setSpeakButtonEnabled(true);
-                homeFragment.setBackendState("Error");
+                homeFragment.setBackendState(getString(R.string.backend_state_error));
             }
             closeCurrentBackendSession();
             refreshListeningUiState();
@@ -392,10 +394,12 @@ public class MainActivity extends AppCompatActivity {
         if (homeFragment != null) {
             homeFragment.setListeningState(isServiceListening);
             homeFragment.setSpeakButtonEnabled(!isCatalogSyncInProgress);
-            homeFragment.setBackendState(isCatalogSyncInProgress ? "Syncing" : "Ready");
+            homeFragment.setBackendState(isCatalogSyncInProgress
+                    ? getString(R.string.backend_state_syncing)
+                    : getString(R.string.backend_state_ready));
             homeFragment.setStatusText(isServiceListening
-                    ? "Arka planda dinleniyor..."
-                    : "Dinleme durduruldu.");
+                    ? getString(R.string.home_status_background_listening)
+                    : getString(R.string.home_status_stopped));
         }
     }
 
@@ -421,20 +425,16 @@ public class MainActivity extends AppCompatActivity {
             }
 
             spellingSuggestionDialog = new AlertDialog.Builder(this)
-                    .setTitle("Uygulamayi acamiyor musun?")
-                    .setMessage(
-                            "Uygulama adini harf harf soylemeyi dene.\n\n"
-                                    + "Can't open the app?\n"
-                                    + "Try spelling the app name letter by letter."
-                    )
-                    .setPositiveButton("Try spelling", (dialog, which) -> {
+                    .setTitle(R.string.spell_suggestion_title)
+                    .setMessage(R.string.spell_suggestion_message)
+                    .setPositiveButton(R.string.spell_suggestion_action, (dialog, which) -> {
                         MyAccessibilityService service = MyAccessibilityService.getInstance();
                         if (service != null) {
                             service.enableSpellAppMode();
-                            showAssistantMessage("Spell mode aktif. Uygulama adini harf harf soyle.");
+                            showAssistantMessage(getString(R.string.spell_mode_enabled));
                         }
                     })
-                    .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                    .setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.dismiss())
                     .create();
 
             spellingSuggestionDialog.setOnDismissListener(dialog -> spellingSuggestionDialog = null);
@@ -469,7 +469,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            Toast.makeText(this, "Mikrofon, rehber ve arama izinleri gerekli", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.runtime_permissions_required, Toast.LENGTH_SHORT).show();
         }
     }
 }

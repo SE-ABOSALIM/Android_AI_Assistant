@@ -28,6 +28,7 @@ import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.CommandHistoryItem;
 import com.example.anroidaiassistant.api.dto.CommandHistoryMutationResponse;
 import com.example.anroidaiassistant.api.dto.CommandHistoryResponse;
+import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.util.DeviceIdentity;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
@@ -72,6 +73,9 @@ public final class HistoryFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        view.setLayoutDirection(isRtl()
+                ? View.LAYOUT_DIRECTION_RTL
+                : View.LAYOUT_DIRECTION_LTR);
         apiService = RetrofitClient.getClient().create(ApiService.class);
         historyList = view.findViewById(R.id.historyList);
         successfulCountView = view.findViewById(R.id.historySuccessfulCount);
@@ -154,7 +158,7 @@ public final class HistoryFragment extends Fragment {
                 isLoading = false;
                 historyCall = null;
                 if (!response.isSuccessful() || response.body() == null) {
-                    showError("Could not load history");
+                    showError(getString(R.string.history_load_error));
                     updateLoadMoreState();
                     return;
                 }
@@ -171,7 +175,7 @@ public final class HistoryFragment extends Fragment {
                 isLoading = false;
                 historyCall = null;
                 Log.e(TAG, "History request failed", t);
-                showError("Backend unavailable");
+                showError(getString(R.string.backend_unavailable));
                 updateLoadMoreState();
             }
         });
@@ -195,6 +199,7 @@ public final class HistoryFragment extends Fragment {
         LinearLayout card = new LinearLayout(requireContext());
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.TOP);
+        card.setLayoutDirection(isRtl() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         card.setBackgroundResource(R.drawable.permission_card_bg);
         card.setPadding(dp(14), dp(14), dp(12), dp(14));
 
@@ -227,13 +232,15 @@ public final class HistoryFragment extends Fragment {
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 1f
         );
-        textParams.leftMargin = dp(12);
+        textParams.setMarginStart(dp(12));
         card.addView(textColumn, textParams);
 
         TextView title = new TextView(requireContext());
-        title.setText(nonEmpty(item.getText(), "Command"));
+        title.setText(nonEmpty(item.getText(), getString(R.string.history_command_fallback)));
         title.setTextColor(ContextCompat.getColor(requireContext(), R.color.app_text_primary));
         title.setTextSize(16);
+        title.setGravity(isRtl() ? Gravity.RIGHT : Gravity.LEFT);
+        title.setTextDirection(isRtl() ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
         textColumn.addView(title);
 
@@ -241,6 +248,8 @@ public final class HistoryFragment extends Fragment {
         detail.setText(historyDetail(item));
         detail.setTextColor(ContextCompat.getColor(requireContext(), R.color.app_text_secondary));
         detail.setTextSize(13);
+        detail.setGravity(isRtl() ? Gravity.RIGHT : Gravity.LEFT);
+        detail.setTextDirection(isRtl() ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -252,6 +261,7 @@ public final class HistoryFragment extends Fragment {
         time.setText(formatCreatedAt(item.getCreatedAt()));
         time.setTextColor(ContextCompat.getColor(requireContext(), R.color.bottom_nav_inactive));
         time.setTextSize(12);
+        time.setGravity(isRtl() ? Gravity.RIGHT : Gravity.LEFT);
         LinearLayout.LayoutParams timeParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
@@ -291,7 +301,7 @@ public final class HistoryFragment extends Fragment {
             @Override
             public void onFailure(Call<CommandHistoryMutationResponse> call, Throwable t) {
                 if (isAdded()) {
-                    showError("Could not delete command");
+                    showError(getString(R.string.history_delete_error));
                 }
             }
         });
@@ -299,10 +309,10 @@ public final class HistoryFragment extends Fragment {
 
     private void confirmClearHistory() {
         new MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Clear history")
-                .setMessage("Delete all command history on this device?")
-                .setPositiveButton("Clear", (dialog, which) -> clearHistory())
-                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
+                .setTitle(R.string.history_clear_title)
+                .setMessage(R.string.history_clear_message)
+                .setPositiveButton(R.string.history_clear_confirm, (dialog, which) -> clearHistory())
+                .setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
@@ -324,7 +334,7 @@ public final class HistoryFragment extends Fragment {
             @Override
             public void onFailure(Call<CommandHistoryMutationResponse> call, Throwable t) {
                 if (isAdded()) {
-                    showError("Could not clear history");
+                    showError(getString(R.string.history_clear_error));
                 }
             }
         });
@@ -336,13 +346,16 @@ public final class HistoryFragment extends Fragment {
         }
 
         loadMoreButton.setEnabled(!isLoading);
-        loadMoreButton.setText(isLoading ? "Loading..." : "Load more commands");
+        loadMoreButton.setText(isLoading ? R.string.history_loading : R.string.history_load_more);
         loadMoreButton.setVisibility(hasMore ? View.VISIBLE : View.GONE);
     }
 
     private String historyDetail(CommandHistoryItem item) {
         if (!item.isAccepted()) {
-            return "Failed: " + nonEmpty(item.getErrorCode(), "Command not accepted");
+            return getString(
+                    R.string.history_failed_detail,
+                    nonEmpty(item.getErrorCode(), getString(R.string.history_command_not_accepted))
+            );
         }
 
         String intent = formatIntent(item.getIntent());
@@ -350,7 +363,7 @@ public final class HistoryFragment extends Fragment {
         if (hasText(parameterSummary)) {
             return intent + " - " + parameterSummary;
         }
-        return "Executed " + intent;
+        return getString(R.string.history_executed_detail, intent);
     }
 
     private String parameterSummary(Map<String, Object> parameters) {
@@ -380,7 +393,7 @@ public final class HistoryFragment extends Fragment {
 
     private String formatIntent(String intent) {
         if (!hasText(intent)) {
-            return "command";
+            return getString(R.string.history_command_detail_fallback);
         }
 
         String[] parts = intent.toLowerCase(Locale.US).split("_");
@@ -397,7 +410,7 @@ public final class HistoryFragment extends Fragment {
                 builder.append(part.substring(1));
             }
         }
-        return builder.length() == 0 ? "command" : builder.toString();
+        return builder.length() == 0 ? getString(R.string.history_command_detail_fallback) : builder.toString();
     }
 
     private String formatCreatedAt(String createdAt) {
@@ -440,5 +453,9 @@ public final class HistoryFragment extends Fragment {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private boolean isRtl() {
+        return AssistantSettings.isRtl(requireContext());
     }
 }

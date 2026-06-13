@@ -20,7 +20,7 @@
             android:id="@+id/tv_selection_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Choose"
+            android:text="@string/selection_title_default"
             android:textColor="#FFFFFF"
             android:textSize="18sp"
             android:textStyle="bold" />
@@ -29,7 +29,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="Secmek icin listedeki numarayi soyleyin."
+            android:text="@string/selection_instruction"
             android:textColor="#B9C0CC"
             android:textSize="13sp" />
 
@@ -45,7 +45,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            android:text="Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin."
+            android:text="@string/selection_hint_default"
             android:textColor="#B9C0CC"
             android:textSize="13sp" />
     </LinearLayout>

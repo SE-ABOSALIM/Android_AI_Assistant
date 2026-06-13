@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.R;
+import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.Collections;
@@ -102,7 +103,13 @@ public final class SelectionOverlayController {
             return;
         }
 
-        selectionTitleView.setText(TextNormalizer.hasText(title) ? title : "Choose");
+        boolean rtl = AssistantSettings.isRtl(context);
+        selectionOverlayView.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+        selectionTitleView.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        selectionTitleView.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
+        selectionTitleView.setText(TextNormalizer.hasText(title)
+                ? title
+                : context.getString(R.string.selection_title_default));
         selectionChoiceContainer.removeAllViews();
 
         for (int i = 0; i < choices.size(); i++) {
@@ -111,7 +118,9 @@ public final class SelectionOverlayController {
 
         selectionHintView.setText(TextNormalizer.hasText(hint)
                 ? hint
-                : "Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.");
+                : context.getString(R.string.selection_hint_default));
+        selectionHintView.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        selectionHintView.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         selectionHintView.setTextColor(Color.parseColor("#B9C0CC"));
     }
 
@@ -119,6 +128,8 @@ public final class SelectionOverlayController {
         LinearLayout row = new LinearLayout(context);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
+        boolean rtl = AssistantSettings.isRtl(context);
+        row.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         row.setPadding(dp(10), dp(8), dp(10), dp(8));
         row.setClickable(true);
         row.setOnClickListener(view -> listener.onChoiceSelected(index));
@@ -138,7 +149,7 @@ public final class SelectionOverlayController {
         number.setTypeface(number.getTypeface(), android.graphics.Typeface.BOLD);
         number.setBackgroundResource(R.drawable.selection_number_background);
         LinearLayout.LayoutParams numberParams = new LinearLayout.LayoutParams(dp(34), dp(34));
-        numberParams.setMargins(0, 0, dp(12), 0);
+        numberParams.setMarginEnd(dp(12));
         row.addView(number, numberParams);
 
         if (choice.icon != null) {
@@ -146,7 +157,7 @@ public final class SelectionOverlayController {
             icon.setImageDrawable(choice.icon);
             icon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
             LinearLayout.LayoutParams iconParams = new LinearLayout.LayoutParams(dp(44), dp(44));
-            iconParams.setMargins(0, 0, dp(12), 0);
+            iconParams.setMarginEnd(dp(12));
             row.addView(icon, iconParams);
         }
 
@@ -157,6 +168,8 @@ public final class SelectionOverlayController {
         rowTitle.setText(choice.title);
         rowTitle.setTextColor(Color.WHITE);
         rowTitle.setTextSize(16);
+        rowTitle.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        rowTitle.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         rowTitle.setTypeface(rowTitle.getTypeface(), android.graphics.Typeface.BOLD);
         rowTitle.setSingleLine(false);
         textColumn.addView(rowTitle);
@@ -166,6 +179,8 @@ public final class SelectionOverlayController {
             subtitle.setText(choice.subtitle);
             subtitle.setTextColor(Color.parseColor("#B9C0CC"));
             subtitle.setTextSize(13);
+            subtitle.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+            subtitle.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
             subtitle.setSingleLine(false);
             textColumn.addView(subtitle);
         }

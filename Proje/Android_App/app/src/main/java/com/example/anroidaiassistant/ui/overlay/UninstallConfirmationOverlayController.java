@@ -12,6 +12,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.anroidaiassistant.R;
+import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 public final class UninstallConfirmationOverlayController {
@@ -120,15 +121,29 @@ public final class UninstallConfirmationOverlayController {
             String noText,
             String hint
     ) {
-        appNameView.setText(TextNormalizer.hasText(appName) ? appName : "App");
+        boolean rtl = AssistantSettings.isRtl(context);
+        if (overlayView != null) {
+            overlayView.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+        }
+        appNameView.setText(TextNormalizer.hasText(appName)
+                ? appName
+                : context.getString(R.string.uninstall_app_fallback));
         if (appIcon != null) {
             appIconView.setImageDrawable(appIcon);
         } else {
             appIconView.setImageResource(R.mipmap.ic_launcher);
         }
-        questionView.setText(TextNormalizer.hasText(question) ? question : "Uninstall this app?");
-        yesView.setText(TextNormalizer.hasText(yesText) ? yesText : "Yes");
-        noView.setText(TextNormalizer.hasText(noText) ? noText : "No");
-        hintView.setText(TextNormalizer.hasText(hint) ? hint : "Say yes or no.");
+        questionView.setText(TextNormalizer.hasText(question)
+                ? question
+                : context.getString(R.string.uninstall_question_fallback));
+        yesView.setText(TextNormalizer.hasText(yesText)
+                ? yesText
+                : context.getString(R.string.uninstall_yes_fallback));
+        noView.setText(TextNormalizer.hasText(noText)
+                ? noText
+                : context.getString(R.string.uninstall_no_fallback));
+        hintView.setText(TextNormalizer.hasText(hint)
+                ? hint
+                : context.getString(R.string.uninstall_hint_fallback));
     }
 }

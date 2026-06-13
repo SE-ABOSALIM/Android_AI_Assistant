@@ -32,6 +32,7 @@ import androidx.fragment.app.Fragment;
 import com.example.anroidaiassistant.MainActivity;
 import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.R;
+import com.example.anroidaiassistant.settings.AssistantSettings;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -61,6 +62,9 @@ public final class PermissionsFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+        view.setLayoutDirection(isRtl()
+                ? View.LAYOUT_DIRECTION_RTL
+                : View.LAYOUT_DIRECTION_LTR);
         summaryCard = view.findViewById(R.id.summary_card);
         summaryIcon = view.findViewById(R.id.summary_icon);
         summaryCount = view.findViewById(R.id.summary_count);
@@ -92,8 +96,16 @@ public final class PermissionsFragment extends Fragment {
             return;
         }
 
-        PermissionGroup appPermissions = PermissionGroup.appPermissions(runtimePermissions());
-        PermissionGroup advancedAccess = PermissionGroup.advancedAccess(advancedPermissions());
+        PermissionGroup appPermissions = PermissionGroup.appPermissions(
+                getString(R.string.permissions_app_title),
+                getString(R.string.permissions_app_description),
+                runtimePermissions()
+        );
+        PermissionGroup advancedAccess = PermissionGroup.advancedAccess(
+                getString(R.string.permissions_advanced_title),
+                getString(R.string.permissions_advanced_description),
+                advancedPermissions()
+        );
 
         rowHolders.clear();
         contentContainer.removeAllViews();
@@ -117,10 +129,12 @@ public final class PermissionsFragment extends Fragment {
 
     private View createDetailHeader(PermissionGroup group) {
         Context context = requireContext();
+        boolean rtl = isRtl();
 
         LinearLayout header = new LinearLayout(context);
         header.setOrientation(LinearLayout.HORIZONTAL);
         header.setGravity(Gravity.CENTER_VERTICAL);
+        header.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         header.setPadding(dp(4), 0, dp(4), dp(10));
 
         LinearLayout back = new LinearLayout(context);
@@ -134,7 +148,7 @@ public final class PermissionsFragment extends Fragment {
         });
 
         ImageView backIcon = new ImageView(context);
-        backIcon.setImageResource(R.drawable.ic_chevron_left);
+        backIcon.setImageResource(rtl ? R.drawable.ic_chevron_right : R.drawable.ic_chevron_left);
         ImageViewCompat.setImageTintList(
                 backIcon,
                 ColorStateList.valueOf(context.getColor(R.color.app_primary))
@@ -142,9 +156,10 @@ public final class PermissionsFragment extends Fragment {
         back.addView(backIcon, new LinearLayout.LayoutParams(dp(22), dp(22)));
 
         TextView title = new TextView(context);
-        title.setText("Permissions");
+        title.setText(getString(R.string.permissions_title));
         title.setTextColor(context.getColor(R.color.app_primary));
         title.setTextSize(15);
+        title.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         back.addView(title);
 
@@ -157,7 +172,7 @@ public final class PermissionsFragment extends Fragment {
         TextView count = new TextView(context);
         int granted = grantedCount(group.items);
         boolean complete = granted == group.items.size();
-        count.setText(granted + "/" + group.items.size() + " granted");
+        count.setText(getString(R.string.permissions_granted_count, granted, group.items.size()));
         count.setTextColor(statusColor(complete));
         count.setTextSize(12);
         count.setTypeface(count.getTypeface(), android.graphics.Typeface.BOLD);
@@ -168,10 +183,12 @@ public final class PermissionsFragment extends Fragment {
 
     private View createCategoryCard(PermissionGroup group) {
         Context context = requireContext();
+        boolean rtl = isRtl();
 
         LinearLayout card = new LinearLayout(context);
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
+        card.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         card.setPadding(dp(14), dp(14), dp(14), dp(14));
         card.setBackgroundResource(R.drawable.permission_card_bg);
         card.setClickable(true);
@@ -212,6 +229,8 @@ public final class PermissionsFragment extends Fragment {
         title.setText(group.title);
         title.setTextColor(context.getColor(R.color.app_text_primary));
         title.setTextSize(15);
+        title.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        title.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         title.setTypeface(title.getTypeface(), android.graphics.Typeface.BOLD);
         textColumn.addView(title);
 
@@ -219,6 +238,8 @@ public final class PermissionsFragment extends Fragment {
         description.setText(group.description);
         description.setTextColor(context.getColor(R.color.app_text_secondary));
         description.setTextSize(12);
+        description.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        description.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         LinearLayout.LayoutParams descriptionParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -235,7 +256,7 @@ public final class PermissionsFragment extends Fragment {
         card.addView(textColumn, textParams);
 
         TextView count = new TextView(context);
-        count.setText(granted + "/" + group.items.size());
+        count.setText(getString(R.string.permissions_category_count, granted, group.items.size()));
         count.setTextColor(accentColor);
         count.setTextSize(18);
         count.setTypeface(count.getTypeface(), android.graphics.Typeface.BOLD);
@@ -243,7 +264,7 @@ public final class PermissionsFragment extends Fragment {
         card.addView(count);
 
         ImageView arrow = new ImageView(context);
-        arrow.setImageResource(R.drawable.ic_chevron_right);
+        arrow.setImageResource(rtl ? R.drawable.ic_chevron_left : R.drawable.ic_chevron_right);
         ImageViewCompat.setImageTintList(
                 arrow,
                 ColorStateList.valueOf(context.getColor(R.color.bottom_nav_inactive))
@@ -266,10 +287,16 @@ public final class PermissionsFragment extends Fragment {
         TextView title = row.findViewById(R.id.permission_title);
         TextView description = row.findViewById(R.id.permission_description);
         SwitchCompat switchView = row.findViewById(R.id.permission_switch);
+        boolean rtl = isRtl();
+        row.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
 
         icon.setImageResource(item.iconRes);
         title.setText(item.title);
         description.setText(item.description);
+        title.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        title.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
+        description.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+        description.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
 
         row.setOnClickListener(v -> requestOrOpen(item));
 
@@ -342,40 +369,40 @@ public final class PermissionsFragment extends Fragment {
     private List<PermissionItem> runtimePermissions() {
         List<PermissionItem> items = new ArrayList<>();
         items.add(PermissionItem.runtime(
-                "Microphone Access",
-                "Required to receive voice commands",
+                getString(R.string.permission_microphone_title),
+                getString(R.string.permission_microphone_description),
                 R.drawable.ic_perm_mic,
                 Manifest.permission.RECORD_AUDIO
         ));
         items.add(PermissionItem.runtime(
-                "Contacts Access",
-                "Required for contact calling commands",
+                getString(R.string.permission_contacts_title),
+                getString(R.string.permission_contacts_description),
                 R.drawable.ic_perm_contacts,
                 Manifest.permission.READ_CONTACTS
         ));
         items.add(PermissionItem.runtime(
-                "Phone Call Access",
-                "Required to start phone calls",
+                getString(R.string.permission_call_title),
+                getString(R.string.permission_call_description),
                 R.drawable.ic_perm_call,
                 Manifest.permission.CALL_PHONE
         ));
         items.add(PermissionItem.runtime(
-                "Phone State Access",
-                "Pause listening while calls are active",
+                getString(R.string.permission_phone_state_title),
+                getString(R.string.permission_phone_state_description),
                 R.drawable.ic_perm_phone_state,
                 Manifest.permission.READ_PHONE_STATE
         ));
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             items.add(PermissionItem.runtime(
-                    "Answer Call Access",
-                    "Required for answer and reject call commands",
+                    getString(R.string.permission_answer_call_title),
+                    getString(R.string.permission_answer_call_description),
                     R.drawable.ic_perm_answer,
                     Manifest.permission.ANSWER_PHONE_CALLS
             ));
         }
         items.add(PermissionItem.runtime(
-                "Camera Access",
-                "Required for camera and flashlight commands",
+                getString(R.string.permission_camera_title),
+                getString(R.string.permission_camera_description),
                 R.drawable.ic_perm_camera,
                 Manifest.permission.CAMERA
         ));
@@ -385,15 +412,15 @@ public final class PermissionsFragment extends Fragment {
     private List<PermissionItem> advancedPermissions() {
         List<PermissionItem> items = new ArrayList<>();
         items.add(PermissionItem.advanced(
-                "Accessibility Service",
-                "Control apps and perform actions",
+                getString(R.string.permission_accessibility_title),
+                getString(R.string.permission_accessibility_description),
                 R.drawable.ic_perm_accessibility,
                 fragment -> fragment.isAccessibilityEnabled(),
                 this::openAccessibilityServiceSettings
         ));
         items.add(PermissionItem.advanced(
-                "Popup Access",
-                "Display overlay windows on top of apps",
+                getString(R.string.permission_popup_title),
+                getString(R.string.permission_popup_description),
                 R.drawable.ic_perm_popup,
                 fragment -> Settings.canDrawOverlays(fragment.requireContext()),
                 () -> openSettings(
@@ -402,15 +429,15 @@ public final class PermissionsFragment extends Fragment {
                 )
         ));
         items.add(PermissionItem.advanced(
-                "Sound Mode Access",
-                "Required for true silent mode control",
+                getString(R.string.permission_sound_title),
+                getString(R.string.permission_sound_description),
                 R.drawable.ic_perm_sound,
                 fragment -> fragment.isNotificationPolicyAccessGranted(),
                 () -> openSettings(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
         ));
         items.add(PermissionItem.advanced(
-                "System Settings Access",
-                "Required for brightness control",
+                getString(R.string.permission_system_settings_title),
+                getString(R.string.permission_system_settings_description),
                 R.drawable.ic_perm_brightness,
                 fragment -> Build.VERSION.SDK_INT < Build.VERSION_CODES.M
                         || Settings.System.canWrite(fragment.requireContext()),
@@ -490,6 +517,10 @@ public final class PermissionsFragment extends Fragment {
         return requireContext().getColor(complete ? R.color.app_primary_soft : R.color.app_warning_soft);
     }
 
+    private boolean isRtl() {
+        return AssistantSettings.isRtl(requireContext());
+    }
+
     private enum GroupKind {
         APP,
         ADVANCED
@@ -516,21 +547,21 @@ public final class PermissionsFragment extends Fragment {
             this.items = items;
         }
 
-        static PermissionGroup appPermissions(List<PermissionItem> items) {
+        static PermissionGroup appPermissions(String title, String description, List<PermissionItem> items) {
             return new PermissionGroup(
                     GroupKind.APP,
-                    "App Permissions",
-                    "Permissions confirmed directly in Android popups",
+                    title,
+                    description,
                     R.drawable.ic_perm_shield,
                     items
             );
         }
 
-        static PermissionGroup advancedAccess(List<PermissionItem> items) {
+        static PermissionGroup advancedAccess(String title, String description, List<PermissionItem> items) {
             return new PermissionGroup(
                     GroupKind.ADVANCED,
-                    "Advanced Access",
-                    "Permissions activated from Android settings screens",
+                    title,
+                    description,
                     R.drawable.ic_perm_accessibility,
                     items
             );
