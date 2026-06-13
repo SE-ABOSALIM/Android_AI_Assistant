@@ -8,6 +8,7 @@ fastapi = "*"
 torch = "*"
 transformers = "*"
 uvicorn = "*"
+asyncpg = "*"
 
 [dev-packages]
 
