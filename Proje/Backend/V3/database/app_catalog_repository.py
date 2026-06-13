@@ -370,9 +370,6 @@ def _alias_rows(language: str, entry: AppCatalogEntryRecord):
     for alias in [entry.label, *entry.aliases]:
         _append_alias(rows, seen, language, alias, "catalog", 1.0)
 
-    for alias in entry.match_aliases:
-        _append_alias(rows, seen, language, alias, "match", 0.95)
-
     return rows
 
 
