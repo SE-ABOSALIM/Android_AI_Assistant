@@ -2,6 +2,7 @@ import time
 
 from fastapi import FastAPI
 
+from V3.cache.app_catalog_cache import set_cached_app_catalog_snapshot
 from V3.config import MODEL_DIR
 from V3.database.app_catalog_repository import save_app_catalog_snapshot
 from V3.schemas import AppCatalogCloseResponse, AppCatalogRequest, AppCatalogResponse, FinalResponse, PredictRequest
@@ -74,12 +75,24 @@ async def app_catalog(request: AppCatalogRequest):
         app_version=request.app_version,
         platform=request.platform,
     )
+    redis_cached = False
+    if db_persisted:
+        redis_cached = await set_cached_app_catalog_snapshot(
+            result["session_id"],
+            {
+                "catalog_version": result["catalog_version"],
+                "language": result.get("language"),
+                "apps": result.get("apps", []),
+            },
+        )
+
     print(
         "[app-catalog] "
         f"session_id={result['session_id']} | "
         f"catalog_version={result['catalog_version']} | "
         f"app_count={result['app_count']} | "
-        f"db_persisted={db_persisted}",
+        f"db_persisted={db_persisted} | "
+        f"redis_cached={redis_cached}",
         flush=True,
     )
     return AppCatalogResponse(
