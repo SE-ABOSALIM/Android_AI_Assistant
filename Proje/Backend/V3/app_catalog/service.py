@@ -1,14 +1,11 @@
-import time
 from typing import Dict, Iterable, List, Optional
 
-from V3.app_catalog.indexer import _build_catalog_search_index
 from V3.app_catalog.models import AppCatalogEntryRecord
 from V3.app_catalog.text_normalization import _has_text
 from V3.app_catalog.store import (
     _catalog_count,
     _delete_catalog,
     _get_catalog,
-    _save_catalog
 )
 from V3.app_catalog.catalog_utils import (
     _build_catalog_version,
@@ -54,23 +51,15 @@ def save_app_catalog(
         ))
 
     version = catalog_version or _build_catalog_version(entries)
-    now = time.monotonic()
     session_key = str(session_id)
-    catalog = {
-        "catalog_version": version,
-        "language": str(language).strip().upper() if _has_text(language) else None,
-        "apps": entries,
-        "search_index": _build_catalog_search_index(entries),
-        "created_at": now,
-        "last_seen": now,
-    }
-
-    _save_catalog(session_key, catalog)
+    normalized_language = str(language).strip().upper() if _has_text(language) else None
 
     return {
         "session_id": session_key,
         "catalog_version": version,
         "app_count": len(entries),
+        "language": normalized_language,
+        "apps": entries,
     }
 
 

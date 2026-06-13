@@ -3,6 +3,7 @@ import time
 from fastapi import FastAPI
 
 from V3.config import MODEL_DIR
+from V3.database.app_catalog_repository import save_app_catalog_snapshot
 from V3.schemas import AppCatalogCloseResponse, AppCatalogRequest, AppCatalogResponse, FinalResponse, PredictRequest
 from V3.services.model_service import get_device_name, preload_model
 from V3.services.predict_service import predict_command
@@ -57,15 +58,32 @@ def predict(request: PredictRequest):
     return response
 
 @app.post("/app-catalog", response_model=AppCatalogResponse)
-def app_catalog(request: AppCatalogRequest):
+async def app_catalog(request: AppCatalogRequest):
     result = save_app_catalog(
         session_id=request.session_id,
         language=request.language,
         catalog_version=request.catalog_version,
         apps=request.apps,
     )
+    db_persisted = await save_app_catalog_snapshot(
+        session_id=result["session_id"],
+        catalog_version=result["catalog_version"],
+        language=result.get("language"),
+        entries=result.get("apps", []),
+        device_id=request.device_id,
+        app_version=request.app_version,
+        platform=request.platform,
+    )
+    print(
+        "[app-catalog] "
+        f"session_id={result['session_id']} | "
+        f"catalog_version={result['catalog_version']} | "
+        f"app_count={result['app_count']} | "
+        f"db_persisted={db_persisted}",
+        flush=True,
+    )
     return AppCatalogResponse(
-        accepted=True,
+        accepted=db_persisted,
         session_id=result["session_id"],
         catalog_version=result["catalog_version"],
         app_count=result["app_count"],

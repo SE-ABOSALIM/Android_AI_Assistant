@@ -1,83 +1,57 @@
-import time
-from threading import RLock
+import asyncio
 from typing import Dict, Optional
 
-from V3.app_catalog.constants import APP_CATALOG_TTL_SECONDS, MAX_APP_CATALOG_SESSIONS
 from V3.app_catalog.text_normalization import _has_text
 
 
-_catalogs: Dict[str, Dict[str, object]] = {}
-_catalog_lock = RLock()
-
-
 def _save_catalog(session_id: str, catalog: Dict[str, object]) -> None:
-    with _catalog_lock:
-        _cleanup_expired_catalogs_locked()
-        _catalogs[session_id] = catalog
-        _prune_oldest_catalogs_locked()
+    # Catalog persistence is handled by V3.database.app_catalog_repository.
+    # This function remains only to keep older imports stable.
+    return None
 
 
 def _get_catalog(session_id: Optional[str]) -> Optional[Dict[str, object]]:
     if not _has_text(session_id):
         return None
 
-    with _catalog_lock:
-        _cleanup_expired_catalogs_locked()
-        catalog = _catalogs.get(str(session_id))
-        if catalog:
-            catalog["last_seen"] = time.monotonic()
+    from V3.database.app_catalog_repository import load_app_catalog_snapshot
 
-        return catalog
+    session_key = str(session_id).strip()
+    return _run_database(lambda: load_app_catalog_snapshot(session_key))
 
 
 def _delete_catalog(session_id: Optional[str]) -> bool:
     if not _has_text(session_id):
         return False
 
-    with _catalog_lock:
-        return _catalogs.pop(str(session_id), None) is not None
+    from V3.database.app_catalog_repository import delete_app_catalog_snapshot
+
+    session_key = str(session_id).strip()
+    return bool(_run_database(lambda: delete_app_catalog_snapshot(session_key)))
 
 
 def _catalog_count() -> int:
-    with _catalog_lock:
-        _cleanup_expired_catalogs_locked()
-        return len(_catalogs)
+    from V3.database.app_catalog_repository import count_app_catalog_snapshots
+
+    return int(_run_database(count_app_catalog_snapshots) or 0)
 
 
 def _cleanup_expired_catalogs() -> None:
-    with _catalog_lock:
-        _cleanup_expired_catalogs_locked()
-
-
-def _cleanup_expired_catalogs_locked() -> None:
-    if not _catalogs:
-        return
-
-    now = time.monotonic()
-    expired_session_ids = [
-        session_id
-        for session_id, catalog in _catalogs.items()
-        if now - float(catalog.get("last_seen", catalog.get("created_at", now))) > APP_CATALOG_TTL_SECONDS
-    ]
-
-    for session_id in expired_session_ids:
-        _catalogs.pop(session_id, None)
+    return None
 
 
 def _prune_oldest_catalogs() -> None:
-    with _catalog_lock:
-        _prune_oldest_catalogs_locked()
+    return None
 
 
-def _prune_oldest_catalogs_locked() -> None:
-    overflow = len(_catalogs) - MAX_APP_CATALOG_SESSIONS
-    if overflow <= 0:
-        return
+def _run_database(operation):
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(operation())
 
-    oldest_session_ids = sorted(
-        _catalogs,
-        key=lambda session_id: float(_catalogs[session_id].get("last_seen", 0.0)),
+    print(
+        "[database] app catalog database access was requested from an active event loop",
+        flush=True,
     )
-
-    for session_id in oldest_session_ids[:overflow]:
-        _catalogs.pop(session_id, None)
+    return None

@@ -19,6 +19,9 @@ class AppCatalogEntry(BaseModel):
 
 class AppCatalogRequest(BaseModel):
     session_id: str
+    device_id: Optional[str] = None
+    platform: Optional[str] = "android"
+    app_version: Optional[str] = None
     language: Optional[str] = None
     catalog_version: Optional[str] = None
     apps: List[AppCatalogEntry] = Field(default_factory=list)
