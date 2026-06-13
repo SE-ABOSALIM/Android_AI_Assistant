@@ -14,6 +14,7 @@ import com.example.anroidaiassistant.ui.overlay.ClickTargetOverlayController;
 import com.example.anroidaiassistant.ui.overlay.GridOverlayController;
 import com.example.anroidaiassistant.ui.overlay.SelectionOverlayController;
 import com.example.anroidaiassistant.ui.overlay.UninstallConfirmationOverlayController;
+import com.example.anroidaiassistant.util.DeviceIdentity;
 import com.example.anroidaiassistant.util.TextNormalizer;
 import com.example.anroidaiassistant.accessibility.AccessibilityActionController;
 import com.example.anroidaiassistant.accessibility.CameraCaptureController;
@@ -626,6 +627,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 text,
                 selectedLanguage,
                 AssistantSession.getSessionId(),
+                DeviceIdentity.getDeviceId(this),
                 alternatives,
                 hasSearchInputAvailable()
         );

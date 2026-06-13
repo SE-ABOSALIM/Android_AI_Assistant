@@ -8,9 +8,11 @@ import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.ui.screens.HomeFragment;
+import com.example.anroidaiassistant.ui.screens.HistoryFragment;
 import com.example.anroidaiassistant.ui.screens.PermissionsFragment;
 import com.example.anroidaiassistant.ui.screens.PlaceholderFragment;
 import com.example.anroidaiassistant.ui.screens.SettingsFragment;
+import com.example.anroidaiassistant.util.DeviceIdentity;
 
 import android.os.Bundle;
 import android.provider.Settings;
@@ -87,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
         if (itemId == R.id.nav_permissions) {
             fragment = new PermissionsFragment();
         } else if (itemId == R.id.nav_history) {
-            fragment = PlaceholderFragment.newInstance("History");
+            fragment = new HistoryFragment();
         } else if (itemId == R.id.nav_guide) {
             fragment = PlaceholderFragment.newInstance("Supported Commands");
         } else if (itemId == R.id.nav_settings) {
@@ -156,7 +158,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sendManualPredictionRequest(String text) {
-        PredictRequest request = new PredictRequest(text, selectedLanguage, AssistantSession.getSessionId());
+        PredictRequest request = new PredictRequest(
+                text,
+                selectedLanguage,
+                AssistantSession.getSessionId(),
+                DeviceIdentity.getDeviceId(this),
+                null,
+                false
+        );
         apiService.predict(request).enqueue(new Callback<PredictResponse>() {
             @Override
             public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {

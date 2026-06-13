@@ -19,6 +19,9 @@ public class PredictRequest {
     @SerializedName("session_id")
     private String sessionId;
 
+    @SerializedName("device_id")
+    private String deviceId;
+
     @SerializedName("catalog_version")
     private String catalogVersion;
 
@@ -44,10 +47,22 @@ public class PredictRequest {
             List<String> textAlternatives,
             boolean hasSearchInput
     ) {
+        this(text, language, sessionId, null, textAlternatives, hasSearchInput);
+    }
+
+    public PredictRequest(
+            String text,
+            String language,
+            String sessionId,
+            String deviceId,
+            List<String> textAlternatives,
+            boolean hasSearchInput
+    ) {
         this.text = text;
         this.language = language;
         this.textAlternatives = textAlternatives == null ? new ArrayList<>() : new ArrayList<>(textAlternatives);
         this.sessionId = sessionId;
+        this.deviceId = deviceId;
         this.catalogVersion = AssistantSession.getCatalogVersion();
         this.hasSearchInput = hasSearchInput;
     }
@@ -66,6 +81,10 @@ public class PredictRequest {
 
     public String getSessionId() {
         return sessionId;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
     }
 
     public String getCatalogVersion() {
