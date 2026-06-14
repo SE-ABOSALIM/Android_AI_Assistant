@@ -11,6 +11,7 @@ from V3.app_catalog.models import (
 from V3.app_catalog.service import (
     catalog_count,
     delete_app_catalog,
+    get_app_catalog_status,
     has_app_catalog,
     is_catalog_version_current,
     save_app_catalog,
@@ -23,6 +24,7 @@ __all__ = [
     "catalog_count",
     "delete_app_catalog",
     "find_app_match",
+    "get_app_catalog_status",
     "has_app_catalog",
     "is_catalog_version_current",
     "resolve_app_match",

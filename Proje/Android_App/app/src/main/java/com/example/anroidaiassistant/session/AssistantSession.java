@@ -17,6 +17,13 @@ public final class AssistantSession {
         return currentSessionId;
     }
 
+    public static synchronized String getOrCreateSessionId() {
+        if (currentSessionId == null) {
+            currentSessionId = UUID.randomUUID().toString();
+        }
+        return currentSessionId;
+    }
+
     public static synchronized String getSessionId() {
         return currentSessionId;
     }

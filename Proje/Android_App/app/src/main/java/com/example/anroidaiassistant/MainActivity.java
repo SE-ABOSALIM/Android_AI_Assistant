@@ -3,13 +3,14 @@ package com.example.anroidaiassistant;
 import com.example.anroidaiassistant.api.ApiService;
 import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
+import com.example.anroidaiassistant.api.dto.AppCatalogStatusResponse;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.ui.screens.CustomCommandsFragment;
 import com.example.anroidaiassistant.ui.screens.GuideFragment;
 import com.example.anroidaiassistant.ui.screens.HomeFragment;
-import com.example.anroidaiassistant.ui.screens.HistoryFragment;
 import com.example.anroidaiassistant.ui.screens.PermissionsFragment;
 import com.example.anroidaiassistant.ui.screens.SettingsFragment;
 import com.example.anroidaiassistant.util.DeviceIdentity;
@@ -42,7 +43,10 @@ public class MainActivity extends AppCompatActivity {
     private CommandExecutor commandExecutor;
     private boolean isServiceListening = false;
     private boolean isCatalogSyncInProgress = false;
+    private boolean isCatalogStatusCheckInProgress = false;
     private Call<AppCatalogResponse> appCatalogSyncCall;
+    private Call<AppCatalogStatusResponse> appCatalogStatusCall;
+    private final List<Runnable> pendingCatalogReadyActions = new ArrayList<>();
     private AlertDialog spellingSuggestionDialog;
     private Runnable pendingPermissionAction;
     private HomeFragment homeFragment;
@@ -70,6 +74,7 @@ public class MainActivity extends AppCompatActivity {
         setupBottomNavigation(savedInstanceState);
 
         refreshListeningUiState();
+        warmUpAppCatalog();
     }
 
     private void setupBottomNavigation(Bundle savedInstanceState) {
@@ -89,7 +94,8 @@ public class MainActivity extends AppCompatActivity {
         if (itemId == R.id.nav_permissions) {
             fragment = new PermissionsFragment();
         } else if (itemId == R.id.nav_history) {
-            fragment = new HistoryFragment();
+            // History UI is parked for now; this slot hosts custom command workflows.
+            fragment = new CustomCommandsFragment();
         } else if (itemId == R.id.nav_guide) {
             fragment = new GuideFragment();
         } else if (itemId == R.id.nav_settings) {
@@ -120,6 +126,7 @@ public class MainActivity extends AppCompatActivity {
         if (service != null) {
             service.updateLanguage(selectedLanguage);
         }
+        warmUpAppCatalog();
     }
 
     public void attachHomeFragment(HomeFragment fragment) {
@@ -205,6 +212,10 @@ public class MainActivity extends AppCompatActivity {
         if (spellingSuggestionDialog != null) {
             spellingSuggestionDialog.dismiss();
         }
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        if (service == null || !service.isContinuousListeningActive()) {
+            closeCurrentBackendSession();
+        }
         instance = null;
     }
 
@@ -250,11 +261,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleListening() {
-        if (isCatalogSyncInProgress) {
-            Toast.makeText(this, R.string.catalog_syncing, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
         if (!hasRequiredAssistantPermissions()) {
             showPermissionRequiredDialog();
             return;
@@ -314,16 +320,89 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void ensureAppCatalogThen(Runnable onCatalogReady) {
+        if (onCatalogReady != null) {
+            pendingCatalogReadyActions.add(onCatalogReady);
+        }
+
         if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
-            onCatalogReady.run();
+            verifyExistingAppCatalogThen();
             return;
         }
 
-        String sessionId = AssistantSession.startNewSession();
-        syncAppCatalogForSession(sessionId, onCatalogReady);
+        startAppCatalogSyncIfNeeded(true);
     }
 
-    private void syncAppCatalogForSession(String sessionId, Runnable onSuccess) {
+    private void warmUpAppCatalog() {
+        if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
+            return;
+        }
+        startAppCatalogSyncIfNeeded(false);
+    }
+
+    private void verifyExistingAppCatalogThen() {
+        if (isCatalogStatusCheckInProgress) {
+            return;
+        }
+
+        String sessionId = AssistantSession.getSessionId();
+        if (sessionId == null) {
+            startAppCatalogSyncIfNeeded(true);
+            return;
+        }
+
+        isCatalogStatusCheckInProgress = true;
+        refreshListeningUiState();
+        appCatalogStatusCall = apiService.getAppCatalogStatus(sessionId);
+        appCatalogStatusCall.enqueue(new Callback<AppCatalogStatusResponse>() {
+            @Override
+            public void onResponse(Call<AppCatalogStatusResponse> call, Response<AppCatalogStatusResponse> response) {
+                runOnUiThread(() -> {
+                    isCatalogStatusCheckInProgress = false;
+                    appCatalogStatusCall = null;
+                    if (isFinishing() || isDestroyed()) {
+                        return;
+                    }
+
+                    AppCatalogStatusResponse body = response.body();
+                    boolean catalogAvailable = response.isSuccessful()
+                            && body != null
+                            && body.isAccepted()
+                            && body.isAvailable();
+                    if (catalogAvailable) {
+                        runPendingCatalogReadyActions();
+                    } else {
+                        startAppCatalogSyncIfNeeded(true);
+                    }
+                    refreshListeningUiState();
+                });
+            }
+
+            @Override
+            public void onFailure(Call<AppCatalogStatusResponse> call, Throwable t) {
+                if (call.isCanceled()) {
+                    return;
+                }
+                runOnUiThread(() -> {
+                    isCatalogStatusCheckInProgress = false;
+                    appCatalogStatusCall = null;
+                    startAppCatalogSyncIfNeeded(true);
+                    refreshListeningUiState();
+                });
+            }
+        });
+    }
+
+    private void startAppCatalogSyncIfNeeded(boolean reportFailure) {
+        if (isCatalogSyncInProgress) {
+            refreshListeningUiState();
+            return;
+        }
+
+        String sessionId = AssistantSession.getOrCreateSessionId();
+        syncAppCatalogForSession(sessionId, reportFailure);
+    }
+
+    private void syncAppCatalogForSession(String sessionId, boolean reportFailure) {
         isCatalogSyncInProgress = true;
         if (homeFragment != null) {
             homeFragment.setSpeakButtonEnabled(false);
@@ -350,12 +429,18 @@ public class MainActivity extends AppCompatActivity {
             }
 
             if (success) {
-                onSuccess.run();
+                if (!AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
+                    startAppCatalogSyncIfNeeded(reportFailure);
+                    return;
+                }
+                runPendingCatalogReadyActions();
                 return;
             }
 
-            closeCurrentBackendSession();
-            Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            clearPendingCatalogReadyActions();
+            if (reportFailure) {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            }
             refreshListeningUiState();
         }));
 
@@ -365,12 +450,21 @@ public class MainActivity extends AppCompatActivity {
                 homeFragment.setSpeakButtonEnabled(true);
                 homeFragment.setBackendState(getString(R.string.backend_state_error));
             }
-            closeCurrentBackendSession();
+            clearPendingCatalogReadyActions();
+            if (reportFailure) {
+                Toast.makeText(this, R.string.backend_unavailable, Toast.LENGTH_SHORT).show();
+            }
             refreshListeningUiState();
         }
     }
 
     private void cancelAppCatalogSyncIfNeeded() {
+        if (appCatalogStatusCall != null) {
+            appCatalogStatusCall.cancel();
+            appCatalogStatusCall = null;
+        }
+        isCatalogStatusCheckInProgress = false;
+
         if (appCatalogSyncCall != null) {
             appCatalogSyncCall.cancel();
             appCatalogSyncCall = null;
@@ -378,8 +472,22 @@ public class MainActivity extends AppCompatActivity {
 
         if (isCatalogSyncInProgress) {
             isCatalogSyncInProgress = false;
-            closeCurrentBackendSession();
         }
+        clearPendingCatalogReadyActions();
+    }
+
+    private void runPendingCatalogReadyActions() {
+        List<Runnable> actions = new ArrayList<>(pendingCatalogReadyActions);
+        pendingCatalogReadyActions.clear();
+        for (Runnable action : actions) {
+            if (action != null) {
+                action.run();
+            }
+        }
+    }
+
+    private void clearPendingCatalogReadyActions() {
+        pendingCatalogReadyActions.clear();
     }
 
     private void closeCurrentBackendSession() {
@@ -393,8 +501,9 @@ public class MainActivity extends AppCompatActivity {
 
         if (homeFragment != null) {
             homeFragment.setListeningState(isServiceListening);
-            homeFragment.setSpeakButtonEnabled(!isCatalogSyncInProgress);
-            homeFragment.setBackendState(isCatalogSyncInProgress
+            boolean catalogBusy = isCatalogSyncInProgress || isCatalogStatusCheckInProgress;
+            homeFragment.setSpeakButtonEnabled(!catalogBusy);
+            homeFragment.setBackendState(catalogBusy
                     ? getString(R.string.backend_state_syncing)
                     : getString(R.string.backend_state_ready));
             homeFragment.setStatusText(isServiceListening

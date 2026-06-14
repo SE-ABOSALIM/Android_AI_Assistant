@@ -4,6 +4,7 @@
     <string name="nav_home">Home</string>
     <string name="nav_permissions">Permissions</string>
     <string name="nav_history">History</string>
+    <string name="nav_custom_commands">Commands</string>
     <string name="nav_guide">Guide</string>
     <string name="nav_settings">Settings</string>
 
@@ -75,6 +76,43 @@
     <string name="history_failed_detail">Failed: %1$s</string>
     <string name="history_command_not_accepted">Command not accepted</string>
     <string name="history_executed_detail">Executed %1$s</string>
+
+    <string name="custom_commands_title">Custom Commands</string>
+    <string name="custom_commands_subtitle">Create reusable voice workflows</string>
+    <string name="custom_commands_summary_label">Saved workflows</string>
+    <string name="custom_commands_count">%1$d workflows</string>
+    <string name="custom_commands_empty">No custom commands yet</string>
+    <string name="custom_commands_empty_hint">Create a workflow and run it later with the custom command prefix.</string>
+    <string name="custom_commands_add">Add custom command</string>
+    <string name="custom_commands_edit">Edit</string>
+    <string name="custom_commands_delete">Delete</string>
+    <string name="custom_commands_save">Save command</string>
+    <string name="custom_commands_update">Update command</string>
+    <string name="custom_commands_name_hint">Command name</string>
+    <string name="custom_commands_name_label">Name</string>
+    <string name="custom_commands_steps_label">Workflow steps</string>
+    <string name="custom_commands_add_step">Add step</string>
+    <string name="custom_commands_phrase_format">Say: custom command: %1$s</string>
+    <string name="custom_commands_step_count">%1$d steps</string>
+    <string name="custom_commands_validation_name">Enter a command name</string>
+    <string name="custom_commands_validation_step">Add at least one valid step</string>
+    <string name="custom_commands_load_error">Could not load custom commands</string>
+    <string name="custom_commands_save_error">Could not save custom command</string>
+    <string name="custom_commands_delete_error">Could not delete custom command</string>
+    <string name="custom_commands_saved">Custom command saved</string>
+    <string name="custom_commands_deleted">Custom command deleted</string>
+    <string name="custom_step_open_app">Open app</string>
+    <string name="custom_step_search_query">Search query</string>
+    <string name="custom_step_click_item">Click item</string>
+    <string name="custom_step_show_labels">Choose numbered label</string>
+    <string name="custom_step_wait">Wait</string>
+    <string name="custom_step_hint_app_name">App name, for example YouTube</string>
+    <string name="custom_step_hint_query">Search text</string>
+    <string name="custom_step_hint_target">Button, text, or icon name</string>
+    <string name="custom_step_hint_label_number">Number to select</string>
+    <string name="custom_step_hint_wait_ms">Delay in milliseconds</string>
+    <string name="custom_step_show_only">show only</string>
+    <string name="custom_step_display">%1$d. %2$s: %3$s</string>
 
     <string name="settings_title">Settings</string>
     <string name="settings_subtitle">Customize assistant behavior</string>

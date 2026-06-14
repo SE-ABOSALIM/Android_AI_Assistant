@@ -5,6 +5,7 @@
     <string name="nav_home">الرئيسية</string>
     <string name="nav_permissions">الأذونات</string>
     <string name="nav_history">السجل</string>
+    <string name="nav_custom_commands">الأوامر</string>
     <string name="nav_guide">الدليل</string>
     <string name="nav_settings">الإعدادات</string>
 
@@ -76,6 +77,39 @@
     <string name="history_failed_detail">فشل: %1$s</string>
     <string name="history_command_not_accepted">لم يتم قبول الأمر</string>
     <string name="history_executed_detail">تم تنفيذ %1$s</string>
+
+    <string name="custom_commands_title">الأوامر المخصصة</string>
+    <string name="custom_commands_subtitle">أنشئ تسلسلات صوتية قابلة لإعادة الاستخدام</string>
+    <string name="custom_commands_summary_label">التسلسلات المحفوظة</string>
+    <string name="custom_commands_count">%1$d تسلسل</string>
+    <string name="custom_commands_empty">لا توجد أوامر مخصصة بعد</string>
+    <string name="custom_commands_empty_hint">أنشئ تسلسلا وشغله لاحقا باستخدام بادئة الأمر المخصص.</string>
+    <string name="custom_commands_add">إضافة أمر مخصص</string>
+    <string name="custom_commands_edit">تعديل</string>
+    <string name="custom_commands_delete">حذف</string>
+    <string name="custom_commands_save">حفظ الأمر</string>
+    <string name="custom_commands_update">تحديث الأمر</string>
+    <string name="custom_commands_name_hint">اسم الأمر</string>
+    <string name="custom_commands_name_label">الاسم</string>
+    <string name="custom_commands_steps_label">خطوات التسلسل</string>
+    <string name="custom_commands_add_step">إضافة خطوة</string>
+    <string name="custom_commands_phrase_format">قل: أمر مخصص: %1$s</string>
+    <string name="custom_commands_step_count">%1$d خطوات</string>
+    <string name="custom_commands_validation_name">أدخل اسم الأمر</string>
+    <string name="custom_commands_validation_step">أضف خطوة واحدة على الأقل مع قيمة</string>
+    <string name="custom_commands_saved">تم حفظ الأمر المخصص</string>
+    <string name="custom_commands_deleted">تم حذف الأمر المخصص</string>
+    <string name="custom_step_open_app">فتح تطبيق</string>
+    <string name="custom_step_search_query">بحث</string>
+    <string name="custom_step_click_item">الضغط على عنصر</string>
+    <string name="custom_step_show_labels">اختيار رقم من الملصقات</string>
+    <string name="custom_step_wait">انتظار</string>
+    <string name="custom_step_hint_app_name">اسم التطبيق، مثل YouTube</string>
+    <string name="custom_step_hint_query">نص البحث</string>
+    <string name="custom_step_hint_target">اسم زر أو نص أو أيقونة</string>
+    <string name="custom_step_hint_label_number">الرقم المطلوب اختياره</string>
+    <string name="custom_step_hint_wait_ms">مدة الانتظار بالميلي ثانية</string>
+    <string name="custom_step_display">%1$d. %2$s: %3$s</string>
 
     <string name="settings_title">الإعدادات</string>
     <string name="settings_subtitle">خصص سلوك المساعد</string>

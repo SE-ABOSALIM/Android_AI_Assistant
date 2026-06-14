@@ -170,6 +170,12 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         threshold=0.92,
         android_supported=True,
     ),
+    "RUN_CUSTOM_COMMAND": _contract(
+        "RUN_CUSTOM_COMMAND",
+        threshold=1.0,
+        required=("custom_command_name", "custom_command_steps"),
+        android_supported=True,
+    ),
     "SCROLL_SCREEN": _contract(
         "SCROLL_SCREEN",
         threshold=0.92,

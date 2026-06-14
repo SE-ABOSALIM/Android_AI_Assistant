@@ -35,6 +35,14 @@ class AppCatalogResponse(BaseModel):
     app_count: int
 
 
+class AppCatalogStatusResponse(BaseModel):
+    accepted: bool
+    session_id: str
+    available: bool
+    catalog_version: Optional[str] = None
+    app_count: int = 0
+
+
 class AppCatalogCloseResponse(BaseModel):
     accepted: bool
     session_id: str
@@ -69,6 +77,42 @@ class CommandHistoryResponse(BaseModel):
 class CommandHistoryMutationResponse(BaseModel):
     accepted: bool
     deleted_count: int = 0
+
+
+class CustomCommandStep(BaseModel):
+    intent: str
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    wait_after_ms: int = 0
+    stop_on_failure: bool = True
+
+
+class CustomCommandItem(BaseModel):
+    id: str
+    name: str
+    language: str
+    enabled: bool = True
+    steps: List[CustomCommandStep] = Field(default_factory=list)
+    created_at: str
+    updated_at: str
+
+
+class CustomCommandListResponse(BaseModel):
+    items: List[CustomCommandItem] = Field(default_factory=list)
+
+
+class CustomCommandMutationRequest(BaseModel):
+    device_id: str
+    language: str = "TR"
+    name: str
+    steps: List[CustomCommandStep] = Field(default_factory=list)
+
+
+class CustomCommandMutationResponse(BaseModel):
+    accepted: bool
+    item: Optional[CustomCommandItem] = None
+    deleted_count: int = 0
+    error_code: Optional[str] = None
+    error_message: Optional[str] = None
 
 
 class FinalResponse(BaseModel):

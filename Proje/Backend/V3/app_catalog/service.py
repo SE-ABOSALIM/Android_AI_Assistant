@@ -67,6 +67,23 @@ def has_app_catalog(session_id: Optional[str]) -> bool:
     return _get_catalog(session_id) is not None
 
 
+def get_app_catalog_status(session_id: Optional[str]) -> Dict[str, object]:
+    catalog = _get_catalog(session_id)
+    if not catalog:
+        return {
+            "available": False,
+            "catalog_version": None,
+            "app_count": 0,
+        }
+
+    apps = catalog.get("apps") or []
+    return {
+        "available": True,
+        "catalog_version": catalog.get("catalog_version"),
+        "app_count": len(apps),
+    }
+
+
 def is_catalog_version_current(session_id: Optional[str], catalog_version: Optional[str]) -> bool:
     if not _has_text(catalog_version):
         return True

@@ -5,6 +5,7 @@
     <string name="nav_home">Ana Sayfa</string>
     <string name="nav_permissions">İzinler</string>
     <string name="nav_history">Geçmiş</string>
+    <string name="nav_custom_commands">Komutlar</string>
     <string name="nav_guide">Kılavuz</string>
     <string name="nav_settings">Ayarlar</string>
 
@@ -76,6 +77,39 @@
     <string name="history_failed_detail">Başarısız: %1$s</string>
     <string name="history_command_not_accepted">Komut kabul edilmedi</string>
     <string name="history_executed_detail">%1$s çalıştırıldı</string>
+
+    <string name="custom_commands_title">Özel Komutlar</string>
+    <string name="custom_commands_subtitle">Tekrar kullanılabilir sesli akışlar oluştur</string>
+    <string name="custom_commands_summary_label">Kayıtlı akışlar</string>
+    <string name="custom_commands_count">%1$d akış</string>
+    <string name="custom_commands_empty">Henüz özel komut yok</string>
+    <string name="custom_commands_empty_hint">Bir akış oluştur ve daha sonra özel komut önekiyle çalıştır.</string>
+    <string name="custom_commands_add">Özel komut ekle</string>
+    <string name="custom_commands_edit">Düzenle</string>
+    <string name="custom_commands_delete">Sil</string>
+    <string name="custom_commands_save">Komutu kaydet</string>
+    <string name="custom_commands_update">Komutu güncelle</string>
+    <string name="custom_commands_name_hint">Komut adı</string>
+    <string name="custom_commands_name_label">Ad</string>
+    <string name="custom_commands_steps_label">Akış adımları</string>
+    <string name="custom_commands_add_step">Adım ekle</string>
+    <string name="custom_commands_phrase_format">Söyle: özel komut: %1$s</string>
+    <string name="custom_commands_step_count">%1$d adım</string>
+    <string name="custom_commands_validation_name">Komut adı gir</string>
+    <string name="custom_commands_validation_step">Değer içeren en az bir adım ekle</string>
+    <string name="custom_commands_saved">Özel komut kaydedildi</string>
+    <string name="custom_commands_deleted">Özel komut silindi</string>
+    <string name="custom_step_open_app">Uygulama aç</string>
+    <string name="custom_step_search_query">Arama yap</string>
+    <string name="custom_step_click_item">Öğeye bas</string>
+    <string name="custom_step_show_labels">Numaralı etiketi seç</string>
+    <string name="custom_step_wait">Bekle</string>
+    <string name="custom_step_hint_app_name">Uygulama adı, örnek YouTube</string>
+    <string name="custom_step_hint_query">Aranacak metin</string>
+    <string name="custom_step_hint_target">Buton, metin veya ikon adı</string>
+    <string name="custom_step_hint_label_number">Seçilecek numara</string>
+    <string name="custom_step_hint_wait_ms">Milisaniye cinsinden bekleme</string>
+    <string name="custom_step_display">%1$d. %2$s: %3$s</string>
 
     <string name="settings_title">Ayarlar</string>
     <string name="settings_subtitle">Asistan davranışını özelleştir</string>

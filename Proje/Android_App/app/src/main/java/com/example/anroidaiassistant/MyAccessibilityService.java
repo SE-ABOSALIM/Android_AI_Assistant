@@ -405,7 +405,6 @@ public class MyAccessibilityService extends AccessibilityService {
         clearNumberSelection();
         hideGrid();
         cancelAppCatalogSyncIfNeeded();
-        closeCurrentBackendSession();
         mainHandler.removeCallbacks(restartListeningRunnable);
         setRecognizerSoundsMuted(false);
         isRecognitionSessionActive = false;
@@ -580,11 +579,7 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
-        String previousSessionId = AssistantSession.getSessionId();
-        String sessionId = AssistantSession.startNewSession();
-        if (previousSessionId != null) {
-            AppCatalogSyncer.closeSession(apiService, previousSessionId);
-        }
+        String sessionId = AssistantSession.getOrCreateSessionId();
 
         updateOverlayText("Uygulama listesi gonderiliyor...");
         appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(
@@ -1164,6 +1159,20 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean showScreenLabels() {
         return screenLabelsController != null && screenLabelsController.showLabels();
+    }
+
+    public boolean selectNumberedChoice(int oneBasedNumber) {
+        if (!isNumberSelectionMode) {
+            return false;
+        }
+
+        int selectedIndex = oneBasedNumber - 1;
+        if (selectedIndex < 0 || selectedIndex >= numberSelectionChoices.size()) {
+            return false;
+        }
+
+        completeNumberSelection(selectedIndex);
+        return true;
     }
 
     public boolean performDevicePowerAction(DevicePowerController.Action action) {
