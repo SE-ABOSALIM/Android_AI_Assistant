@@ -114,6 +114,7 @@
     <string name="spell_suggestion_message">جرّب تهجئة اسم التطبيق حرفا حرفا.</string>
     <string name="spell_suggestion_action">جرّب التهجئة</string>
     <string name="spell_mode_enabled">وضع التهجئة نشط. تهجأ اسم التطبيق حرفا حرفا.</string>
+    <string name="overlay_preparing">جار التحضير...</string>
     <string name="overlay_listening">يستمع...</string>
     <string name="selection_title_default">اختر</string>
     <string name="selection_instruction">قل رقم العنصر في القائمة للاختيار.</string>

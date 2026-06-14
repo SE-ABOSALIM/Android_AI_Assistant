@@ -74,6 +74,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private boolean isNumberSelectionMode = false;
     private boolean isConfirmationSelectionMode = false;
     private boolean isRecognitionSessionActive = false;
+    private boolean isRecognizerReadyForSpeech = false;
     private boolean areRecognizerSoundsMuted = false;
     private boolean isPausedForPhoneCall = false;
     private final Map<Integer, Boolean> streamMuteStateBeforeRecognizer = new HashMap<>();
@@ -199,9 +200,8 @@ public class MyAccessibilityService extends AccessibilityService {
         speechRecognizer.setRecognitionListener(new RecognitionListener() {
             @Override
             public void onReadyForSpeech(Bundle params) {
-                if (!isNumberSelectionMode) {
-                    updateOverlayText("Listening...");
-                }
+                isRecognizerReadyForSpeech = true;
+                showRecognizerReadyState();
             }
             @Override
             public void onBeginningOfSpeech() {}
@@ -210,11 +210,14 @@ public class MyAccessibilityService extends AccessibilityService {
             @Override
             public void onBufferReceived(byte[] buffer) {}
             @Override
-            public void onEndOfSpeech() {}
+            public void onEndOfSpeech() {
+                isRecognizerReadyForSpeech = false;
+            }
 
             @Override
             public void onError(int error) {
                 isRecognitionSessionActive = false;
+                isRecognizerReadyForSpeech = false;
                 if (isPausedForPhoneCall) {
                     return;
                 }
@@ -226,9 +229,7 @@ public class MyAccessibilityService extends AccessibilityService {
                     case SpeechRecognizer.ERROR_NO_MATCH:
                     case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
                     case SpeechRecognizer.ERROR_CLIENT:
-                        if (!isNumberSelectionMode) {
-                            updateOverlayText("Listening...");
-                        }
+                        showRecognizerPreparingState();
                         scheduleListeningRestart(RESTART_DELAY_FAST_MS);
                         break;
                     case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
@@ -247,6 +248,7 @@ public class MyAccessibilityService extends AccessibilityService {
             @Override
             public void onResults(Bundle results) {
                 isRecognitionSessionActive = false;
+                isRecognizerReadyForSpeech = false;
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null && !matches.isEmpty()) {
                     String spokenText = matches.get(0);
@@ -287,6 +289,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private void destroySpeechRecognizer() {
         mainHandler.removeCallbacks(restartListeningRunnable);
         isRecognitionSessionActive = false;
+        isRecognizerReadyForSpeech = false;
 
         if (speechRecognizer == null) {
             return;
@@ -311,9 +314,12 @@ public class MyAccessibilityService extends AccessibilityService {
 
         try {
             isRecognitionSessionActive = true;
+            isRecognizerReadyForSpeech = false;
+            showRecognizerPreparingState();
             speechRecognizer.startListening(speechRecognizerIntent);
         } catch (Exception ignored) {
             isRecognitionSessionActive = false;
+            isRecognizerReadyForSpeech = false;
             setupSpeechRecognizer();
             scheduleListeningRestart(RESTART_DELAY_SLOW_MS);
         }
@@ -392,6 +398,7 @@ public class MyAccessibilityService extends AccessibilityService {
         }
         setRecognizerSoundsMuted(true);
         showOverlay();
+        showRecognizerPreparingState();
         if (speechRecognizer == null) {
             setupSpeechRecognizer();
         }
@@ -408,6 +415,7 @@ public class MyAccessibilityService extends AccessibilityService {
         mainHandler.removeCallbacks(restartListeningRunnable);
         setRecognizerSoundsMuted(false);
         isRecognitionSessionActive = false;
+        isRecognizerReadyForSpeech = false;
         if (speechRecognizer != null) {
             try {
                 speechRecognizer.stopListening();
@@ -446,6 +454,7 @@ public class MyAccessibilityService extends AccessibilityService {
         hideGrid();
         mainHandler.removeCallbacks(restartListeningRunnable);
         isRecognitionSessionActive = false;
+        isRecognizerReadyForSpeech = false;
         if (speechRecognizer != null) {
             try {
                 speechRecognizer.stopListening();
@@ -470,7 +479,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         setRecognizerSoundsMuted(true);
         showOverlay();
-        updateOverlayText("Listening...");
+        showRecognizerPreparingState();
         if (speechRecognizer == null) {
             setupSpeechRecognizer();
         }
@@ -548,6 +557,30 @@ public class MyAccessibilityService extends AccessibilityService {
         if (listeningOverlayController != null) {
             listeningOverlayController.updateText(text);
         }
+    }
+
+    private void showRecognizerPreparingState() {
+        if (shouldShowRecognizerStateInOverlay()) {
+            updateOverlayText(getString(R.string.overlay_preparing));
+        }
+    }
+
+    private void showRecognizerReadyState() {
+        if (shouldShowRecognizerStateInOverlay()) {
+            updateOverlayText(getString(R.string.overlay_listening));
+        }
+    }
+
+    private void showCurrentRecognizerState() {
+        if (isRecognizerReadyForSpeech) {
+            showRecognizerReadyState();
+        } else {
+            showRecognizerPreparingState();
+        }
+    }
+
+    private boolean shouldShowRecognizerStateInOverlay() {
+        return !isNumberSelectionMode && !isGridActive();
     }
 
     public void showFeedback(String text) {
@@ -673,7 +706,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 hideGrid();
                 if (isListening) {
                     showOverlay();
-                    updateOverlayText("Listening...");
+                    showCurrentRecognizerState();
                 }
             }
             return true;
@@ -892,6 +925,7 @@ public class MyAccessibilityService extends AccessibilityService {
             } catch (Exception ignored) {}
         }
         isRecognitionSessionActive = false;
+        isRecognizerReadyForSpeech = false;
         mainHandler.postDelayed(restartListeningRunnable, RESTART_DELAY_FAST_MS);
     }
 
@@ -973,7 +1007,7 @@ public class MyAccessibilityService extends AccessibilityService {
         }
         if (clickTargetSelection && isListening) {
             showOverlay();
-            updateOverlayText("Listening...");
+            showCurrentRecognizerState();
         }
     }
 
@@ -998,7 +1032,7 @@ public class MyAccessibilityService extends AccessibilityService {
         hideUninstallConfirmationWindow();
         if (restoreListeningOverlay && isListening) {
             showOverlay();
-            updateOverlayText("Listening...");
+            showCurrentRecognizerState();
         }
     }
 
@@ -1194,7 +1228,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         if (isListening) {
             showOverlay();
-            updateOverlayText("Listening...");
+            showCurrentRecognizerState();
         }
     }
 

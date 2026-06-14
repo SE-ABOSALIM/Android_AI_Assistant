@@ -114,6 +114,7 @@
     <string name="spell_suggestion_message">Uygulama adını harf harf söylemeyi dene.</string>
     <string name="spell_suggestion_action">Harf harf söyle</string>
     <string name="spell_mode_enabled">Harf modu aktif. Uygulama adını harf harf söyle.</string>
+    <string name="overlay_preparing">Hazırlanıyor...</string>
     <string name="overlay_listening">Dinleniyor...</string>
     <string name="selection_title_default">Seç</string>
     <string name="selection_instruction">Seçmek için listedeki numarayı söyle.</string>

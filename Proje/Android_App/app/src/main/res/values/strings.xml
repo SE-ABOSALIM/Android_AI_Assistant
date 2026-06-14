@@ -117,6 +117,7 @@
     <string name="spell_suggestion_message">Try spelling the app name letter by letter.</string>
     <string name="spell_suggestion_action">Try spelling</string>
     <string name="spell_mode_enabled">Spell mode active. Spell the app name letter by letter.</string>
+    <string name="overlay_preparing">Preparing...</string>
     <string name="overlay_listening">Listening...</string>
     <string name="selection_title_default">Choose</string>
     <string name="selection_instruction">Say the number in the list to choose.</string>
