@@ -4,18 +4,60 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+
+    <!-- Daha Zarif ve İnce Dış Çark -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@color/bottom_nav_item_color"
-        android:strokeWidth="2.2"
+        android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M12,3.3 L14.1,3.3 L14.8,5.6 L16.4,6.2 L18.5,5.1 L20,6.6 L18.9,8.7 L19.5,10.3 L21.7,11 L21.7,13 L19.5,13.7 L18.9,15.3 L20,17.4 L18.5,18.9 L16.4,17.8 L14.8,18.4 L14.1,20.7 L9.9,20.7 L9.2,18.4 L7.6,17.8 L5.5,18.9 L4,17.4 L5.1,15.3 L4.5,13.7 L2.3,13 L2.3,11 L4.5,10.3 L5.1,8.7 L4,6.6 L5.5,5.1 L7.6,6.2 L9.2,5.6 L9.9,3.3 Z" />
+        android:pathData="M 19.14,12.94
+                         c 0.04,-0.3 0.06,-0.61 0.06,-0.94
+                         c 0,-0.32 -0.02,-0.64 -0.07,-0.94
+                         l 2.03,-1.58
+                         c 0.18,-0.14 0.23,-0.41 0.12,-0.61
+                         l -1.92,-3.32
+                         c -0.12,-0.22 -0.37,-0.29 -0.59,-0.22
+                         l -2.39,0.96
+                         c -0.5,-0.38 -1.03,-0.7 -1.62,-0.94
+                         L 14.4,2.81
+                         C 14.36,2.58 14.17,2.4 13.93,2.4
+                         h -3.87
+                         c -0.24,0 -0.43,0.18 -0.47,0.41
+                         L 9.21,5.45
+                         C 8.62,5.69 8.08,6.01 7.58,6.39
+                         L 5.19,5.43
+                         C 4.97,5.36 4.72,5.43 4.6,5.65
+                         L 2.68,8.97
+                         c -0.11,0.21 -0.06,0.47 0.12,0.61
+                         l 2.03,1.58
+                         c -0.05,0.3 -0.09,0.63 -0.09,0.94
+                         s 0.02,0.64 0.07,0.94
+                         l -2.03,1.58
+                         c -0.18,0.14 -0.23,0.41 -0.12,0.61
+                         l 1.92,3.32
+                         c 0.12,0.22 0.37,0.29 0.59,0.22
+                         l 2.39,-0.96
+                         c 0.5,0.38 1.03,0.7 1.62,0.94
+                         l 0.36,2.54
+                         c 0.05,0.24 0.24,0.41 0.47,0.41
+                         h 3.87
+                         c 0.24,0 0.43,-0.18 0.47,-0.41
+                         l 0.36,-2.54
+                         c 0.59,-0.24 1.13,-0.56 1.62,-0.94
+                         l 2.39,0.96
+                         c 0.22,0.08 0.47,0.01 0.59,-0.22
+                         l 1.92,-3.32
+                         c 0.11,-0.21 0.06,-0.47 -0.12,-0.61
+                         z" />
+
+    <!-- Daha Zarif ve İnce Merkez Dairesi -->
     <path
         android:fillColor="@android:color/transparent"
         android:strokeColor="@color/bottom_nav_item_color"
-        android:strokeWidth="2.2"
+        android:strokeWidth="1.8"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M12,8.3 A3.7,3.7 0,1 0,12 15.7 A3.7,3.7 0,0 0,12 8.3" />
+        android:pathData="M 12,8.5 a 3.5,3.5 0 1,0 0,7 3.5,3.5 0 1,0 0,-7" />
 </vector>
