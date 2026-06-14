@@ -76,6 +76,20 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"target_text": "home"})
         self.assertEqual(result["rule_matched"], "click_item")
 
+    def test_click_item_rule_repairs_english_top_stt(self):
+        examples = {
+            "top Done": "done",
+            "top Stop": "stop",
+        }
+
+        for text, target in examples.items():
+            with self.subTest(text=text):
+                result = rule_based_command(text, "EN")
+
+                self.assertEqual(result["intent"], "CLICK_ITEM")
+                self.assertEqual(result["parameters"], {"target_text": target})
+                self.assertEqual(result["rule_matched"], "click_item")
+
     def test_click_item_rule_keeps_position_hint(self):
         result = rule_based_command("asagidaki artiya bas", "TR")
 

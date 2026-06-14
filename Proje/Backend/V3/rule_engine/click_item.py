@@ -26,7 +26,7 @@ def click_item_command(context: RuleContext) -> Optional[Dict[str, Any]]:
 
 def _has_click_action(context: RuleContext) -> bool:
     normalized = f" {normalized_lower(context.original)} "
-    if _looks_like_turkish_merged_click(context):
+    if _looks_like_english_top_click(context) or _looks_like_turkish_merged_click(context):
         return True
 
     return any(
@@ -43,6 +43,14 @@ def _has_click_action(context: RuleContext) -> bool:
             " \u0627\u0646\u0642\u0631 ",
         )
     )
+
+
+def _looks_like_english_top_click(context: RuleContext) -> bool:
+    if not str(context.language or "").upper().startswith("EN"):
+        return False
+
+    words = normalized_lower(context.original).split()
+    return len(words) >= 2 and words[0] == "top"
 
 
 def _looks_like_turkish_merged_click(context: RuleContext) -> bool:
