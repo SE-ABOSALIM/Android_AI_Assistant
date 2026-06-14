@@ -13,8 +13,6 @@
     <color name="app_power_icon">#94A3B8</color>
     <color name="app_success">#22C55E</color>
     <color name="app_danger">#F87171</color>
-    <color name="history_success_stat_bg">#123524</color>
-    <color name="history_failed_stat_bg">#3F1D1D</color>
     <color name="app_warning">#FBBF24</color>
     <color name="app_warning_soft">#422006</color>
     <color name="app_warning_progress_track">#78350F</color>

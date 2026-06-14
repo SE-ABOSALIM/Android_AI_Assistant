@@ -3,8 +3,6 @@ package com.example.anroidaiassistant.api;
 import com.example.anroidaiassistant.api.dto.AppCatalogRequest;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.api.dto.AppCatalogStatusResponse;
-import com.example.anroidaiassistant.api.dto.CommandHistoryResponse;
-import com.example.anroidaiassistant.api.dto.CommandHistoryMutationResponse;
 import com.example.anroidaiassistant.api.dto.CustomCommandListResponse;
 import com.example.anroidaiassistant.api.dto.CustomCommandMutationRequest;
 import com.example.anroidaiassistant.api.dto.CustomCommandMutationResponse;
@@ -32,28 +30,6 @@ public interface ApiService {
 
     @POST("predict")
     Call<PredictResponse> predict(@Body PredictRequest request);
-
-    @GET("command-history")
-    Call<CommandHistoryResponse> getCommandHistory(
-            @Query("session_id") String sessionId,
-            @Query("device_id") String deviceId,
-            @Query("limit") int limit,
-            @Query("offset") int offset,
-            @Query("q") String query
-    );
-
-    @DELETE("command-history")
-    Call<CommandHistoryMutationResponse> clearCommandHistory(
-            @Query("session_id") String sessionId,
-            @Query("device_id") String deviceId
-    );
-
-    @DELETE("command-history/{history_id}")
-    Call<CommandHistoryMutationResponse> deleteCommandHistoryItem(
-            @Path("history_id") String historyId,
-            @Query("session_id") String sessionId,
-            @Query("device_id") String deviceId
-    );
 
     @GET("custom-commands")
     Call<CustomCommandListResponse> getCustomCommands(

@@ -209,7 +209,7 @@ public final class CustomCommandsFragment extends Fragment {
                 R.color.app_primary,
                 true
         );
-        phrase.setBackgroundResource(R.drawable.history_load_more_background);
+        phrase.setBackgroundResource(R.drawable.custom_command_soft_background);
         phrase.setPadding(dp(12), dp(9), dp(12), dp(9));
         LinearLayout.LayoutParams phraseParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -321,7 +321,7 @@ public final class CustomCommandsFragment extends Fragment {
         addStep.setText(R.string.custom_commands_add_step);
         addStep.setAllCaps(false);
         addStep.setTextColor(ContextCompat.getColor(context, R.color.app_primary));
-        addStep.setBackgroundResource(R.drawable.history_load_more_background);
+        addStep.setBackgroundResource(R.drawable.custom_command_soft_background);
         addStep.setOnClickListener(v -> addStepRow(stepsContainer, stepRows, null));
         LinearLayout.LayoutParams addStepParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,

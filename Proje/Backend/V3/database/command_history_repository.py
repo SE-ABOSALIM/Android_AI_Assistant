@@ -5,9 +5,6 @@ from typing import Any, Dict, Optional
 from V3.database.connection import is_database_configured, open_database_connection
 
 
-MAX_COMMAND_HISTORY_PER_DEVICE = 300
-
-
 async def record_command_history(
     *,
     text: str,
@@ -62,11 +59,6 @@ async def record_command_history(
                 "successful" if accepted else "failed",
                 _clean_text(response.get("error_code"), uppercase=True),
                 _optional_float(processing_time_ms),
-            )
-            await _prune_old_command_history(
-                connection,
-                database_device_id=database_device_id,
-                session_id=session_id,
             )
 
         return True
@@ -283,49 +275,6 @@ def _where_clause(scope, query: Optional[str]):
         f"OR COALESCE(error_code, '') ILIKE ${query_position})",
         [*scope.params, search],
     )
-
-
-async def _prune_old_command_history(connection, *, database_device_id, session_id: Optional[str]) -> None:
-    if database_device_id is not None:
-        await connection.execute(
-            """
-            DELETE FROM command_history
-             WHERE id IN (
-                SELECT id
-                  FROM (
-                    SELECT
-                        id,
-                        row_number() OVER (ORDER BY created_at DESC) AS row_number
-                    FROM command_history
-                    WHERE device_ref_id = $1
-                  ) AS ranked
-                 WHERE row_number > $2
-             )
-            """,
-            database_device_id,
-            MAX_COMMAND_HISTORY_PER_DEVICE,
-        )
-        return
-
-    if _has_text(session_id):
-        await connection.execute(
-            """
-            DELETE FROM command_history
-             WHERE id IN (
-                SELECT id
-                  FROM (
-                    SELECT
-                        id,
-                        row_number() OVER (ORDER BY created_at DESC) AS row_number
-                    FROM command_history
-                    WHERE session_id = $1
-                  ) AS ranked
-                 WHERE row_number > $2
-             )
-            """,
-            str(session_id).strip(),
-            MAX_COMMAND_HISTORY_PER_DEVICE,
-        )
 
 
 def _row_to_history_item(row) -> Dict[str, Any]:

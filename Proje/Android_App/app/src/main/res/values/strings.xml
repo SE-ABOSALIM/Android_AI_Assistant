@@ -3,7 +3,6 @@
 
     <string name="nav_home">Home</string>
     <string name="nav_permissions">Permissions</string>
-    <string name="nav_history">History</string>
     <string name="nav_custom_commands">Commands</string>
     <string name="nav_guide">Guide</string>
     <string name="nav_settings">Settings</string>
@@ -55,27 +54,7 @@
     <string name="permission_system_settings_title">System Settings Access</string>
     <string name="permission_system_settings_description">Required for brightness control</string>
 
-    <string name="history_title">History</string>
-    <string name="history_subtitle">Your command history</string>
-    <string name="history_clear_all">Clear All</string>
-    <string name="history_search_hint">Search commands...</string>
-    <string name="history_successful">Successful</string>
-    <string name="history_failed">Failed</string>
-    <string name="history_empty">No commands yet</string>
-    <string name="history_load_more">Load more commands</string>
-    <string name="history_loading">Loading...</string>
-    <string name="history_load_error">Could not load history</string>
-    <string name="history_delete_error">Could not delete command</string>
-    <string name="history_clear_error">Could not clear history</string>
-    <string name="history_clear_title">Clear history</string>
-    <string name="history_clear_message">Delete all command history on this device?</string>
-    <string name="history_clear_confirm">Clear</string>
     <string name="common_cancel">Cancel</string>
-    <string name="history_command_fallback">Command</string>
-    <string name="history_command_detail_fallback">command</string>
-    <string name="history_failed_detail">Failed: %1$s</string>
-    <string name="history_command_not_accepted">Command not accepted</string>
-    <string name="history_executed_detail">Executed %1$s</string>
 
     <string name="custom_commands_title">Custom Commands</string>
     <string name="custom_commands_subtitle">Create reusable voice workflows</string>

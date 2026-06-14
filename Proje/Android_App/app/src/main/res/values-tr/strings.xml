@@ -4,7 +4,6 @@
 
     <string name="nav_home">Ana Sayfa</string>
     <string name="nav_permissions">İzinler</string>
-    <string name="nav_history">Geçmiş</string>
     <string name="nav_custom_commands">Komutlar</string>
     <string name="nav_guide">Kılavuz</string>
     <string name="nav_settings">Ayarlar</string>
@@ -56,27 +55,7 @@
     <string name="permission_system_settings_title">Sistem Ayarları Erişimi</string>
     <string name="permission_system_settings_description">Parlaklık kontrolü için gerekli</string>
 
-    <string name="history_title">Geçmiş</string>
-    <string name="history_subtitle">Komut geçmişin</string>
-    <string name="history_clear_all">Tümünü Temizle</string>
-    <string name="history_search_hint">Komut ara...</string>
-    <string name="history_successful">Başarılı</string>
-    <string name="history_failed">Başarısız</string>
-    <string name="history_empty">Henüz komut yok</string>
-    <string name="history_load_more">Daha fazla komut yükle</string>
-    <string name="history_loading">Yükleniyor...</string>
-    <string name="history_load_error">Geçmiş yüklenemedi</string>
-    <string name="history_delete_error">Komut silinemedi</string>
-    <string name="history_clear_error">Geçmiş temizlenemedi</string>
-    <string name="history_clear_title">Geçmişi temizle</string>
-    <string name="history_clear_message">Bu cihazdaki tüm komut geçmişi silinsin mi?</string>
-    <string name="history_clear_confirm">Temizle</string>
     <string name="common_cancel">İptal</string>
-    <string name="history_command_fallback">Komut</string>
-    <string name="history_command_detail_fallback">komut</string>
-    <string name="history_failed_detail">Başarısız: %1$s</string>
-    <string name="history_command_not_accepted">Komut kabul edilmedi</string>
-    <string name="history_executed_detail">%1$s çalıştırıldı</string>
 
     <string name="custom_commands_title">Özel Komutlar</string>
     <string name="custom_commands_subtitle">Tekrar kullanılabilir sesli akışlar oluştur</string>

@@ -93,8 +93,7 @@ public class MainActivity extends AppCompatActivity {
         Fragment fragment;
         if (itemId == R.id.nav_permissions) {
             fragment = new PermissionsFragment();
-        } else if (itemId == R.id.nav_history) {
-            // History UI is parked for now; this slot hosts custom command workflows.
+        } else if (itemId == R.id.nav_custom_commands) {
             fragment = new CustomCommandsFragment();
         } else if (itemId == R.id.nav_guide) {
             fragment = new GuideFragment();

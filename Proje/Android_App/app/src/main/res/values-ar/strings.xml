@@ -4,7 +4,6 @@
 
     <string name="nav_home">الرئيسية</string>
     <string name="nav_permissions">الأذونات</string>
-    <string name="nav_history">السجل</string>
     <string name="nav_custom_commands">الأوامر</string>
     <string name="nav_guide">الدليل</string>
     <string name="nav_settings">الإعدادات</string>
@@ -56,27 +55,7 @@
     <string name="permission_system_settings_title">وصول إعدادات النظام</string>
     <string name="permission_system_settings_description">مطلوب للتحكم في السطوع</string>
 
-    <string name="history_title">السجل</string>
-    <string name="history_subtitle">سجل أوامرك</string>
-    <string name="history_clear_all">مسح الكل</string>
-    <string name="history_search_hint">ابحث في الأوامر...</string>
-    <string name="history_successful">ناجحة</string>
-    <string name="history_failed">فاشلة</string>
-    <string name="history_empty">لا توجد أوامر بعد</string>
-    <string name="history_load_more">تحميل المزيد من الأوامر</string>
-    <string name="history_loading">جار التحميل...</string>
-    <string name="history_load_error">تعذر تحميل السجل</string>
-    <string name="history_delete_error">تعذر حذف الأمر</string>
-    <string name="history_clear_error">تعذر مسح السجل</string>
-    <string name="history_clear_title">مسح السجل</string>
-    <string name="history_clear_message">هل تريد حذف كل سجل الأوامر على هذا الجهاز؟</string>
-    <string name="history_clear_confirm">مسح</string>
     <string name="common_cancel">إلغاء</string>
-    <string name="history_command_fallback">أمر</string>
-    <string name="history_command_detail_fallback">أمر</string>
-    <string name="history_failed_detail">فشل: %1$s</string>
-    <string name="history_command_not_accepted">لم يتم قبول الأمر</string>
-    <string name="history_executed_detail">تم تنفيذ %1$s</string>
 
     <string name="custom_commands_title">الأوامر المخصصة</string>
     <string name="custom_commands_subtitle">أنشئ تسلسلات صوتية قابلة لإعادة الاستخدام</string>
