@@ -5,7 +5,7 @@ from fastapi import BackgroundTasks, FastAPI, Query
 
 from V3.cache.app_catalog_cache import delete_cached_app_catalog_snapshot, set_cached_app_catalog_snapshot
 from V3.config import MODEL_DIR
-from V3.database.app_catalog_repository import save_app_catalog_snapshot
+from V3.database.app_catalog_repository import delete_stale_device_records, save_app_catalog_snapshot
 from V3.database.command_history_repository import (
     clear_command_history,
     delete_command_history_item,
@@ -44,7 +44,8 @@ app = FastAPI(title="Android Assistant Intent API")
 
 
 @app.on_event("startup")
-def preload_intent_model():
+async def preload_intent_model():
+    await _delete_stale_device_data()
     started_at = time.perf_counter()
     preload_model()
     elapsed_ms = (time.perf_counter() - started_at) * 1000
@@ -227,6 +228,7 @@ async def delete_history_item(history_id: str, session_id: str | None = None, de
 
 @app.post("/app-catalog", response_model=AppCatalogResponse)
 async def app_catalog(request: AppCatalogRequest):
+    await _delete_stale_device_data()
     result = save_app_catalog(
         session_id=request.session_id,
         language=request.language,
@@ -298,3 +300,16 @@ async def close_app_catalog(session_id: str):
         removed=removed,
         remaining_sessions=catalog_count(),
     )
+
+
+async def _delete_stale_device_data() -> int:
+    device_keys = await delete_stale_device_records()
+    for device_key in device_keys:
+        await delete_cached_app_catalog_snapshot(device_key)
+
+    if device_keys:
+        print(
+            f"[database] deleted stale device data | retention_days=3 | device_count={len(device_keys)}",
+            flush=True,
+        )
+    return len(device_keys)

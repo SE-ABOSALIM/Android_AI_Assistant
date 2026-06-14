@@ -1,6 +1,7 @@
 from typing import Dict, Iterable, List, Optional
 
 from V3.app_catalog.arabic_aliases import _build_match_aliases, _is_arabic_language
+from V3.app_catalog.constants import STALE_DEVICE_RETENTION_DAYS
 from V3.app_catalog.indexer import _build_catalog_search_index
 from V3.app_catalog.models import AppCatalogEntryRecord
 from V3.app_catalog.text_normalization import _has_text, _normalize_words
@@ -193,6 +194,66 @@ async def count_app_catalog_snapshots() -> int:
     except Exception as exc:
         print(f"[database] failed to count app catalogs | error={exc}", flush=True)
         return 0
+    finally:
+        if connection is not None:
+            await connection.close()
+
+
+async def delete_stale_device_records(retention_days: int = STALE_DEVICE_RETENTION_DAYS) -> List[str]:
+    if not is_database_configured():
+        return []
+
+    retention_days = max(1, int(retention_days or STALE_DEVICE_RETENTION_DAYS))
+    connection = None
+    try:
+        connection = await open_database_connection()
+        if connection is None:
+            return []
+
+        stale_devices = await connection.fetch(
+            """
+            SELECT id, device_id
+              FROM devices
+             WHERE last_seen_at < now() - ($1::int * interval '1 day')
+            """,
+            retention_days,
+        )
+        if not stale_devices:
+            return []
+
+        device_ref_ids = [row["id"] for row in stale_devices]
+        device_keys = [str(row["device_id"]) for row in stale_devices if _has_text(row["device_id"])]
+
+        async with connection.transaction():
+            await connection.execute(
+                "DELETE FROM error_messages WHERE device_ref_id = ANY($1::uuid[])",
+                device_ref_ids,
+            )
+            await connection.execute(
+                "DELETE FROM failed_app_open_attempts WHERE device_ref_id = ANY($1::uuid[])",
+                device_ref_ids,
+            )
+            await connection.execute(
+                "DELETE FROM command_history WHERE device_ref_id = ANY($1::uuid[])",
+                device_ref_ids,
+            )
+            await connection.execute(
+                "DELETE FROM custom_commands WHERE device_ref_id = ANY($1::uuid[])",
+                device_ref_ids,
+            )
+            await connection.execute(
+                "DELETE FROM device_apps WHERE device_ref_id = ANY($1::uuid[])",
+                device_ref_ids,
+            )
+            await connection.execute(
+                "DELETE FROM devices WHERE id = ANY($1::uuid[])",
+                device_ref_ids,
+            )
+
+        return device_keys
+    except Exception as exc:
+        print(f"[database] failed to delete stale devices | error={exc}", flush=True)
+        return []
     finally:
         if connection is not None:
             await connection.close()
