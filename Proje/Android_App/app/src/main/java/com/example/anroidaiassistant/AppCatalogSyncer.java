@@ -5,6 +5,7 @@ import com.example.anroidaiassistant.api.dto.AppCatalogEntry;
 import com.example.anroidaiassistant.api.dto.AppCatalogRequest;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.util.DeviceIdentity;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import android.content.Context;
@@ -45,7 +46,8 @@ public final class AppCatalogSyncer {
 
         List<AppCatalogEntry> apps = collectLaunchableApps(context);
         String catalogVersion = buildCatalogVersion(apps);
-        AppCatalogRequest request = new AppCatalogRequest(sessionId, language, catalogVersion, apps);
+        String deviceId = DeviceIdentity.getDeviceId(context);
+        AppCatalogRequest request = new AppCatalogRequest(sessionId, deviceId, language, catalogVersion, apps);
 
         Call<AppCatalogResponse> call = apiService.syncAppCatalog(request);
         call.enqueue(new Callback<AppCatalogResponse>() {

@@ -7,6 +7,9 @@ public class AppCatalogRequest {
     @SerializedName("session_id")
     private final String sessionId;
 
+    @SerializedName("device_id")
+    private final String deviceId;
+
     private final String language;
 
     @SerializedName("catalog_version")
@@ -14,8 +17,15 @@ public class AppCatalogRequest {
 
     private final List<AppCatalogEntry> apps;
 
-    public AppCatalogRequest(String sessionId, String language, String catalogVersion, List<AppCatalogEntry> apps) {
+    public AppCatalogRequest(
+            String sessionId,
+            String deviceId,
+            String language,
+            String catalogVersion,
+            List<AppCatalogEntry> apps
+    ) {
         this.sessionId = sessionId;
+        this.deviceId = deviceId;
         this.language = language;
         this.catalogVersion = catalogVersion;
         this.apps = apps;
@@ -23,6 +33,10 @@ public class AppCatalogRequest {
 
     public String getSessionId() {
         return sessionId;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
     }
 
     public String getLanguage() {

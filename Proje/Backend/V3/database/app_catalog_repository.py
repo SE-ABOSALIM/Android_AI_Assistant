@@ -42,6 +42,13 @@ async def save_app_catalog_snapshot(
                 app_version=_clean_text(app_version),
                 language=normalized_language,
             )
+            if await _is_catalog_current(
+                connection,
+                device_id=database_device_id,
+                catalog_version=catalog_version,
+                app_count=len(entry_list),
+            ):
+                return True
 
             for entry in entry_list:
                 app_id = await _upsert_app(connection, entry.package_name, entry.label)
@@ -215,6 +222,24 @@ async def _upsert_device(connection, *, device_key: str, platform: str, app_vers
         app_version,
         language,
     )
+
+
+async def _is_catalog_current(connection, *, device_id, catalog_version: str, app_count: int) -> bool:
+    row = await connection.fetchrow(
+        """
+        SELECT
+            COUNT(*) AS app_count,
+            COALESCE(bool_and(last_seen_catalog_version = $2), false) AS same_version
+        FROM device_apps
+        WHERE device_id = $1
+        """,
+        device_id,
+        catalog_version,
+    )
+    if row is None:
+        return False
+
+    return int(row["app_count"] or 0) == app_count and bool(row["same_version"])
 
 
 async def _upsert_app(connection, package_name: str, display_name: str):

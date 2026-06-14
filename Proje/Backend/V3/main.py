@@ -12,18 +12,34 @@ from V3.database.command_history_repository import (
     list_command_history,
     record_command_history,
 )
+from V3.database.custom_command_repository import (
+    delete_custom_command,
+    list_custom_commands,
+    save_custom_command,
+    update_custom_command,
+)
 from V3.schemas import (
     AppCatalogCloseResponse,
     AppCatalogRequest,
     AppCatalogResponse,
+    AppCatalogStatusResponse,
     CommandHistoryMutationResponse,
     CommandHistoryResponse,
+    CustomCommandListResponse,
+    CustomCommandMutationRequest,
+    CustomCommandMutationResponse,
     FinalResponse,
     PredictRequest,
 )
 from V3.services.model_service import get_device_name, preload_model
 from V3.services.predict_service import predict_command
-from V3.services.app_catalog_service import catalog_count, delete_app_catalog, save_app_catalog
+from V3.services.app_catalog_service import (
+    catalog_count,
+    delete_app_catalog,
+    get_app_catalog_status,
+    save_app_catalog,
+)
+from V3.services.custom_command_service import try_build_custom_command_response
 
 app = FastAPI(title="Android Assistant Intent API")
 
@@ -52,14 +68,20 @@ def root():
 @app.post("/predict", response_model=FinalResponse)
 def predict(request: PredictRequest, background_tasks: BackgroundTasks):
     started_at = time.perf_counter()
-    response = predict_command(
+    response = try_build_custom_command_response(
         text=request.text,
         language=request.language,
-        text_alternatives=request.text_alternatives,
-        session_id=request.session_id,
-        catalog_version=request.catalog_version,
-        has_search_input=request.has_search_input,
+        device_id=request.device_id,
     )
+    if response is None:
+        response = predict_command(
+            text=request.text,
+            language=request.language,
+            text_alternatives=request.text_alternatives,
+            session_id=request.session_id,
+            catalog_version=request.catalog_version,
+            has_search_input=request.has_search_input,
+        )
     response["processing_time_ms"] = round((time.perf_counter() - started_at) * 1000, 2)
     background_tasks.add_task(
         _record_command_history_background,
@@ -81,6 +103,58 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
         flush=True,
     )
     return response
+
+
+@app.get("/custom-commands", response_model=CustomCommandListResponse)
+async def custom_commands(device_id: str, language: str = "TR"):
+    return await list_custom_commands(device_id=device_id, language=language)
+
+
+@app.post("/custom-commands", response_model=CustomCommandMutationResponse)
+async def create_custom_command(request: CustomCommandMutationRequest):
+    item = await save_custom_command(
+        device_id=request.device_id,
+        language=request.language,
+        name=request.name,
+        steps=[step.dict() for step in request.steps],
+    )
+    return CustomCommandMutationResponse(
+        accepted=item is not None,
+        item=item,
+        error_code=None if item is not None else "CUSTOM_COMMAND_SAVE_FAILED",
+        error_message=None if item is not None else "Custom command could not be saved.",
+    )
+
+
+@app.put("/custom-commands/{command_id}", response_model=CustomCommandMutationResponse)
+async def edit_custom_command(command_id: str, request: CustomCommandMutationRequest):
+    item = await update_custom_command(
+        command_id=command_id,
+        device_id=request.device_id,
+        language=request.language,
+        name=request.name,
+        steps=[step.dict() for step in request.steps],
+    )
+    return CustomCommandMutationResponse(
+        accepted=item is not None,
+        item=item,
+        error_code=None if item is not None else "CUSTOM_COMMAND_UPDATE_FAILED",
+        error_message=None if item is not None else "Custom command could not be updated.",
+    )
+
+
+@app.delete("/custom-commands/{command_id}", response_model=CustomCommandMutationResponse)
+async def remove_custom_command(command_id: str, device_id: str):
+    deleted_count = await delete_custom_command(
+        command_id=command_id,
+        device_id=device_id,
+    )
+    return CustomCommandMutationResponse(
+        accepted=deleted_count > 0,
+        deleted_count=deleted_count,
+        error_code=None if deleted_count > 0 else "CUSTOM_COMMAND_DELETE_FAILED",
+        error_message=None if deleted_count > 0 else "Custom command could not be deleted.",
+    )
 
 
 def _record_command_history_background(
@@ -182,6 +256,7 @@ async def app_catalog(request: AppCatalogRequest):
     print(
         "[app-catalog] "
         f"session_id={result['session_id']} | "
+        f"device_id={request.device_id or '-'} | "
         f"catalog_version={result['catalog_version']} | "
         f"app_count={result['app_count']} | "
         f"db_persisted={db_persisted} | "
@@ -193,6 +268,18 @@ async def app_catalog(request: AppCatalogRequest):
         session_id=result["session_id"],
         catalog_version=result["catalog_version"],
         app_count=result["app_count"],
+    )
+
+
+@app.get("/app-catalog/{session_id}", response_model=AppCatalogStatusResponse)
+def app_catalog_status(session_id: str):
+    status = get_app_catalog_status(session_id)
+    return AppCatalogStatusResponse(
+        accepted=True,
+        session_id=session_id,
+        available=bool(status["available"]),
+        catalog_version=status.get("catalog_version"),
+        app_count=int(status.get("app_count") or 0),
     )
 
 
