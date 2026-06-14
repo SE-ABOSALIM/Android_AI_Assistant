@@ -48,7 +48,7 @@ async def list_custom_commands(*, device_id: Optional[str], language: Optional[s
                 created_at,
                 updated_at
             FROM custom_commands
-            WHERE device_id = $1
+            WHERE device_ref_id = $1
               AND language = $2
             ORDER BY updated_at DESC, created_at DESC
             """,
@@ -89,14 +89,14 @@ async def save_custom_command(
             command_id = await connection.fetchval(
                 """
                 INSERT INTO custom_commands (
-                    device_id,
+                    device_ref_id,
                     name,
                     normalized_name,
                     language,
                     updated_at
                 )
                 VALUES ($1, $2, $3, $4, now())
-                ON CONFLICT (device_id, language, normalized_name)
+                ON CONFLICT (device_ref_id, language, normalized_name)
                 DO UPDATE SET
                     name = EXCLUDED.name,
                     enabled = true,
@@ -150,7 +150,7 @@ async def update_custom_command(
                        language = $5,
                        updated_at = now()
                  WHERE id = $1::uuid
-                   AND device_id = $2
+                   AND device_ref_id = $2
                  RETURNING id
                 """,
                 str(command_id).strip(),
@@ -187,7 +187,7 @@ async def delete_custom_command(*, command_id: str, device_id: Optional[str]) ->
             """
             DELETE FROM custom_commands
              WHERE id = $1::uuid
-               AND device_id = $2
+               AND device_ref_id = $2
             """,
             str(command_id).strip(),
             database_device_id,
@@ -212,7 +212,6 @@ async def get_custom_command(*, command_id: str, device_id: Optional[str]) -> Op
             return None
 
         database_device_id = await _ensure_device(connection, device_id=device_id, language=None)
-        normalized_language = _normalize_language(language)
         row = await connection.fetchrow(
             """
             SELECT
@@ -224,7 +223,7 @@ async def get_custom_command(*, command_id: str, device_id: Optional[str]) -> Op
                 updated_at
             FROM custom_commands
             WHERE id = $1::uuid
-              AND device_id = $2
+              AND device_ref_id = $2
             """,
             str(command_id).strip(),
             database_device_id,
@@ -256,6 +255,7 @@ async def find_custom_command_by_spoken_name(
             return None
 
         database_device_id = await _ensure_device(connection, device_id=device_id, language=language)
+        normalized_language = _normalize_language(language)
         row = await connection.fetchrow(
             """
             SELECT
@@ -266,7 +266,7 @@ async def find_custom_command_by_spoken_name(
                 created_at,
                 updated_at
             FROM custom_commands
-            WHERE device_id = $1
+            WHERE device_ref_id = $1
               AND language = $2
               AND normalized_name = $3
               AND enabled = true
@@ -340,7 +340,7 @@ async def _find_relaxed_custom_command_row(
             created_at,
             updated_at
         FROM custom_commands
-        WHERE device_id = $1
+        WHERE device_ref_id = $1
           AND language = $2
           AND enabled = true
         """,
@@ -402,6 +402,22 @@ async def _ensure_device(connection, *, device_id: Optional[str], language: Opti
         return None
 
     normalized_language = _normalize_language(language) if _has_text(language) else None
+    if normalized_language is None:
+        return await connection.fetchval(
+            """
+            INSERT INTO devices (
+                device_id,
+                platform,
+                last_seen_at
+            )
+            VALUES ($1, 'android', now())
+            ON CONFLICT (device_id)
+            DO UPDATE SET last_seen_at = now()
+            RETURNING id
+            """,
+            str(device_id).strip(),
+        )
+
     return await connection.fetchval(
         """
         INSERT INTO devices (

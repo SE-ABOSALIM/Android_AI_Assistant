@@ -63,7 +63,7 @@ async def save_app_catalog_snapshot(
             await connection.execute(
                 """
                 DELETE FROM device_apps
-                 WHERE device_id = $1
+                 WHERE device_ref_id = $1
                    AND last_seen_catalog_version IS DISTINCT FROM $2
                 """,
                 database_device_id,
@@ -104,7 +104,7 @@ async def load_app_catalog_snapshot(session_id: Optional[str]) -> Optional[Dict[
             LEFT JOIN LATERAL (
                 SELECT last_seen_catalog_version AS catalog_version
                   FROM device_apps
-                 WHERE device_id = d.id
+                 WHERE device_ref_id = d.id
                  ORDER BY updated_at DESC
                  LIMIT 1
             ) AS latest_apps ON true
@@ -123,7 +123,7 @@ async def load_app_catalog_snapshot(session_id: Optional[str]) -> Optional[Dict[
                 apps.package_name
             FROM device_apps da
             JOIN apps ON apps.id = da.app_id
-            WHERE da.device_id = $1
+            WHERE da.device_ref_id = $1
             ORDER BY da.display_name, apps.package_name
             """,
             device["id"],
@@ -231,7 +231,7 @@ async def _is_catalog_current(connection, *, device_id, catalog_version: str, ap
             COUNT(*) AS app_count,
             COALESCE(bool_and(last_seen_catalog_version = $2), false) AS same_version
         FROM device_apps
-        WHERE device_id = $1
+        WHERE device_ref_id = $1
         """,
         device_id,
         catalog_version,
@@ -260,7 +260,7 @@ async def _upsert_device_app(connection, *, device_id, app_id, entry: AppCatalog
     await connection.execute(
         """
         INSERT INTO device_apps (
-            device_id,
+            device_ref_id,
             app_id,
             display_name,
             normalized_name,
@@ -268,7 +268,7 @@ async def _upsert_device_app(connection, *, device_id, app_id, entry: AppCatalog
             updated_at
         )
         VALUES ($1, $2, $3, $4, $5, now())
-        ON CONFLICT (device_id, app_id)
+        ON CONFLICT (device_ref_id, app_id)
         DO UPDATE SET
             display_name = EXCLUDED.display_name,
             normalized_name = EXCLUDED.normalized_name,

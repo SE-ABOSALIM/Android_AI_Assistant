@@ -36,7 +36,7 @@ async def record_command_history(
             await connection.fetchval(
                 """
                 INSERT INTO command_history (
-                    device_id,
+                    device_ref_id,
                     session_id,
                     text,
                     language,
@@ -263,7 +263,7 @@ async def _ensure_device(connection, *, device_id: Optional[str], language: Opti
 async def _history_scope(connection, *, device_id: Optional[str], session_id: Optional[str]):
     if _has_text(device_id):
         database_device_id = await _ensure_device(connection, device_id=device_id, language=None)
-        return _Scope("device_id = $1", [database_device_id])
+        return _Scope("device_ref_id = $1", [database_device_id])
 
     if _has_text(session_id):
         return _Scope("session_id = $1", [str(session_id).strip()])
@@ -297,7 +297,7 @@ async def _prune_old_command_history(connection, *, database_device_id, session_
                         id,
                         row_number() OVER (ORDER BY created_at DESC) AS row_number
                     FROM command_history
-                    WHERE device_id = $1
+                    WHERE device_ref_id = $1
                   ) AS ranked
                  WHERE row_number > $2
              )
