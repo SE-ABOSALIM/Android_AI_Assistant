@@ -8,6 +8,7 @@ import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.selection.GridCommandParser;
 import com.example.anroidaiassistant.selection.SelectionNumberParser;
+import com.example.anroidaiassistant.speech.RecognizerAudioSource;
 import com.example.anroidaiassistant.telephony.CallStateMonitor;
 import com.example.anroidaiassistant.ui.overlay.ListeningOverlayController;
 import com.example.anroidaiassistant.ui.overlay.ClickTargetOverlayController;
@@ -61,6 +62,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private static MyAccessibilityService instance;
     private static final int RESTART_DELAY_FAST_MS = 200;
     private static final int RESTART_DELAY_SLOW_MS = 800;
+    private static final int PARTIAL_RESULT_FINALIZE_DELAY_MS = 1200;
     private static final int CLOSE_APP_BACK_RETRY_DELAY_MS = 450;
     private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 5;
     private static final int[] BASE_RECOGNIZER_SOUND_STREAMS_TO_MUTE = {
@@ -79,7 +81,11 @@ public class MyAccessibilityService extends AccessibilityService {
     private boolean isRecognizerReadyForSpeech = false;
     private boolean areRecognizerSoundsMuted = false;
     private boolean isPausedForPhoneCall = false;
+    private boolean externalRecognizerAudioSourceEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
+    private boolean hasHandledCurrentRecognitionResult = false;
+    private String latestPartialRecognitionText;
     private final Map<Integer, Boolean> streamMuteStateBeforeRecognizer = new HashMap<>();
+    private RecognizerAudioSource activeRecognizerAudioSource;
     private final List<NumberedChoice> numberSelectionChoices = new ArrayList<>();
     private final SelectionNumberParser selectionNumberParser = new SelectionNumberParser();
     private final GridCommandParser gridCommandParser = new GridCommandParser();
@@ -118,6 +124,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private UninstallConfirmationOverlayController uninstallConfirmationOverlayController;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable restartListeningRunnable = this::startListeningSession;
+    private final Runnable partialResultFinalizeRunnable = this::finalizeLatestPartialResult;
 
     public static MyAccessibilityService getInstance() {
         return instance;
@@ -218,6 +225,20 @@ public class MyAccessibilityService extends AccessibilityService {
 
             @Override
             public void onError(int error) {
+                if (hasHandledCurrentRecognitionResult) {
+                    return;
+                }
+                if ((error == SpeechRecognizer.ERROR_NO_MATCH
+                        || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+                        || error == SpeechRecognizer.ERROR_CLIENT)
+                        && latestPartialRecognitionText != null
+                        && !latestPartialRecognitionText.trim().isEmpty()) {
+                    finalizeLatestPartialResult();
+                    return;
+                }
+                clearPartialResultFallback();
+                boolean wasUsingExternalAudioSource = activeRecognizerAudioSource != null;
+                stopActiveRecognizerAudioSource();
                 isRecognitionSessionActive = false;
                 isRecognizerReadyForSpeech = false;
                 if (isPausedForPhoneCall) {
@@ -228,6 +249,13 @@ public class MyAccessibilityService extends AccessibilityService {
                 }
 
                 switch (error) {
+                    case SpeechRecognizer.ERROR_AUDIO:
+                        if (wasUsingExternalAudioSource) {
+                            externalRecognizerAudioSourceEnabled = false;
+                        }
+                        setupSpeechRecognizer();
+                        scheduleListeningRestart(RESTART_DELAY_SLOW_MS);
+                        break;
                     case SpeechRecognizer.ERROR_NO_MATCH:
                     case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
                     case SpeechRecognizer.ERROR_CLIENT:
@@ -249,24 +277,17 @@ public class MyAccessibilityService extends AccessibilityService {
 
             @Override
             public void onResults(Bundle results) {
+                if (hasHandledCurrentRecognitionResult) {
+                    return;
+                }
+                clearPartialResultFallback();
+                stopActiveRecognizerAudioSource();
                 isRecognitionSessionActive = false;
                 isRecognizerReadyForSpeech = false;
                 ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null && !matches.isEmpty()) {
-                    String spokenText = matches.get(0);
-                    if (isGridActive() && handleGridSpeech(spokenText)) {
-                        // Grid consumed the utterance.
-                    } else if (isNumberSelectionMode) {
-                        handleNumberSelectionResult(spokenText);
-                    } else if (consumeSpellAppMode()) {
-                        updateOverlayText("Input: " + spokenText);
-                        if (commandExecutor != null) {
-                            commandExecutor.handleSpelledAppCandidate(spokenText);
-                        }
-                    } else {
-                        updateOverlayText("Input: " + spokenText);
-                        sendPredictionRequest(spokenText, matches);
-                    }
+                    hasHandledCurrentRecognitionResult = true;
+                    handleRecognizedSpeech(matches.get(0), matches);
                 }
                 if (isListening) {
                     scheduleListeningRestart(RESTART_DELAY_FAST_MS);
@@ -276,11 +297,12 @@ public class MyAccessibilityService extends AccessibilityService {
             @Override
             public void onPartialResults(Bundle partialResults) {
                 ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-                if (isNumberSelectionMode || isGridActive()) {
-                    return;
-                }
                 if (matches != null && !matches.isEmpty()) {
-                    updateOverlayText("Hearing: " + matches.get(0));
+                    String spokenText = matches.get(0);
+                    schedulePartialResultFallback(spokenText);
+                    if (!isNumberSelectionMode && !isGridActive()) {
+                        updateOverlayText("Hearing: " + spokenText);
+                    }
                 }
             }
             @Override
@@ -290,8 +312,11 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void destroySpeechRecognizer() {
         mainHandler.removeCallbacks(restartListeningRunnable);
+        clearPartialResultFallback();
+        stopActiveRecognizerAudioSource();
         isRecognitionSessionActive = false;
         isRecognizerReadyForSpeech = false;
+        hasHandledCurrentRecognitionResult = false;
 
         if (speechRecognizer == null) {
             return;
@@ -307,6 +332,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void startListeningSession() {
         mainHandler.removeCallbacks(restartListeningRunnable);
+        clearPartialResultFallback();
         if (!isListening || speechRecognizer == null || isRecognitionSessionActive) {
             return;
         }
@@ -317,15 +343,119 @@ public class MyAccessibilityService extends AccessibilityService {
         try {
             isRecognitionSessionActive = true;
             isRecognizerReadyForSpeech = false;
+            hasHandledCurrentRecognitionResult = false;
             showRecognizerPreparingState();
             setRecognizerSoundsMuted(true);
-            speechRecognizer.startListening(speechRecognizerIntent);
+            Intent recognizerIntent = buildRecognizerIntentForSession();
+            speechRecognizer.startListening(recognizerIntent);
         } catch (Exception ignored) {
+            stopActiveRecognizerAudioSource();
             isRecognitionSessionActive = false;
             isRecognizerReadyForSpeech = false;
             setupSpeechRecognizer();
             scheduleListeningRestart(RESTART_DELAY_SLOW_MS);
         }
+    }
+
+    private void handleRecognizedSpeech(String spokenText, List<String> alternatives) {
+        if (spokenText == null || spokenText.trim().isEmpty()) {
+            return;
+        }
+
+        if (isGridActive() && handleGridSpeech(spokenText)) {
+            return;
+        }
+
+        if (isNumberSelectionMode) {
+            handleNumberSelectionResult(spokenText);
+            return;
+        }
+
+        if (consumeSpellAppMode()) {
+            updateOverlayText("Input: " + spokenText);
+            if (commandExecutor != null) {
+                commandExecutor.handleSpelledAppCandidate(spokenText);
+            }
+            return;
+        }
+
+        updateOverlayText("Input: " + spokenText);
+        sendPredictionRequest(spokenText, alternatives);
+    }
+
+    private void schedulePartialResultFallback(String spokenText) {
+        if (spokenText == null || spokenText.trim().isEmpty() || hasHandledCurrentRecognitionResult) {
+            return;
+        }
+
+        latestPartialRecognitionText = spokenText;
+        mainHandler.removeCallbacks(partialResultFinalizeRunnable);
+        mainHandler.postDelayed(partialResultFinalizeRunnable, PARTIAL_RESULT_FINALIZE_DELAY_MS);
+    }
+
+    private void clearPartialResultFallback() {
+        mainHandler.removeCallbacks(partialResultFinalizeRunnable);
+        latestPartialRecognitionText = null;
+    }
+
+    private void finalizeLatestPartialResult() {
+        String spokenText = latestPartialRecognitionText;
+        clearPartialResultFallback();
+
+        if (spokenText == null || spokenText.trim().isEmpty()) {
+            return;
+        }
+        if (!isListening || isPausedForPhoneCall || !isRecognitionSessionActive || hasHandledCurrentRecognitionResult) {
+            return;
+        }
+
+        hasHandledCurrentRecognitionResult = true;
+        stopActiveRecognizerAudioSource();
+        isRecognitionSessionActive = false;
+        isRecognizerReadyForSpeech = false;
+
+        if (speechRecognizer != null) {
+            try {
+                speechRecognizer.cancel();
+            } catch (Exception ignored) {}
+        }
+
+        ArrayList<String> alternatives = new ArrayList<>();
+        alternatives.add(spokenText);
+        handleRecognizedSpeech(spokenText, alternatives);
+
+        if (isListening) {
+            scheduleListeningRestart(RESTART_DELAY_FAST_MS);
+        }
+    }
+
+    private Intent buildRecognizerIntentForSession() {
+        Intent recognizerIntent = new Intent(speechRecognizerIntent);
+        stopActiveRecognizerAudioSource();
+
+        if (!externalRecognizerAudioSourceEnabled) {
+            return recognizerIntent;
+        }
+
+        RecognizerAudioSource audioSource = RecognizerAudioSource.start(this);
+        if (audioSource == null) {
+            return recognizerIntent;
+        }
+
+        activeRecognizerAudioSource = audioSource;
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE, audioSource.getReadDescriptor());
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_CHANNEL_COUNT, RecognizerAudioSource.CHANNEL_COUNT);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_ENCODING, RecognizerAudioSource.AUDIO_ENCODING);
+        recognizerIntent.putExtra(RecognizerIntent.EXTRA_AUDIO_SOURCE_SAMPLING_RATE, RecognizerAudioSource.SAMPLE_RATE_HZ);
+        return recognizerIntent;
+    }
+
+    private void stopActiveRecognizerAudioSource() {
+        if (activeRecognizerAudioSource == null) {
+            return;
+        }
+        activeRecognizerAudioSource.close();
+        activeRecognizerAudioSource = null;
     }
 
     private void scheduleListeningRestart(int delayMillis) {
@@ -342,14 +472,14 @@ public class MyAccessibilityService extends AccessibilityService {
         for (int stream : BASE_RECOGNIZER_SOUND_STREAMS_TO_MUTE) {
             streams.add(stream);
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            streams.add(AudioManager.STREAM_ACCESSIBILITY);
-        }
         return streams;
     }
 
     private void setRecognizerSoundsMuted(boolean muted) {
         if (audioManager == null) {
+            return;
+        }
+        if (muted && audioManager.isMusicActive()) {
             return;
         }
         if (!muted && !areRecognizerSoundsMuted) {
@@ -433,9 +563,12 @@ public class MyAccessibilityService extends AccessibilityService {
         hideGrid();
         cancelAppCatalogSyncIfNeeded();
         mainHandler.removeCallbacks(restartListeningRunnable);
+        clearPartialResultFallback();
+        stopActiveRecognizerAudioSource();
         setRecognizerSoundsMuted(false);
         isRecognitionSessionActive = false;
         isRecognizerReadyForSpeech = false;
+        hasHandledCurrentRecognitionResult = false;
         if (speechRecognizer != null) {
             try {
                 speechRecognizer.stopListening();
@@ -473,8 +606,11 @@ public class MyAccessibilityService extends AccessibilityService {
         clearNumberSelection(false);
         hideGrid();
         mainHandler.removeCallbacks(restartListeningRunnable);
+        clearPartialResultFallback();
+        stopActiveRecognizerAudioSource();
         isRecognitionSessionActive = false;
         isRecognizerReadyForSpeech = false;
+        hasHandledCurrentRecognitionResult = false;
         if (speechRecognizer != null) {
             try {
                 speechRecognizer.stopListening();
