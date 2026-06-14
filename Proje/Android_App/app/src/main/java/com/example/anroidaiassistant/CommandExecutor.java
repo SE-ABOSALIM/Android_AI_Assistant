@@ -1,10 +1,15 @@
 package com.example.anroidaiassistant;
 
 import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.api.ApiService;
+import com.example.anroidaiassistant.api.RetrofitClient;
+import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.apps.AppOpenController;
 import com.example.anroidaiassistant.executor.CommandDispatcher;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.executor.CommandHandlerRegistry;
+import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.util.DeviceIdentity;
 import com.example.anroidaiassistant.util.ParameterReader;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
@@ -18,12 +23,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 public class CommandExecutor {
 
     private final Context context;
     private final CommandExecutionContext executionContext;
     private final AppOpenController appOpenController;
     private final CommandDispatcher commandDispatcher;
+    private final ApiService apiService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     public CommandExecutor(Context context) {
@@ -31,6 +41,7 @@ public class CommandExecutor {
         this.executionContext = new CommandExecutionContext(context, this::showMessage);
         this.appOpenController = new AppOpenController();
         this.commandDispatcher = CommandHandlerRegistry.createDefaultDispatcher(appOpenController);
+        this.apiService = RetrofitClient.getClient().create(ApiService.class);
     }
 
     public void executeCommand(PredictResponse response) {
@@ -124,6 +135,11 @@ public class CommandExecutor {
             return;
         }
 
+        if (shouldResolveCustomStepThroughBackend(intent)) {
+            executeBackendResolvedCustomStep(steps, index, intent, parameters, waitAfterMs, stopOnFailure);
+            return;
+        }
+
         boolean dispatched = commandDispatcher.dispatch(intent, parameters, executionContext);
         if (!dispatched && stopOnFailure) {
             showMessage("Custom command step failed: " + intent);
@@ -131,6 +147,117 @@ public class CommandExecutor {
         }
 
         scheduleNextCustomStep(steps, index, waitAfterMs);
+    }
+
+    private void executeBackendResolvedCustomStep(
+            List<Map<String, Object>> steps,
+            int index,
+            String intent,
+            Map<String, Object> parameters,
+            int waitAfterMs,
+            boolean stopOnFailure
+    ) {
+        String language = selectedLanguageForCustomCommand();
+        String commandText = buildCustomStepCommandText(intent, parameters, language);
+        if (!hasText(commandText)) {
+            if (stopOnFailure) {
+                showMessage("Custom command step failed: " + intent);
+                return;
+            }
+            scheduleNextCustomStep(steps, index, waitAfterMs);
+            return;
+        }
+
+        PredictRequest request = new PredictRequest(
+                commandText,
+                language,
+                AssistantSession.getSessionId(),
+                DeviceIdentity.getDeviceId(context),
+                null,
+                hasSearchInputForCustomCommand()
+        );
+
+        apiService.predict(request).enqueue(new Callback<PredictResponse>() {
+            @Override
+            public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {
+                if (!response.isSuccessful() || response.body() == null) {
+                    if (stopOnFailure) {
+                        showMessage("Custom command step failed: " + intent);
+                        return;
+                    }
+                    scheduleNextCustomStep(steps, index, waitAfterMs);
+                    return;
+                }
+
+                boolean executed = executeResolvedCustomStep(response.body());
+                if (!executed && stopOnFailure) {
+                    return;
+                }
+
+                scheduleNextCustomStep(steps, index, waitAfterMs);
+            }
+
+            @Override
+            public void onFailure(Call<PredictResponse> call, Throwable t) {
+                if (stopOnFailure) {
+                    showMessage("Custom command step failed: " + intent);
+                    return;
+                }
+                scheduleNextCustomStep(steps, index, waitAfterMs);
+            }
+        });
+    }
+
+    private boolean executeResolvedCustomStep(PredictResponse response) {
+        if (response == null) {
+            showMessage("No response from backend");
+            return false;
+        }
+
+        if (!response.isAccepted()) {
+            handleRejectedCommand(response);
+            return false;
+        }
+
+        if (response.isNeedsConfirmation()) {
+            handleRejectedCommand(response);
+            return false;
+        }
+
+        if (errorEquals(response, "LOW_CONFIDENCE")
+                || errorEquals(response, "MISSING_REQUIRED_SLOT")
+                || errorEquals(response, "UNKNOWN_COMMAND")) {
+            handleRejectedCommand(response);
+            return false;
+        }
+
+        String resolvedIntent = response.getIntent();
+        if (!hasText(resolvedIntent)) {
+            showMessage("Unsupported command");
+            return false;
+        }
+
+        if ("UNKNOWN_COMMAND".equalsIgnoreCase(resolvedIntent)) {
+            showMessage(firstNonEmpty(response.getErrorMessage(), "Command not supported"));
+            return false;
+        }
+
+        if ("RUN_CUSTOM_COMMAND".equalsIgnoreCase(resolvedIntent)) {
+            showMessage("Nested custom commands are not supported");
+            return false;
+        }
+
+        if (isGridBlockingTouchIntent(resolvedIntent)) {
+            showMessage("Grid acikken dokunmak icin grid numarasi soyle.");
+            return false;
+        }
+
+        if (commandDispatcher.dispatch(resolvedIntent, response.getParameters(), executionContext)) {
+            return true;
+        }
+
+        showMessage("Unsupported intent: " + resolvedIntent);
+        return false;
     }
 
     private void executeLabelsStep(
@@ -174,6 +301,76 @@ public class CommandExecutor {
                 () -> executeCustomStep(steps, index + 1),
                 Math.max(0, waitAfterMs)
         );
+    }
+
+    private boolean shouldResolveCustomStepThroughBackend(String intent) {
+        return "OPEN_APP".equalsIgnoreCase(intent)
+                || "SEARCH_QUERY".equalsIgnoreCase(intent)
+                || "CLICK_ITEM".equalsIgnoreCase(intent);
+    }
+
+    private String buildCustomStepCommandText(String intent, Map<String, Object> parameters, String language) {
+        if ("OPEN_APP".equalsIgnoreCase(intent)) {
+            String appName = ParameterReader.getStringParam(parameters, "app_name");
+            if (!hasText(appName)) {
+                return null;
+            }
+            if ("AR".equals(language)) {
+                return "\u0627\u0641\u062a\u062d " + appName;
+            }
+            if ("EN".equals(language)) {
+                return "open " + appName;
+            }
+            return appName + " ac";
+        }
+
+        if ("SEARCH_QUERY".equalsIgnoreCase(intent)) {
+            String query = ParameterReader.getStringParam(parameters, "query");
+            if (!hasText(query)) {
+                return null;
+            }
+            if ("AR".equals(language)) {
+                return "\u0627\u0628\u062d\u062b \u0639\u0646 " + query;
+            }
+            if ("EN".equals(language)) {
+                return "search " + query;
+            }
+            return query + " ara";
+        }
+
+        if ("CLICK_ITEM".equalsIgnoreCase(intent)) {
+            String targetText = ParameterReader.getStringParam(parameters, "target_text");
+            if (!hasText(targetText)) {
+                return null;
+            }
+            if ("AR".equals(language)) {
+                return "\u0627\u0636\u063a\u0637 \u0639\u0644\u0649 " + targetText;
+            }
+            if ("EN".equals(language)) {
+                return "tap " + targetText;
+            }
+            return targetText + " bas";
+        }
+
+        return null;
+    }
+
+    private String selectedLanguageForCustomCommand() {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        String language = service == null ? null : service.getSelectedLanguage();
+        if (!hasText(language)) {
+            return "TR";
+        }
+        language = language.trim().toUpperCase();
+        if ("EN".equals(language) || "AR".equals(language) || "TR".equals(language)) {
+            return language;
+        }
+        return "TR";
+    }
+
+    private boolean hasSearchInputForCustomCommand() {
+        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        return service != null && service.hasSearchInputAvailable();
     }
 
     private List<Map<String, Object>> customCommandSteps(Map<String, Object> parameters) {
