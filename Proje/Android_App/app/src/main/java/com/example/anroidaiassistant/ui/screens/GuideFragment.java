@@ -186,6 +186,8 @@ public final class GuideFragment extends Fragment {
                 return R.drawable.ic_guide_time_camera;
             case 7:
                 return R.drawable.ic_guide_calls_power;
+            case 8:
+                return R.drawable.ic_guide_other;
             default:
                 return R.drawable.ic_nav_guide;
         }
@@ -389,6 +391,16 @@ public final class GuideFragment extends Fragment {
                                         "telefonu yeniden başlat"),
                                 cmd("Dinlemeyi durdur", "Asistan dinlemeyi bırakır. Bu intent sadece güvenli rule komutlarıyla çalışır.",
                                         "dinlemeyi bırak", "asistanı durdur")
+                        ),
+                        group("Diğer", "Öneri pencereleri, ekran üstü numaralar ve heceleme yardımı.",
+                                cmd("Öneri pencereleri", "Birden fazla aday çıktığında sadece tek sayı söylemek yerine numara kelimesiyle söyle. Pencereden çıkmak için iptal diyebilirsin.",
+                                        "numara bir", "numara iki", "iptal"),
+                                cmd("Ekran numaraları", "Numaraları göster veya labels açıldığında ekrandaki öğeler numaralanır. Kısa tek sayılar STT tarafından kaçırılabildiği için numaradan önce numara demek daha güvenlidir.",
+                                        "numaraları göster", "numara üç", "numara beş"),
+                                cmd("Ekran üstü seçimler", "Grid veya ekran numaraları açıkken bas, çift tıkla ve basılı tut komutlarını numarayla kullanabilirsin.",
+                                        "beşe bas", "numara dörtte basılı tut"),
+                                cmd("Uygulama adını hecele", "Uygulama adı yanlış anlaşılırsa adı harf harf söyleyerek açmayı deneyebilirsin. Bu özellikle yazı içeren uygulama adlarında işe yarar.",
+                                        "Instagram: i n s t a g r a m", "BingX: b i n g x")
                         )
                 )
         );
@@ -489,6 +501,16 @@ public final class GuideFragment extends Fragment {
                                         "restart phone", "reboot device"),
                                 cmd("Stop listening", "Stops the assistant. This intent is only accepted from safe rule commands.",
                                         "stop listening", "turn off voice assistant")
+                        ),
+                        group("Other", "Choice dialogs, screen labels, and spelling help.",
+                                cmd("Choice dialogs", "When multiple candidates are shown, say number before the choice. To close the dialog, say cancel.",
+                                        "number one", "number two", "cancel"),
+                                cmd("Screen labels", "Show numbers or show labels numbers clickable screen items. Very short numbers can be missed by STT, so saying number first is safer.",
+                                        "show numbers", "number three", "number five"),
+                                cmd("On-screen selections", "When grid or labels are visible, tap, double tap, and hold commands can use the shown number.",
+                                        "tap number five", "hold number four"),
+                                cmd("Spell app names", "If an app name is misheard, spell the app name letter by letter. This helps with app names that contain written text or unusual words.",
+                                        "Instagram: i n s t a g r a m", "BingX: b i n g x")
                         )
                 )
         );
@@ -589,6 +611,16 @@ public final class GuideFragment extends Fragment {
                                         "أعد تشغيل الهاتف", "إعادة تشغيل الجهاز"),
                                 cmd("إيقاف الاستماع", "يوقف المساعد. هذا الأمر يقبل فقط من أوامر rule الآمنة.",
                                         "توقف عن الاستماع", "أوقف المساعد")
+                        ),
+                        group("أخرى", "نوافذ الاختيار، أرقام الشاشة، والمساعدة في التهجئة.",
+                                cmd("نوافذ الاختيار", "عند ظهور أكثر من خيار، قل كلمة رقم قبل الاختيار. ولإغلاق النافذة قل إلغاء.",
+                                        "رقم واحد", "رقم اثنان", "إلغاء"),
+                                cmd("أرقام الشاشة", "عند استخدام إظهار الأرقام أو التسميات يتم ترقيم العناصر القابلة للنقر. الأرقام القصيرة قد لا يلتقطها STT، لذلك قول رقم أولا أكثر أمانا.",
+                                        "أظهر الأرقام", "رقم ثلاثة", "رقم خمسة"),
+                                cmd("اختيارات الشاشة", "عندما تكون الشبكة أو الأرقام ظاهرة يمكنك استخدام النقر، النقر مرتين، والضغط المطول مع الرقم الظاهر.",
+                                        "اضغط على رقم خمسة", "اضغط مطولا على رقم أربعة"),
+                                cmd("تهجئة اسم التطبيق", "إذا لم يفهم المساعد اسم التطبيق، جرّب تهجئة الاسم حرفا حرفا. هذا مفيد مع أسماء التطبيقات التي تحتوي على نص أو كلمات غير معتادة.",
+                                        "Instagram: i n s t a g r a m", "BingX: b i n g x")
                         )
                 )
         );
