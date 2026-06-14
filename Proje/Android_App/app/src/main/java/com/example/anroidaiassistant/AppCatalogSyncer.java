@@ -81,21 +81,9 @@ public final class AppCatalogSyncer {
     }
 
     public static void closeSession(ApiService apiService, String sessionId) {
-        if (apiService == null || !hasText(sessionId)) {
-            return;
-        }
-
-        apiService.closeAppCatalog(sessionId).enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) {}
-
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) {
-                if (!call.isCanceled()) {
-                    Log.w(TAG, "App catalog close request failed", t);
-                }
-            }
-        });
+        // App catalog data is device-scoped and persistent in the backend database.
+        // Stopping the assistant only ends the local listening session; it must not
+        // delete the installed app catalog.
     }
 
     private static List<AppCatalogEntry> collectLaunchableApps(Context context) {

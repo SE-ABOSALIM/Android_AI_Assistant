@@ -19,6 +19,7 @@ def validate_and_build_response(
     top_predictions: Optional[List[Dict[str, Any]]] = None,
     text_alternatives: Optional[List[str]] = None,
     session_id: Optional[str] = None,
+    device_id: Optional[str] = None,
     catalog_version: Optional[str] = None,
     has_search_input: bool = False,
 ) -> Dict[str, Any]:
@@ -116,6 +117,7 @@ def validate_and_build_response(
         top_predictions=top_predictions,
         text_alternatives=text_alternatives,
         session_id=session_id,
+        device_id=device_id,
         catalog_version=catalog_version,
         has_search_input=has_search_input,
     )

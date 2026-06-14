@@ -10,6 +10,7 @@ def predict_command(
     language: str,
     text_alternatives: list[str] = None,
     session_id: str = None,
+    device_id: str = None,
     catalog_version: str = None,
     has_search_input: bool = False,
 ) -> Dict[str, Any]:
@@ -33,6 +34,7 @@ def predict_command(
             top_predictions=[],
             text_alternatives=text_alternatives,
             session_id=session_id,
+            device_id=device_id,
             catalog_version=catalog_version,
             has_search_input=has_search_input,
         )
@@ -52,6 +54,7 @@ def predict_command(
         top_predictions=model_result["top_predictions"],
         text_alternatives=text_alternatives,
         session_id=session_id,
+        device_id=device_id,
         catalog_version=catalog_version,
         has_search_input=has_search_input,
     )

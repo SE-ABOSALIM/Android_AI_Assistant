@@ -3,7 +3,7 @@ import time
 
 from fastapi import BackgroundTasks, FastAPI, Query
 
-from V3.cache.app_catalog_cache import set_cached_app_catalog_snapshot
+from V3.cache.app_catalog_cache import delete_cached_app_catalog_snapshot, set_cached_app_catalog_snapshot
 from V3.config import MODEL_DIR
 from V3.database.app_catalog_repository import save_app_catalog_snapshot
 from V3.database.command_history_repository import (
@@ -35,7 +35,6 @@ from V3.services.model_service import get_device_name, preload_model
 from V3.services.predict_service import predict_command
 from V3.services.app_catalog_service import (
     catalog_count,
-    delete_app_catalog,
     get_app_catalog_status,
     save_app_catalog,
 )
@@ -79,6 +78,7 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
             language=request.language,
             text_alternatives=request.text_alternatives,
             session_id=request.session_id,
+            device_id=request.device_id,
             catalog_version=request.catalog_version,
             has_search_input=request.has_search_input,
         )
@@ -244,14 +244,20 @@ async def app_catalog(request: AppCatalogRequest):
     )
     redis_cached = False
     if db_persisted:
+        catalog_payload = {
+            "catalog_version": result["catalog_version"],
+            "language": result.get("language"),
+            "apps": result.get("apps", []),
+        }
         redis_cached = await set_cached_app_catalog_snapshot(
             result["session_id"],
-            {
-                "catalog_version": result["catalog_version"],
-                "language": result.get("language"),
-                "apps": result.get("apps", []),
-            },
+            catalog_payload,
         )
+        if request.device_id:
+            redis_cached = await set_cached_app_catalog_snapshot(
+                request.device_id,
+                catalog_payload,
+            ) or redis_cached
 
     print(
         "[app-catalog] "
@@ -284,8 +290,8 @@ def app_catalog_status(session_id: str):
 
 
 @app.delete("/app-catalog/{session_id}", response_model=AppCatalogCloseResponse)
-def close_app_catalog(session_id: str):
-    removed = delete_app_catalog(session_id)
+async def close_app_catalog(session_id: str):
+    removed = await delete_cached_app_catalog_snapshot(session_id)
     return AppCatalogCloseResponse(
         accepted=True,
         session_id=session_id,

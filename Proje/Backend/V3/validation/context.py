@@ -13,6 +13,7 @@ class ValidationContext:
     top_predictions: List[Dict[str, Any]]
     text_alternatives: Optional[List[str]]
     session_id: Optional[str]
+    device_id: Optional[str]
     catalog_version: Optional[str]
     has_search_input: bool = False
     missing_slots: List[str] = field(default_factory=list)

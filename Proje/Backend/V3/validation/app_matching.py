@@ -7,6 +7,7 @@ from V3.validation.context import ValidationContext
 
 
 def enrich_app_command(context: ValidationContext) -> None:
+    catalog_key = _catalog_lookup_key(context)
     app_names = _extract_app_name_candidates(
         context.original_text,
         context.language,
@@ -20,21 +21,21 @@ def enrich_app_command(context: ValidationContext) -> None:
 
     context.parameters["app_name"] = app_names[0]
 
-    if not has_app_catalog(context.session_id):
+    if not has_app_catalog(catalog_key):
         context.reject(
             "APP_CATALOG_MISSING",
-            "Installed app catalog is missing for this session.",
+            "Installed app catalog is missing for this device.",
         )
         return
 
-    if not is_catalog_version_current(context.session_id, context.catalog_version):
+    if not is_catalog_version_current(catalog_key, context.catalog_version):
         context.reject(
             "APP_CATALOG_STALE",
-            "Installed app catalog version is stale for this session.",
+            "Installed app catalog version is stale for this device.",
         )
         return
 
-    app_resolution = _resolve_best_app_match(context.session_id, app_names)
+    app_resolution = _resolve_best_app_match(catalog_key, app_names)
     app_name = app_resolution["app_name"]
     if app_resolution["ambiguous_matches"]:
         context.parameters["app_name"] = app_name
@@ -56,6 +57,12 @@ def enrich_app_command(context: ValidationContext) -> None:
         else:
             error_message = "The requested app does not match an installed app."
         context.reject("APP_NOT_IN_CATALOG", error_message)
+
+
+def _catalog_lookup_key(context: ValidationContext) -> Optional[str]:
+    if context.device_id and str(context.device_id).strip():
+        return str(context.device_id).strip()
+    return context.session_id
 
 
 def _extract_app_name_candidates(
