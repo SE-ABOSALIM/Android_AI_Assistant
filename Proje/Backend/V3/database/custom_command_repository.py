@@ -26,6 +26,12 @@ ARABIC_NAME_VARIANT_MAP = str.maketrans(
     }
 )
 
+ARABIC_INDIC_DIGIT_MAP = str.maketrans(
+    "\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669"
+    "\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9",
+    "01234567890123456789",
+)
+
 
 async def list_custom_commands(*, device_id: Optional[str], language: Optional[str]) -> Dict[str, Any]:
     if not is_database_configured() or not _has_text(device_id):
@@ -389,7 +395,7 @@ async def _replace_steps(connection, *, command_id, steps: List[Dict[str, Any]])
             VALUES ($1, $2, $3, $4::jsonb, $5, $6)
             """,
             command_id,
-            index,
+            int(step.get("step_order") or index),
             step["intent"],
             json.dumps(step["parameters"], ensure_ascii=False),
             int(step.get("wait_after_ms") or 0),
@@ -455,9 +461,10 @@ def _clean_steps(steps: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
         result.append(
             {
+                "step_order": len(result) + 1,
                 "intent": intent,
                 "parameters": parameters,
-                "wait_after_ms": max(0, int(raw_step.get("wait_after_ms") or 0)),
+                "wait_after_ms": _wait_after_ms(raw_step, parameters),
                 "stop_on_failure": bool(raw_step.get("stop_on_failure", True)),
             }
         )
@@ -476,6 +483,35 @@ def _clean_parameters(intent: str, parameters: Dict[str, Any]) -> Dict[str, Any]
     if intent == "SHOW_LABELS":
         return _optional_text_param(parameters, "label_number")
     return {}
+
+
+def _wait_after_ms(raw_step: Dict[str, Any], parameters: Dict[str, Any]) -> int:
+    direct_value = _parse_non_negative_int((raw_step or {}).get("wait_after_ms"))
+    if direct_value:
+        return direct_value
+
+    return _parse_non_negative_int((parameters or {}).get("duration_ms")) or 0
+
+
+def _parse_non_negative_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return max(0, int(value))
+
+    text = str(value).strip().translate(ARABIC_INDIC_DIGIT_MAP)
+    if not text:
+        return None
+
+    if text.startswith("-"):
+        return 0
+
+    digits = "".join(char for char in text if char.isdigit())
+    if not digits:
+        return None
+    return max(0, int(digits))
 
 
 def _single_text_param(parameters: Dict[str, Any], key: str) -> Dict[str, Any]:
