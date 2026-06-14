@@ -63,8 +63,10 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final int RESTART_DELAY_SLOW_MS = 800;
     private static final int CLOSE_APP_BACK_RETRY_DELAY_MS = 450;
     private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 5;
-    private static final int[] STREAMS_TO_MUTE = {
-            AudioManager.STREAM_SYSTEM
+    private static final int[] BASE_RECOGNIZER_SOUND_STREAMS_TO_MUTE = {
+            AudioManager.STREAM_SYSTEM,
+            AudioManager.STREAM_NOTIFICATION,
+            AudioManager.STREAM_DTMF
     };
 
     private SpeechRecognizer speechRecognizer;
@@ -316,6 +318,7 @@ public class MyAccessibilityService extends AccessibilityService {
             isRecognitionSessionActive = true;
             isRecognizerReadyForSpeech = false;
             showRecognizerPreparingState();
+            setRecognizerSoundsMuted(true);
             speechRecognizer.startListening(speechRecognizerIntent);
         } catch (Exception ignored) {
             isRecognitionSessionActive = false;
@@ -334,20 +337,37 @@ public class MyAccessibilityService extends AccessibilityService {
         mainHandler.postDelayed(restartListeningRunnable, delayMillis);
     }
 
+    private List<Integer> getRecognizerSoundStreamsToMute() {
+        List<Integer> streams = new ArrayList<>();
+        for (int stream : BASE_RECOGNIZER_SOUND_STREAMS_TO_MUTE) {
+            streams.add(stream);
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            streams.add(AudioManager.STREAM_ACCESSIBILITY);
+        }
+        return streams;
+    }
+
     private void setRecognizerSoundsMuted(boolean muted) {
-        if (audioManager == null || areRecognizerSoundsMuted == muted) {
+        if (audioManager == null) {
+            return;
+        }
+        if (!muted && !areRecognizerSoundsMuted) {
             return;
         }
 
-        if (muted) {
+        boolean captureOriginalState = muted && !areRecognizerSoundsMuted;
+        if (captureOriginalState) {
             streamMuteStateBeforeRecognizer.clear();
         }
 
-        for (int stream : STREAMS_TO_MUTE) {
+        for (int stream : getRecognizerSoundStreamsToMute()) {
             try {
                 boolean wasMuted = audioManager.isStreamMute(stream);
                 if (muted) {
-                    streamMuteStateBeforeRecognizer.put(stream, wasMuted);
+                    if (captureOriginalState) {
+                        streamMuteStateBeforeRecognizer.put(stream, wasMuted);
+                    }
                     if (wasMuted) {
                         continue;
                     }
