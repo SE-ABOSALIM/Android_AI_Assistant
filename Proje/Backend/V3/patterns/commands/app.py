@@ -47,6 +47,8 @@ OPEN_APP_REJECT_PATTERNS = {
 
 APP_SUFFIX_SEPARATORS = (
     "'",
+    "\u2019",
+    "\u2018",
     "’",
     "‘",
     "`",

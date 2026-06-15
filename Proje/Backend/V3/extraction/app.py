@@ -3,7 +3,8 @@ from typing import Optional
 
 from V3.extraction.common import (
     clean_app_name,
-    extract_first_match
+    extract_first_match,
+    strip_terminal_punctuation,
 )
 from V3.utils.language import (
     language_key,
@@ -50,8 +51,8 @@ def extract_app_name_for_intent(text: str, language: str, intent: str) -> Option
 
 
 def _extract_open_app_name(text: str, language: str) -> Optional[str]:
-    original = normalize_text(text)
-    normalized = normalized_lower(original)
+    original = strip_terminal_punctuation(normalize_text(text))
+    normalized = strip_terminal_punctuation(normalized_lower(original))
     match_text = original if language_key(language) == "AR" else normalized
 
     if _is_rejected_open_app_text(normalized, language):

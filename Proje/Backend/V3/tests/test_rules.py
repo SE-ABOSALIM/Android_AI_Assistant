@@ -302,6 +302,20 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"app_name": "instagram"})
         self.assertEqual(result["rule_matched"], "open_app")
 
+    def test_open_app_rule_strips_stt_punctuation_and_turkish_suffix(self):
+        examples = [
+            "YouTube'a gir.",
+            "YouTube'a ac.",
+        ]
+
+        for text in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, "TR")
+
+                self.assertEqual(result["intent"], "OPEN_APP")
+                self.assertEqual(result["parameters"], {"app_name": "youtube"})
+                self.assertEqual(result["rule_matched"], "open_app")
+
     def test_open_app_rule_for_english_open_prefix(self):
         result = rule_based_command("open offline games", "EN")
 

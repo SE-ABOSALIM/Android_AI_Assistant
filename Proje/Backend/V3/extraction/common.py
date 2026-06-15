@@ -4,17 +4,23 @@ from typing import Iterable, Optional
 from V3.patterns.commands.app import APP_SUFFIX_SEPARATORS
 from V3.utils.text import normalize_text, normalized_lower
 
+TERMINAL_PUNCTUATION_PATTERN = r"[\s.!?,:;…،؛؟]+$"
+
 
 def clean_app_name(app_name: str) -> str:
-    app_name = app_name.strip()
+    app_name = strip_terminal_punctuation(app_name.strip())
 
     for separator in APP_SUFFIX_SEPARATORS:
         if separator in app_name:
             stem, suffix = app_name.split(separator, 1)
             if is_turkish_case_suffix(suffix):
-                return stem.strip()
+                return strip_terminal_punctuation(stem.strip())
 
     return app_name
+
+
+def strip_terminal_punctuation(value: str) -> str:
+    return re.sub(TERMINAL_PUNCTUATION_PATTERN, "", value).strip()
 
 
 def extract_first_match(text: str, patterns: Iterable[str], ignore_case: bool = False) -> Optional[str]:
