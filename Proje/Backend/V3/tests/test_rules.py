@@ -31,6 +31,28 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"volume_level": "max"})
         self.assertEqual(result["rule_matched"], "volume_level_max")
 
+    def test_media_playback_rule(self):
+        examples = [
+            ("resume video", "EN"),
+            ("videoyu devam ettir", "TR"),
+            ("\u0627\u0643\u0645\u0644 \u0627\u0644\u0641\u064a\u062f\u064a\u0648", "AR"),
+        ]
+
+        for text, language in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, language)
+
+                self.assertEqual(result["intent"], "SET_MEDIA_PLAYBACK")
+                self.assertEqual(result["parameters"], {"media_action": "play"})
+                self.assertEqual(result["rule_matched"], "media_playback_play")
+
+    def test_media_playback_rule_does_not_steal_play_store_app_open(self):
+        result = rule_based_command("open play store", "EN")
+
+        self.assertEqual(result["intent"], "OPEN_APP")
+        self.assertEqual(result["parameters"], {"app_name": "play store"})
+        self.assertEqual(result["rule_matched"], "open_app")
+
     def test_turkish_volume_level_rule(self):
         result = rule_based_command("sesi orta yap", "TR")
 

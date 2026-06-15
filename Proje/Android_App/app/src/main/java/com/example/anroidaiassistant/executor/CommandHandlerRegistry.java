@@ -13,6 +13,7 @@ import com.example.anroidaiassistant.executor.handlers.ClickItemCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ContactCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.GridCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.LabelsCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.MediaPlaybackCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.NavigationCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.OpenAppCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.PowerCommandHandler;
@@ -52,6 +53,7 @@ public final class CommandHandlerRegistry {
                         appOpenController
                 ),
                 new VolumeCommandHandler(),
+                new MediaPlaybackCommandHandler(),
                 new BrightnessCommandHandler(),
                 new ScrollCommandHandler(),
                 new SwipeCommandHandler(),

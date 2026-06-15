@@ -106,6 +106,17 @@ class IntentContractTests(unittest.TestCase):
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
 
+    def test_media_playback_intent_is_android_supported(self):
+        response = _validate(
+            "SET_MEDIA_PLAYBACK",
+            {"media_action": "play"},
+            text="resume video",
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertTrue(response["backend_supported"])
+        self.assertTrue(response["android_supported"])
+
     def test_stop_listening_rejects_model_prediction(self):
         model_prediction = _validate(
             "STOP_LISTENING",

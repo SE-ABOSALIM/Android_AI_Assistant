@@ -902,6 +902,24 @@ public class MyAccessibilityService extends AccessibilityService {
         return isListening;
     }
 
+    public boolean playMediaPlayback() {
+        return dispatchMediaKey(KeyEvent.KEYCODE_MEDIA_PLAY);
+    }
+
+    private boolean dispatchMediaKey(int keyCode) {
+        if (audioManager == null) {
+            return false;
+        }
+
+        try {
+            audioManager.dispatchMediaKeyEvent(new KeyEvent(KeyEvent.ACTION_DOWN, keyCode));
+            audioManager.dispatchMediaKeyEvent(new KeyEvent(KeyEvent.ACTION_UP, keyCode));
+            return true;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
     private void cancelAppCatalogSyncIfNeeded() {
         if (appCatalogSyncCall != null) {
             appCatalogSyncCall.cancel();

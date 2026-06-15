@@ -213,6 +213,12 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         required=("state",),
         android_supported=True,
     ),
+    "SET_MEDIA_PLAYBACK": _contract(
+        "SET_MEDIA_PLAYBACK",
+        threshold=0.92,
+        required=("media_action",),
+        android_supported=True,
+    ),
     "SET_LOCATION": _contract(
         "SET_LOCATION",
         threshold=0.95,
