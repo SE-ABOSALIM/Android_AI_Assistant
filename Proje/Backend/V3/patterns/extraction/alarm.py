@@ -3,7 +3,14 @@ DAY_ALIASES = {
     "tuesday": ("tuesday", "sali", "\u0627\u0644\u062b\u0644\u0627\u062b\u0627\u0621", "\u062b\u0644\u0627\u062b\u0627\u0621"),
     "wednesday": ("wednesday", "carsamba", "\u0627\u0644\u0627\u0631\u0628\u0639\u0627\u0621", "\u0627\u0631\u0628\u0639\u0627\u0621"),
     "thursday": ("thursday", "persembe", "\u0627\u0644\u062e\u0645\u064a\u0633", "\u062e\u0645\u064a\u0633"),
-    "friday": ("friday", "cuma", "\u0627\u0644\u062c\u0645\u0639\u0629", "\u062c\u0645\u0639\u0629"),
+    "friday": (
+        "friday",
+        "cuma",
+        "\u0627\u0644\u062c\u0645\u0639\u0629",
+        "\u062c\u0645\u0639\u0629",
+        "\u0627\u0644\u062c\u0645\u0639\u0647",
+        "\u062c\u0645\u0639\u0647",
+    ),
     "saturday": ("saturday", "cumartesi", "\u0627\u0644\u0633\u0628\u062a", "\u0633\u0628\u062a"),
     "sunday": ("sunday", "pazar", "\u0627\u0644\u0627\u062d\u062f", "\u0627\u062d\u062f"),
 }

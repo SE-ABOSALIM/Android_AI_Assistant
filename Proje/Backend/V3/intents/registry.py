@@ -294,7 +294,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "TAKE_SCREENSHOT": _contract(
         "TAKE_SCREENSHOT",
-        threshold=0.99,
+        threshold=0.994,
         android_supported=True
     ),
     "UNINSTALL_APP": _contract(

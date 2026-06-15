@@ -501,6 +501,12 @@ class IntentContractTests(unittest.TestCase):
             language="TR",
         )
         scheduled_day = _validate("SET_ALARM", {}, text="pazartesi saat 17 icin alarm kur")
+        arabic_friday = _validate(
+            "SET_ALARM",
+            {},
+            text="\u0627\u0636\u0628\u0637 \u0645\u0646\u0628\u0647\u0627 \u0639\u0644\u0649 \u0627\u0644\u0633\u0627\u0639\u0647 5:00 \u0645\u0633\u0627\u0621 \u064a\u0648\u0645 \u0627\u0644\u062c\u0645\u0639\u0647",
+            language="AR",
+        )
 
         self.assertTrue(morning["accepted"])
         self.assertTrue(morning["android_supported"])
@@ -522,6 +528,11 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(scheduled_day["accepted"])
         self.assertEqual(scheduled_day["parameters"]["alarm_hour"], 17)
         self.assertEqual(scheduled_day["parameters"]["day"], "monday")
+
+        self.assertTrue(arabic_friday["accepted"])
+        self.assertEqual(arabic_friday["parameters"]["alarm_hour"], 17)
+        self.assertEqual(arabic_friday["parameters"]["period"], "pm")
+        self.assertEqual(arabic_friday["parameters"]["day"], "friday")
 
     def test_rejects_bare_alarm_numbers(self):
         examples = [
