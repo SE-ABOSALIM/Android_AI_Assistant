@@ -539,6 +539,19 @@ class IntentContractTests(unittest.TestCase):
                 self.assertFalse(response["accepted"])
                 self.assertEqual(response["error_code"], "BARE_ALARM_TIME")
 
+    def test_rejects_time_statements_as_alarm_commands(self):
+        examples = [
+            "it is 4:05",
+            "it is 5:50",
+        ]
+
+        for text in examples:
+            with self.subTest(text=text):
+                response = _validate("SET_ALARM", {}, text=text, language="EN")
+
+                self.assertFalse(response["accepted"])
+                self.assertEqual(response["error_code"], "MISSING_ALARM_SIGNAL")
+
     def test_predict_take_photo_rule_enriches_camera_parameter(self):
         examples = [
             ("arka kamera ile fotograf cek", "TR", "back"),

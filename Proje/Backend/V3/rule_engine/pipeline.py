@@ -1,6 +1,7 @@
 from typing import Callable, List, Optional
 
 from V3.rule_engine.context import RuleContext
+from V3.rule_engine.alarm import alarm_command
 from V3.rule_engine.apps import app_command
 from V3.rule_engine.click_item import click_item_command
 from V3.rule_engine.display import display_command
@@ -32,6 +33,7 @@ RULE_HANDLERS: List[RuleHandler] = [
     labels_command,
     grid_command,
     text_control_command,
+    alarm_command,
     timer_command,
     app_command,
 ]

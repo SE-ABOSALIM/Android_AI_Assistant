@@ -10,7 +10,11 @@ DAY_ALIASES = {
 
 AM_ALIASES = (
     "am",
+    "a.m",
+    "a.m.",
     "a m",
+    "a. m",
+    "a. m.",
     "morning",
     "sabah",
     "\u0635\u0628\u0627\u062d",
@@ -21,7 +25,11 @@ AM_ALIASES = (
 
 PM_ALIASES = (
     "pm",
+    "p.m",
+    "p.m.",
     "p m",
+    "p. m",
+    "p. m.",
     "evening",
     "afternoon",
     "night",
@@ -32,4 +40,21 @@ PM_ALIASES = (
     "\u0627\u0644\u0645\u0633\u0627\u0621",
     "\u0644\u064a\u0644",
     "\u0627\u0644\u0644\u064a\u0644",
+)
+
+ALARM_COMMAND_ALIASES = (
+    "alarm",
+    "set alarm",
+    "set an alarm",
+    "wake me",
+    "wake me up",
+    "alarm kur",
+    "alarm ayarla",
+    "beni uyandir",
+    "uyandir",
+    "\u0645\u0646\u0628\u0647",
+    "\u0645\u0646\u0628\u0647\u0627",
+    "\u0645\u0646\u0628\u0647\u064a",
+    "\u0646\u0628\u0647\u0646\u064a",
+    "\u0627\u064a\u0642\u0638\u0646\u064a",
 )

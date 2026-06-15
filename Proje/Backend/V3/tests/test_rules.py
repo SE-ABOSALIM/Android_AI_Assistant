@@ -179,6 +179,45 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"]["duration_seconds"], 300)
         self.assertEqual(result["rule_matched"], "set_timer")
 
+    def test_alarm_rule_handles_english_day_time_variants(self):
+        examples = [
+            "Set an alarm for 22 for Sunday.",
+            "Set an alarm for 22 at Sunday.",
+            "set an alarm 22 Sunday.",
+        ]
+
+        for text in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, "EN")
+
+                self.assertEqual(result["intent"], "SET_ALARM")
+                self.assertEqual(result["parameters"]["alarm_hour"], 22)
+                self.assertEqual(result["parameters"]["alarm_minute"], 0)
+                self.assertEqual(result["parameters"]["day"], "sunday")
+                self.assertEqual(result["rule_matched"], "set_alarm")
+
+    def test_alarm_rule_respects_explicit_am_pm(self):
+        examples = {
+            "Set an alarm for 5 P.M. Sunday.": 17,
+            "Set an alarm for 5 A.M. Sunday.": 5,
+            "Set an alarm for 17 Sunday.": 17,
+        }
+
+        for text, expected_hour in examples.items():
+            with self.subTest(text=text):
+                result = rule_based_command(text, "EN")
+
+                self.assertEqual(result["intent"], "SET_ALARM")
+                self.assertEqual(result["parameters"]["alarm_hour"], expected_hour)
+                self.assertEqual(result["parameters"]["alarm_minute"], 0)
+                self.assertEqual(result["parameters"]["day"], "sunday")
+                self.assertEqual(result["rule_matched"], "set_alarm")
+
+    def test_alarm_rule_requires_alarm_signal(self):
+        result = rule_based_command("5 pieces", "EN")
+
+        self.assertIsNone(result)
+
     def test_go_back_rule(self):
         result = rule_based_command("Geri git", "TR")
 

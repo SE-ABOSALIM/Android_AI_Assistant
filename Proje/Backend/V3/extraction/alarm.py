@@ -7,7 +7,8 @@ from V3.utils.text import normalize_text, normalized_lower
 from V3.patterns.extraction.alarm import (
     DAY_ALIASES,
     AM_ALIASES,
-    PM_ALIASES
+    PM_ALIASES,
+    ALARM_COMMAND_ALIASES,
 )
 
 def extract_alarm(text: str, language: str) -> Dict[str, object]:
@@ -68,6 +69,11 @@ def is_bare_alarm_time_expression(text: str) -> bool:
     return value is not None and 0 <= value <= 24
 
 
+def has_alarm_command_signal(text: str, language: str) -> bool:
+    normalized = normalized_lower(normalize_text(text))
+    return _contains_alias(normalized, ALARM_COMMAND_ALIASES)
+
+
 def _extract_alarm_time(normalized_text: str) -> Optional[Tuple[int, int]]:
     digit_match = re.search(r"\b(\d{1,2})(?:\s*[:.]\s*(\d{1,2}))?\b", normalized_text)
     if digit_match:
@@ -79,7 +85,7 @@ def _extract_alarm_time(normalized_text: str) -> Optional[Tuple[int, int]]:
     tokens = re.findall(r"[a-zA-Z\u0600-\u06FF]+", normalized_text)
     for window_size in (2, 1):
         for index in range(0, len(tokens) - window_size + 1):
-            value = words_to_number(tokens[index:index + window_size])
+            value = words_to_number(tokens[index:index + window_size], allow_article_number=False)
             if value is None:
                 continue
 
@@ -124,9 +130,10 @@ def _extract_day(normalized_text: str) -> Optional[str]:
 
 
 def _contains_alias(normalized_text: str, aliases: Tuple[str, ...]) -> bool:
-    padded = f" {normalized_text} "
     for alias in aliases:
         normalized_alias = normalized_lower(alias)
-        if f" {normalized_alias} " in padded:
+        alias_pattern = r"\s+".join(re.escape(part) for part in normalized_alias.split())
+        pattern = rf"(?<![a-zA-Z0-9\u0600-\u06FF]){alias_pattern}(?![a-zA-Z0-9\u0600-\u06FF])"
+        if re.search(pattern, normalized_text):
             return True
     return False
