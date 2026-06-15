@@ -152,7 +152,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "OPEN_NOTIFICATIONS": _contract(
         "OPEN_NOTIFICATIONS",
-        threshold=0.92,
+        threshold=0.96,
         android_supported=True
     ),
     "POWER_OFF": _contract(
@@ -288,13 +288,13 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "TAKE_PHOTO": _contract(
         "TAKE_PHOTO",
-        threshold=0.92,
+        threshold=0.96,
         optional=("camera",),
         android_supported=True,
     ),
     "TAKE_SCREENSHOT": _contract(
         "TAKE_SCREENSHOT",
-        threshold=0.95,
+        threshold=0.99,
         android_supported=True
     ),
     "UNINSTALL_APP": _contract(
