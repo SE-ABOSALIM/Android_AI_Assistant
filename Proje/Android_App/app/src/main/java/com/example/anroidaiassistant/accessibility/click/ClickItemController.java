@@ -19,7 +19,6 @@ public final class ClickItemController {
     private static final int DIRECT_MARGIN = 12;
     private static final int FALLBACK_MIN_SCORE = 58;
     private static final int FALLBACK_MAX_SCORE_GAP = 12;
-    private static final int MAX_FALLBACK_CANDIDATES = 5;
 
     private final MyAccessibilityService service;
     private final GestureController gestureController;
@@ -174,9 +173,6 @@ public final class ClickItemController {
         }
 
         filtered.sort(bestMatchComparator());
-        if (filtered.size() > MAX_FALLBACK_CANDIDATES) {
-            return new ArrayList<>(filtered.subList(0, MAX_FALLBACK_CANDIDATES));
-        }
         return filtered;
     }
 

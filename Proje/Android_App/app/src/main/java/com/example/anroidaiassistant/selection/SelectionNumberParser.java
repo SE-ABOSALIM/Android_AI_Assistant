@@ -12,7 +12,7 @@ public final class SelectionNumberParser {
             return null;
         }
 
-        String normalized = normalizeSelectionText(spokenText);
+        String normalized = removeGestureCountPhrases(normalizeSelectionText(spokenText));
         Matcher matcher = Pattern.compile("\\b\\d+\\b").matcher(normalized);
         if (matcher.find()) {
             return toSelectionIndex(matcher.group(), maxChoice);
@@ -118,7 +118,13 @@ public final class SelectionNumberParser {
             return null;
         }
 
-        for (String suffix : new String[]{"ye", "ya", "e", "a", "inci", "inciye", "uncu", "uncuye"}) {
+        for (String suffix : new String[]{
+                "ye", "ya", "e", "a", "yi", "yu", "i", "u",
+                "de", "da", "te", "ta", "den", "dan", "ten", "tan",
+                "inci", "inciye", "incisine", "incisi",
+                "uncu", "uncuye", "uncusuna", "uncusu",
+                "nci", "ncu", "ncisine", "ncisi"
+        }) {
             if (token.length() > suffix.length() + 1 && token.endsWith(suffix)) {
                 Integer value = turkishNumberStemToValue(token.substring(0, token.length() - suffix.length()));
                 if (value != null) {
@@ -181,6 +187,18 @@ public final class SelectionNumberParser {
                 .replace('\u00fc', 'u')
                 .replaceAll("[\\u064B-\\u065F\\u0670]", "")
                 .replaceAll("[^\\p{L}0-9\\s]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private String removeGestureCountPhrases(String text) {
+        if (!hasText(text)) {
+            return "";
+        }
+        return text
+                .replaceAll("\\btwo\\s+times\\b", " ")
+                .replaceAll("\\biki\\s+(?:kere|kez|defa)\\b", " ")
+                .replaceAll("(?:^|\\s)(?:\u0645\u0631\u062a\u064a\u0646|\u0646\u0642\u0631\u062a\u064a\u0646|\u0636\u063a\u0637\u062a\u064a\u0646)(?=\\s|$)", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
     }

@@ -68,9 +68,14 @@ public final class GridCommandParser {
             return false;
         }
 
-        String commandWordsRemoved = normalized
-                .replaceAll("\\b(?:tap|click|press|select|cell|grid|box|number|on|the|double|hold|long|bas|tikla|sec|hucre|kare|numara|cift|uzun|basili|tut)\\b", " ")
-                .replaceAll("(?:^|\\s)(?:\u0627\u0636\u063a\u0637|\u0627\u0646\u0642\u0631|\u0627\u062e\u062a\u0631|\u062d\u062f\u062f|\u062e\u0644\u064a\u0647|\u062e\u0627\u0646\u0647|\u0645\u0631\u0628\u0639|\u0631\u0642\u0645|\u0639\u0644\u0649|\u0639\u0644\u064a|\u0645\u0631\u062a\u064a\u0646|\u0636\u063a\u0637\u0647|\u0636\u063a\u0637|\u0645\u0637\u0648\u0644|\u0645\u0637\u0648\u0644\u0627|\u0645\u0637\u0648\u0644\u0647|\u0637\u0648\u064a\u0644|\u0637\u0648\u064a\u0644\u0647|\u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u0627\u0633\u062a\u0645\u0631)(?=\\s|$)", " ")
+        String selectionText = removeNumericTurkishSuffixes(normalized)
+                .replaceAll("\\btwo\\s+times\\b", " ")
+                .replaceAll("\\biki\\s+(?:kere|kez|defa)\\b", " ")
+                .replaceAll("(?:^|\\s)(?:\u0645\u0631\u062a\u064a\u0646|\u0646\u0642\u0631\u062a\u064a\u0646|\u0636\u063a\u0637\u062a\u064a\u0646)(?=\\s|$)", " ");
+
+        String commandWordsRemoved = selectionText
+                .replaceAll("\\b(?:tap|click|press|select|cell|grid|box|number|numbers|option|item|on|the|double|twice|hold|long|bas|tikla|tiklama|dokun|sec|hucre|kare|numara|numarasi|numarasina|numarasini|numarada|numaradan|sayi|sayisi|sayisina|rakam|rakamina|secenek|secenegi|cift|kere|kez|defa|uzun|basili|tut)\\b", " ")
+                .replaceAll("(?:^|\\s)(?:\u0627\u0636\u063a\u0637|\u0627\u0646\u0642\u0631|\u0627\u062e\u062a\u0631|\u062d\u062f\u062f|\u062e\u064a\u0627\u0631|\u0627\u0644\u062e\u064a\u0627\u0631|\u0639\u0646\u0635\u0631|\u0627\u0644\u0639\u0646\u0635\u0631|\u062e\u0644\u064a\u0647|\u062e\u0627\u0646\u0647|\u0645\u0631\u0628\u0639|\u0631\u0642\u0645|\u0627\u0644\u0631\u0642\u0645|\u0631\u0642\u0645\u0647|\u0639\u0644\u0649|\u0639\u0644\u064a|\u0645\u0631\u062a\u064a\u0646|\u0646\u0642\u0631\u062a\u064a\u0646|\u0636\u063a\u0637\u062a\u064a\u0646|\u0636\u063a\u0637\u0647|\u0636\u063a\u0637|\u0645\u0637\u0648\u0644|\u0645\u0637\u0648\u0644\u0627|\u0645\u0637\u0648\u0644\u0647|\u0637\u0648\u064a\u0644|\u0637\u0648\u064a\u0644\u0647|\u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u0627\u0633\u062a\u0645\u0631)(?=\\s|$)", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
 
@@ -91,10 +96,23 @@ public final class GridCommandParser {
                 "double tap",
                 "double click",
                 "double press",
+                "tap twice",
+                "click twice",
+                "press twice",
+                "two times",
                 "cift tikla",
+                "cift dokun",
                 "cift bas",
                 "cift tiklama",
+                "iki kere tikla",
+                "iki kez tikla",
+                "iki defa tikla",
+                "iki kere bas",
+                "iki kez bas",
                 "\u0645\u0631\u062a\u064a\u0646",
+                "\u0646\u0642\u0631\u062a\u064a\u0646",
+                "\u0627\u0646\u0642\u0631 \u0645\u0631\u062a\u064a\u0646",
+                "\u0627\u0636\u063a\u0637 \u0645\u0631\u062a\u064a\u0646",
                 "\u0636\u063a\u0637\u062a\u064a\u0646")) {
             return "double_tap";
         }
@@ -103,15 +121,21 @@ public final class GridCommandParser {
                 "hold",
                 "long press",
                 "press and hold",
+                "hold down",
                 "uzun bas",
+                "uzun tikla",
+                "uzun dokun",
                 "basili tut",
+                "basili bas",
                 "\u0645\u0637\u0648\u0644",
                 "\u0645\u0637\u0648\u0644\u0627",
                 "\u0645\u0637\u0648\u0644\u0647",
                 "\u0637\u0648\u064a\u0644",
                 "\u0637\u0648\u064a\u0644\u0647",
                 "\u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631",
+                "\u0627\u0636\u063a\u0637 \u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631",
                 "\u0627\u0633\u062a\u0645\u0631\u0627\u0631",
+                "\u0636\u063a\u0637 \u0645\u0637\u0648\u0644",
                 "\u0636\u063a\u0637\u0647 \u0645\u0637\u0648\u0644\u0647",
                 "\u0627\u0636\u063a\u0637 \u0645\u0637\u0648\u0644\u0627")) {
             return "hold";
@@ -162,6 +186,13 @@ public final class GridCommandParser {
         return true;
     }
 
+    private String removeNumericTurkishSuffixes(String value) {
+        return value
+                .replaceAll("\\b(\\d+)\\s+(?:ye|ya|e|a|yi|yu|i|u|de|da|te|ta|den|dan|ten|tan)\\b", "$1")
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
     private boolean isArabicAndNumberWord(String token) {
         return token != null
                 && token.length() > 1
@@ -174,7 +205,13 @@ public final class GridCommandParser {
             return false;
         }
 
-        for (String suffix : new String[]{"ye", "ya", "e", "a", "inci", "inciye", "uncu", "uncuye"}) {
+        for (String suffix : new String[]{
+                "ye", "ya", "e", "a", "yi", "yu", "i", "u",
+                "de", "da", "te", "ta", "den", "dan", "ten", "tan",
+                "inci", "inciye", "incisine", "incisi",
+                "uncu", "uncuye", "uncusuna", "uncusu",
+                "nci", "ncu", "ncisine", "ncisi"
+        }) {
             if (token.length() > suffix.length() + 1
                     && token.endsWith(suffix)
                     && isTurkishNumberStem(token.substring(0, token.length() - suffix.length()))) {

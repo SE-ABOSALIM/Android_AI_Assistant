@@ -35,6 +35,8 @@ public class GridCommandParserTest {
         assertTrue(parser.isCellSelectionText("hold on five"));
         assertTrue(parser.isCellSelectionText("ikiye bas"));
         assertTrue(parser.isCellSelectionText("dorde bas"));
+        assertTrue(parser.isCellSelectionText("15'e basili tut"));
+        assertTrue(parser.isCellSelectionText("15 numarasina basili tut"));
         assertTrue(parser.isCellSelectionText("\u0627\u0636\u063a\u0637 \u0639\u0644\u0649 \u062e\u0645\u0633\u0629"));
         assertTrue(parser.isCellSelectionText("\u0627\u0636\u063a\u0637 \u0645\u0637\u0648\u0644\u0627 \u0639\u0644\u0649 \u062e\u0645\u0633\u0629"));
         assertTrue(parser.isCellSelectionText("25"));
@@ -52,6 +54,8 @@ public class GridCommandParserTest {
         assertEquals("hold", parser.parseCellGestureAction("hold on five"));
         assertEquals("double_tap", parser.parseCellGestureAction("cift bas bes"));
         assertEquals("hold", parser.parseCellGestureAction("besi basili tut"));
+        assertEquals("double_tap", parser.parseCellGestureAction("15'e cift tikla"));
+        assertEquals("hold", parser.parseCellGestureAction("15'e basili tut"));
         assertEquals("hold", parser.parseCellGestureAction("\u0627\u0636\u063a\u0637 \u0645\u0637\u0648\u0644\u0627 \u0639\u0644\u0649 \u062e\u0645\u0633\u0629"));
         assertEquals("hold", parser.parseCellGestureAction("\u0627\u0636\u063a\u0637 \u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631 \u0639\u0644\u0649 \u062e\u0645\u0633\u0629"));
     }

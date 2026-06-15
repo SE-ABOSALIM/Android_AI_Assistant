@@ -65,7 +65,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final int RESTART_DELAY_SLOW_MS = 800;
     private static final int PARTIAL_RESULT_FINALIZE_DELAY_MS = 1200;
     private static final int CLOSE_APP_BACK_RETRY_DELAY_MS = 450;
-    private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 5;
+    private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 15;
     private static final int[] BASE_RECOGNIZER_SOUND_STREAMS_TO_MUTE = {
             AudioManager.STREAM_SYSTEM,
             AudioManager.STREAM_NOTIFICATION,
@@ -1125,6 +1125,13 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
+        String selectionGestureAction = gridCommandParser.parseCellGestureAction(spokenText);
+        if (isClickTargetSelectionActive()
+                && !"tap".equals(selectionGestureAction)
+                && completeClickTargetGestureSelection(selectedIndex, selectionGestureAction)) {
+            return;
+        }
+
         completeNumberSelection(selectedIndex);
     }
 
@@ -1185,6 +1192,41 @@ public class MyAccessibilityService extends AccessibilityService {
             showOverlay();
             showCurrentRecognizerState();
         }
+    }
+
+    private boolean completeClickTargetGestureSelection(int selectedIndex, String action) {
+        if (selectedIndex < 0 || selectedIndex >= numberSelectionChoices.size()) {
+            return false;
+        }
+        NumberedChoice choice = numberSelectionChoices.get(selectedIndex);
+        if (!(choice instanceof ClickTargetChoice) || gestureController == null) {
+            return false;
+        }
+
+        ClickTargetChoice clickChoice = (ClickTargetChoice) choice;
+        Rect bounds = clickChoice.bounds;
+        if (bounds == null || bounds.isEmpty()) {
+            return false;
+        }
+
+        clearNumberSelection(false);
+        boolean handled;
+        if ("double_tap".equals(action)) {
+            handled = gestureController.doubleTapBoundsCenter(bounds);
+        } else if ("hold".equals(action)) {
+            handled = gestureController.longPressBoundsCenter(bounds);
+        } else {
+            handled = gestureController.tapBoundsCenter(bounds);
+        }
+
+        if (!handled) {
+            showFeedback("Gesture could not be performed");
+        }
+        if (isListening) {
+            showOverlay();
+            showCurrentRecognizerState();
+        }
+        return true;
     }
 
     private void clearNumberSelection() {
