@@ -42,6 +42,10 @@ public class ClickTextMatcherTest {
 
         assertTrue(aliasMatcher.targetVariants("x isareti", "").contains("close"));
         assertTrue(aliasMatcher.targetVariants("carpi isareti", "").contains("close"));
+        assertTrue(aliasMatcher.targetVariants("x icon", "").contains("close icon"));
+        assertTrue(aliasMatcher.targetVariants("cross mark", "").contains("close"));
+        assertTrue(aliasMatcher.targetVariants("\u0639\u0644\u0627\u0645\u0647 \u0627\u0643\u0633", "").contains("close"));
+        assertTrue(aliasMatcher.targetVariants("\u0627\u064a\u0642\u0648\u0646\u0647 \u0627\u0643\u0633", "").contains("close"));
         assertTrue(aliasMatcher.targetVariants("kamera isareti", "").contains("camera"));
         assertTrue(aliasMatcher.targetVariants("video icon", "").contains("video"));
         assertTrue(aliasMatcher.targetVariants("\u0639\u0644\u0627\u0645\u0647 \u0627\u0643\u0633", "").contains("close"));
@@ -122,6 +126,13 @@ public class ClickTextMatcherTest {
         assertTrue(aliasMatcher.targetVariants("indir ikonuna", "").contains("download"));
         assertTrue(aliasMatcher.targetVariants("bilgi isareti", "").contains("info"));
         assertTrue(aliasMatcher.targetVariants("onay isareti", "").contains("check"));
+        assertTrue(aliasMatcher.targetVariants("dogru isareti", "").contains("check"));
+        assertTrue(aliasMatcher.targetVariants("tik isareti", "").contains("tick"));
+        assertTrue(aliasMatcher.targetVariants("check mark", "").contains("check"));
+        assertTrue(aliasMatcher.targetVariants("tick icon", "").contains("tick"));
+        assertTrue(aliasMatcher.targetVariants("correct mark", "").contains("check"));
+        assertTrue(aliasMatcher.targetVariants("\u0639\u0644\u0627\u0645\u0647 \u0635\u062D", "").contains("check"));
+        assertTrue(aliasMatcher.targetVariants("\u0627\u064a\u0642\u0648\u0646\u0647 \u0635\u062D", "").contains("check"));
         assertTrue(aliasMatcher.targetVariants("takvim ikonuna", "").contains("calendar"));
         assertTrue(aliasMatcher.targetVariants("saat ikonuna", "").contains("clock"));
         assertTrue(aliasMatcher.targetVariants("mesaj ikonuna", "").contains("message"));
