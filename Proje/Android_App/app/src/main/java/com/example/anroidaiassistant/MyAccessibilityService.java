@@ -5,6 +5,7 @@ import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
+import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.selection.GridCommandParser;
 import com.example.anroidaiassistant.selection.SelectionNumberParser;
@@ -134,6 +135,7 @@ public class MyAccessibilityService extends AccessibilityService {
     protected void onServiceConnected() {
         super.onServiceConnected();
         instance = this;
+        selectedLanguage = AssistantSettings.getLanguage(this);
         
         apiService = RetrofitClient.getClient().create(ApiService.class);
         callStateMonitor = new CallStateMonitor(this, this::onCallActiveChanged);

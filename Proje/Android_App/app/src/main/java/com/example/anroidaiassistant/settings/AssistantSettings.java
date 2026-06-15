@@ -1,7 +1,10 @@
 package com.example.anroidaiassistant.settings;
 
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.content.SharedPreferences;
+import android.os.Build;
 
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.os.LocaleListCompat;
@@ -13,6 +16,7 @@ import java.util.Locale;
 public final class AssistantSettings {
     private static final String PREFS_NAME = "assistant_settings";
     private static final String KEY_LANGUAGE = "language";
+    private static final String KEY_LANGUAGE_USER_SELECTED = "language_user_selected";
     private static final String KEY_THEME = "theme";
 
     public static final String LANGUAGE_TR = "TR";
@@ -27,7 +31,12 @@ public final class AssistantSettings {
     }
 
     public static String getLanguage(Context context) {
-        return normalizeLanguage(prefs(context).getString(KEY_LANGUAGE, LANGUAGE_TR));
+        SharedPreferences preferences = prefs(context);
+        if (!preferences.getBoolean(KEY_LANGUAGE_USER_SELECTED, false)) {
+            return systemDefaultLanguage();
+        }
+
+        return normalizeLanguage(preferences.getString(KEY_LANGUAGE, systemDefaultLanguage()));
     }
 
     public static void setLanguage(Context context, String language) {
@@ -35,6 +44,7 @@ public final class AssistantSettings {
         prefs(context)
                 .edit()
                 .putString(KEY_LANGUAGE, normalizedLanguage)
+                .putBoolean(KEY_LANGUAGE_USER_SELECTED, true)
                 .apply();
         applyLanguage(normalizedLanguage);
     }
@@ -148,6 +158,25 @@ public final class AssistantSettings {
             return "ar";
         }
         return "tr";
+    }
+
+    private static String systemDefaultLanguage() {
+        Configuration configuration = Resources.getSystem().getConfiguration();
+        Locale locale;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            locale = configuration.getLocales().get(0);
+        } else {
+            locale = configuration.locale;
+        }
+
+        String language = locale == null ? null : locale.getLanguage();
+        if ("tr".equalsIgnoreCase(language)) {
+            return LANGUAGE_TR;
+        }
+        if ("ar".equalsIgnoreCase(language)) {
+            return LANGUAGE_AR;
+        }
+        return LANGUAGE_EN;
     }
 
     private static SharedPreferences prefs(Context context) {
