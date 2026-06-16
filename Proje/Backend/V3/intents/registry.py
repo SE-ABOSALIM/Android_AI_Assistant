@@ -260,7 +260,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SHOW_RECENTS": _contract(
         "SHOW_RECENTS",
-        threshold=0.92,
+        threshold=0.985,
         android_supported=True
     ),
     "SHOW_GRID": _contract(
