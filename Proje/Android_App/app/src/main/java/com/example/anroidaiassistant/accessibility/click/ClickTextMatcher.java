@@ -175,7 +175,19 @@ public final class ClickTextMatcher {
         if (nodeToken.length() < 4 || targetToken.length() < 4) {
             return false;
         }
-        return nodeToken.contains(targetToken) || targetToken.contains(nodeToken);
+        return nodeToken.contains(targetToken)
+                || targetToken.contains(nodeToken)
+                || closeTokenMatch(nodeToken, targetToken);
+    }
+
+    private boolean closeTokenMatch(String nodeToken, String targetToken) {
+        int minLength = Math.min(nodeToken.length(), targetToken.length());
+        if (minLength < 5 || Math.abs(nodeToken.length() - targetToken.length()) > 1) {
+            return false;
+        }
+
+        int distance = levenshteinDistance(nodeToken, targetToken);
+        return distance == 1 && levenshteinSimilarity(nodeToken, targetToken) >= 0.84;
     }
 
     private boolean isStrongFuzzyMatch(String nodeText, String target) {

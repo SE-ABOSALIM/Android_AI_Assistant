@@ -27,6 +27,17 @@ public class ClickTextMatcherTest {
     }
 
     @Test
+    public void scoresCloseNameTokenInsideLongNodeText() {
+        ClickTextMatch match = matcher.score(
+                "muhammed you tez yeni version docx",
+                Arrays.asList("muhammad")
+        );
+
+        assertTrue(match.score > 0);
+        assertTrue(match.score < 66);
+    }
+
+    @Test
     public void expandsGlobalIconAliases() {
         ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
 
