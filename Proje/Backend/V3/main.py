@@ -92,6 +92,7 @@ def predict(request: PredictRequest, background_tasks: BackgroundTasks):
         f"text='{request.text}' | "
         f"language={request.language.upper()} | "
         f"intent={response.get('intent')} | "
+        f"parameters={response.get('parameters')} | "
         f"accepted={response.get('accepted')} | "
         f"confidence={response.get('confidence')}",
         flush=True,
