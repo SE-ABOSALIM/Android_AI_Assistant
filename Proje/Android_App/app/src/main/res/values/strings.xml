@@ -117,8 +117,8 @@
     <string name="spell_suggestion_message">Try spelling the app name letter by letter.</string>
     <string name="spell_suggestion_action">Try spelling</string>
     <string name="spell_mode_enabled">Spell mode active. Spell the app name letter by letter.</string>
-    <string name="overlay_preparing">Preparing...</string>
-    <string name="overlay_listening">Listening...</string>
+    <string name="overlay_preparing">Getting ready</string>
+    <string name="overlay_listening">Ready for command</string>
     <string name="selection_title_default">Choose</string>
     <string name="selection_instruction">Say the number in the list to choose.</string>
     <string name="selection_hint_default">Multiple options found. Say the number of the option you want.</string>
@@ -132,8 +132,8 @@
     <string name="selection_number_only">Say only the number in the list.</string>
     <string name="grid_number_required">Say the grid number.</string>
     <string name="grid_cell_tap_failed">Grid cell could not be tapped.</string>
-    <string name="overlay_hearing_format">Hearing: %1$s</string>
-    <string name="overlay_input_format">Input: %1$s</string>
+    <string name="overlay_hearing_format">Heard: %1$s</string>
+    <string name="overlay_input_format">Command: %1$s</string>
     <string name="feedback_type_command_first">Type a command first</string>
     <string name="feedback_spell_app_name">Spell app name...</string>
     <string name="feedback_selection_cancelled">Selection cancelled.</string>

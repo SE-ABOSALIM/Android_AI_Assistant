@@ -307,7 +307,10 @@ public class MyAccessibilityService extends AccessibilityService {
                     String spokenText = matches.get(0);
                     schedulePartialResultFallback(spokenText);
                     if (!isNumberSelectionMode && !isGridActive()) {
-                        updateOverlayText(localizedOverlayString(R.string.overlay_hearing_format, spokenText));
+                        updateOverlayText(
+                                localizedOverlayString(R.string.overlay_hearing_format, spokenText),
+                                ListeningOverlayController.STATUS_HEARD
+                        );
                     }
                 }
             }
@@ -716,14 +719,24 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void updateOverlayText(String text) {
+        updateOverlayText(text, false);
+    }
+
+    private void updateOverlayText(String text, boolean preparing) {
+        updateOverlayText(text, preparing
+                ? ListeningOverlayController.STATUS_PREPARING
+                : ListeningOverlayController.STATUS_READY);
+    }
+
+    private void updateOverlayText(String text, int status) {
         if (listeningOverlayController != null) {
-            listeningOverlayController.updateText(text);
+            listeningOverlayController.updateText(text, status);
         }
     }
 
     private void showRecognizerPreparingState() {
         if (shouldShowRecognizerStateInOverlay()) {
-            updateOverlayText(localizedOverlayString(R.string.overlay_preparing));
+            updateOverlayText(localizedOverlayString(R.string.overlay_preparing), true);
         }
     }
 

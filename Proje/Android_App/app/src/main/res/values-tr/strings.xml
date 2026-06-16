@@ -114,8 +114,8 @@
     <string name="spell_suggestion_message">Uygulama adını harf harf söylemeyi dene.</string>
     <string name="spell_suggestion_action">Harf harf söyle</string>
     <string name="spell_mode_enabled">Harf modu aktif. Uygulama adını harf harf söyle.</string>
-    <string name="overlay_preparing">Hazırlanıyor...</string>
-    <string name="overlay_listening">Dinleniyor...</string>
+    <string name="overlay_preparing">Hazırlanıyor</string>
+    <string name="overlay_listening">Komut bekleniyor</string>
     <string name="selection_title_default">Seç</string>
     <string name="selection_instruction">Seçmek için listedeki numarayı söyle.</string>
     <string name="selection_hint_default">Birden çok seçenek bulundu. İstediğin seçeneğin numarasını söyle.</string>
@@ -129,7 +129,7 @@
     <string name="selection_number_only">Sadece listedeki numarayı söyle.</string>
     <string name="grid_number_required">Grid numarasını söyle.</string>
     <string name="grid_cell_tap_failed">Grid hücresine basılamadı.</string>
-    <string name="overlay_hearing_format">Duyulan: %1$s</string>
+    <string name="overlay_hearing_format">Duyuldu: %1$s</string>
     <string name="overlay_input_format">Komut: %1$s</string>
     <string name="feedback_type_command_first">Önce bir komut yaz</string>
     <string name="feedback_spell_app_name">Uygulama adını harf harf söyle...</string>

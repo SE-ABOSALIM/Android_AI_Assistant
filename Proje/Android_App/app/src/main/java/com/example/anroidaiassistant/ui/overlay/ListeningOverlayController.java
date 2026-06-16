@@ -14,6 +14,10 @@ import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 public final class ListeningOverlayController {
+    public static final int STATUS_READY = 0;
+    public static final int STATUS_PREPARING = 1;
+    public static final int STATUS_HEARD = 2;
+
     private static final int EDGE_PADDING_DP = 2;
     private static final int BELOW_STATUS_BAR_PADDING_DP = 2;
 
@@ -21,6 +25,7 @@ public final class ListeningOverlayController {
     private final WindowManager windowManager;
 
     private View overlayView;
+    private View indicatorView;
     private TextView overlayTextView;
 
     public ListeningOverlayController(Context context, WindowManager windowManager) {
@@ -34,6 +39,7 @@ public final class ListeningOverlayController {
         }
 
         overlayView = LayoutInflater.from(context).inflate(R.layout.overlay_layout, null);
+        indicatorView = overlayView.findViewById(R.id.listening_indicator);
         overlayTextView = overlayView.findViewById(R.id.tv_overlay_text);
         applyLanguageDirection();
 
@@ -63,12 +69,22 @@ public final class ListeningOverlayController {
 
         windowManager.removeView(overlayView);
         overlayView = null;
+        indicatorView = null;
         overlayTextView = null;
     }
 
     public void updateText(String text) {
+        updateText(text, STATUS_READY);
+    }
+
+    public void updateText(String text, boolean preparing) {
+        updateText(text, preparing ? STATUS_PREPARING : STATUS_READY);
+    }
+
+    public void updateText(String text, int status) {
         if (overlayTextView != null && TextNormalizer.hasText(text)) {
             applyLanguageDirection();
+            applyStatusStyle(status);
             overlayTextView.setText(text);
         }
     }
@@ -82,6 +98,20 @@ public final class ListeningOverlayController {
         overlayView.setLayoutDirection(rtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
         overlayTextView.setTextDirection(rtl ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         overlayTextView.setGravity(rtl ? Gravity.RIGHT : Gravity.LEFT);
+    }
+
+    private void applyStatusStyle(int status) {
+        if (indicatorView == null) {
+            return;
+        }
+
+        if (status == STATUS_PREPARING) {
+            indicatorView.setBackgroundResource(R.drawable.indicator_circle_preparing);
+        } else if (status == STATUS_HEARD) {
+            indicatorView.setBackgroundResource(R.drawable.indicator_circle_heard);
+        } else {
+            indicatorView.setBackgroundResource(R.drawable.indicator_circle);
+        }
     }
 
     private int overlayWidth(int edgePadding) {

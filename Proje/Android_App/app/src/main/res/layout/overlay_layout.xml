@@ -8,25 +8,31 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/overlay_background"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="12dp"
-        android:gravity="center_vertical">
+        android:paddingStart="14dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="9dp">
 
         <View
             android:id="@+id/listening_indicator"
-            android:layout_width="12dp"
-            android:layout_height="12dp"
+            android:layout_width="9dp"
+            android:layout_height="9dp"
             android:background="@drawable/indicator_circle" />
 
         <TextView
             android:id="@+id/tv_overlay_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@string/overlay_listening"
-            android:textColor="#FFFFFF"
+            android:layout_marginStart="10dp"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:lineSpacingExtra="2dp"
             android:maxLines="2"
+            android:text="@string/overlay_listening"
+            android:textColor="#F8FAFC"
             android:textSize="14sp"
-            android:textStyle="bold" />
+            android:textStyle="normal" />
     </LinearLayout>
 </FrameLayout>
