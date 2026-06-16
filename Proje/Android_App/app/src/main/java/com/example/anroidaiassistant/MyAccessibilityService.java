@@ -32,6 +32,7 @@ import com.example.anroidaiassistant.accessibility.SystemUninstallController;
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.graphics.drawable.Drawable;
 import android.graphics.Rect;
 import android.media.AudioManager;
@@ -52,6 +53,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -66,6 +68,8 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final int PARTIAL_RESULT_FINALIZE_DELAY_MS = 1200;
     private static final int CLOSE_APP_BACK_RETRY_DELAY_MS = 450;
     private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 15;
+    private static final int SCREENSHOT_OVERLAY_HIDE_DELAY_MS = 250;
+    private static final int SCREENSHOT_OVERLAY_RESTORE_DELAY_MS = 1300;
     private static final int[] BASE_RECOGNIZER_SOUND_STREAMS_TO_MUTE = {
             AudioManager.STREAM_SYSTEM,
             AudioManager.STREAM_NOTIFICATION,
@@ -303,7 +307,7 @@ public class MyAccessibilityService extends AccessibilityService {
                     String spokenText = matches.get(0);
                     schedulePartialResultFallback(spokenText);
                     if (!isNumberSelectionMode && !isGridActive()) {
-                        updateOverlayText("Hearing: " + spokenText);
+                        updateOverlayText(localizedOverlayString(R.string.overlay_hearing_format, spokenText));
                     }
                 }
             }
@@ -374,14 +378,14 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         if (consumeSpellAppMode()) {
-            updateOverlayText("Input: " + spokenText);
+            updateOverlayText(localizedOverlayString(R.string.overlay_input_format, spokenText));
             if (commandExecutor != null) {
                 commandExecutor.handleSpelledAppCandidate(spokenText);
             }
             return;
         }
 
-        updateOverlayText("Input: " + spokenText);
+        updateOverlayText(localizedOverlayString(R.string.overlay_input_format, spokenText));
         sendPredictionRequest(spokenText, alternatives);
     }
 
@@ -719,13 +723,13 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void showRecognizerPreparingState() {
         if (shouldShowRecognizerStateInOverlay()) {
-            updateOverlayText(getString(R.string.overlay_preparing));
+            updateOverlayText(localizedOverlayString(R.string.overlay_preparing));
         }
     }
 
     private void showRecognizerReadyState() {
         if (shouldShowRecognizerStateInOverlay()) {
-            updateOverlayText(getString(R.string.overlay_listening));
+            updateOverlayText(localizedOverlayString(R.string.overlay_listening));
         }
     }
 
@@ -742,15 +746,91 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public void showFeedback(String text) {
-        updateOverlayText(text);
+        updateOverlayText(localizeKnownFeedback(text));
+    }
+
+    public String localizedOverlayString(int resId, Object... args) {
+        String language = AssistantSettings.getLanguage(this);
+        Locale locale;
+        if (AssistantSettings.LANGUAGE_AR.equals(language)) {
+            locale = new Locale("ar");
+        } else if (AssistantSettings.LANGUAGE_EN.equals(language)) {
+            locale = Locale.ENGLISH;
+        } else {
+            locale = new Locale("tr");
+        }
+
+        Configuration configuration = new Configuration(getResources().getConfiguration());
+        configuration.setLocale(locale);
+        Context localizedContext = createConfigurationContext(configuration);
+        if (args == null || args.length == 0) {
+            return localizedContext.getString(resId);
+        }
+        return localizedContext.getString(resId, args);
+    }
+
+    public String localizedQuickSettingName(String intent, String fallback) {
+        if ("SET_WIFI".equals(intent)) {
+            return localizedOverlayString(R.string.quick_setting_wifi);
+        }
+        if ("SET_BLUETOOTH".equals(intent)) {
+            return localizedOverlayString(R.string.quick_setting_bluetooth);
+        }
+        if ("SET_LOCATION".equals(intent)) {
+            return localizedOverlayString(R.string.quick_setting_location);
+        }
+        if ("SET_MOBILE_DATA".equals(intent)) {
+            return localizedOverlayString(R.string.quick_setting_mobile_data);
+        }
+        if ("SET_MOBILE_HOTSPOT".equals(intent)) {
+            return localizedOverlayString(R.string.quick_setting_mobile_hotspot);
+        }
+        return fallback;
+    }
+
+    private String localizeKnownFeedback(String text) {
+        if (text == null) {
+            return null;
+        }
+
+        switch (text) {
+            case "Type a command first":
+                return localizedOverlayString(R.string.feedback_type_command_first);
+            case "Spell app name...":
+                return localizedOverlayString(R.string.feedback_spell_app_name);
+            case "Selection cancelled.":
+                return localizedOverlayString(R.string.feedback_selection_cancelled);
+            case "Gesture could not be performed":
+                return localizedOverlayString(R.string.feedback_gesture_failed);
+            case "App could not be closed.":
+                return localizedOverlayString(R.string.feedback_close_app_failed);
+            case "Screenshot is not supported on this device":
+                return localizedOverlayString(R.string.feedback_screenshot_unsupported);
+            case "Grid is unavailable":
+                return localizedOverlayString(R.string.feedback_grid_unavailable);
+            case "Item not found":
+                return localizedOverlayString(R.string.feedback_item_not_found);
+            case "Item could not be clicked":
+                return localizedOverlayString(R.string.feedback_item_click_failed);
+            case "Labels cancelled.":
+                return localizedOverlayString(R.string.feedback_labels_cancelled);
+            case "Text could not be written":
+                return localizedOverlayString(R.string.feedback_text_write_failed);
+            case "Text could not be cleared":
+                return localizedOverlayString(R.string.feedback_text_clear_failed);
+            case "Text field not found":
+                return localizedOverlayString(R.string.feedback_text_field_not_found);
+            default:
+                return text;
+        }
     }
 
     public void submitTextCommand(String text) {
         if (text == null || text.trim().isEmpty()) {
-            showFeedback("Type a command first");
+            showFeedback(localizedOverlayString(R.string.feedback_type_command_first));
             return;
         }
-        updateOverlayText("Input: " + text.trim());
+        updateOverlayText(localizedOverlayString(R.string.overlay_input_format, text.trim()));
         sendPredictionRequest(text.trim());
     }
 
@@ -766,13 +846,13 @@ public class MyAccessibilityService extends AccessibilityService {
 
         pendingPrediction = new PendingPrediction(text, alternatives);
         if (appCatalogSyncCall != null) {
-            updateOverlayText("Uygulama listesi gonderiliyor...");
+            updateOverlayText(localizedOverlayString(R.string.catalog_syncing));
             return;
         }
 
         String sessionId = AssistantSession.getOrCreateSessionId();
 
-        updateOverlayText("Uygulama listesi gonderiliyor...");
+        updateOverlayText(localizedOverlayString(R.string.catalog_syncing));
         appCatalogSyncCall = AppCatalogSyncer.syncInstalledApps(
                 this,
                 apiService,
@@ -939,7 +1019,7 @@ public class MyAccessibilityService extends AccessibilityService {
         isSpellAppMode = true;
         clearNumberSelection();
         hideGrid();
-        updateOverlayText("Spell app name...");
+        updateOverlayText(localizedOverlayString(R.string.feedback_spell_app_name));
     }
 
     private boolean consumeSpellAppMode() {
@@ -1175,7 +1255,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
         NumberSelectionCallback callback = numberSelectionCallback;
         clearNumberSelection();
-        updateOverlayText("Selection cancelled.");
+        updateOverlayText(localizedOverlayString(R.string.feedback_selection_cancelled));
         if (callback != null) {
             callback.onCancelled();
         }
@@ -1220,7 +1300,7 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         if (!handled) {
-            showFeedback("Gesture could not be performed");
+            showFeedback(localizedOverlayString(R.string.feedback_gesture_failed));
         }
         if (isListening) {
             showOverlay();
@@ -1342,7 +1422,7 @@ public class MyAccessibilityService extends AccessibilityService {
                 return;
             }
             if (attempt >= CLOSE_APP_MAX_BACK_ATTEMPTS) {
-                showFeedback("App could not be closed.");
+                showFeedback(localizedOverlayString(R.string.feedback_close_app_failed));
                 return;
             }
             performCloseAppBackAttempt(initialPackageName, attempt + 1);
@@ -1369,6 +1449,24 @@ public class MyAccessibilityService extends AccessibilityService {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             return false;
         }
+        hideOverlay();
+        mainHandler.postDelayed(() -> {
+            boolean handled = performScreenshotNow();
+            if (!handled) {
+                showFeedback(localizedOverlayString(R.string.feedback_screenshot_unsupported));
+                return;
+            }
+            mainHandler.postDelayed(() -> {
+                if (isListening && !isNumberSelectionMode && !isGridActive()) {
+                    showOverlay();
+                    showCurrentRecognizerState();
+                }
+            }, SCREENSHOT_OVERLAY_RESTORE_DELAY_MS);
+        }, SCREENSHOT_OVERLAY_HIDE_DELAY_MS);
+        return true;
+    }
+
+    private boolean performScreenshotNow() {
         if (accessibilityActionController != null) {
             return accessibilityActionController.performScreenshot();
         }
@@ -1434,7 +1532,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public void handleGridAction(String action) {
         if (gridController == null) {
-            showFeedback("Grid is unavailable");
+            showFeedback(localizedOverlayString(R.string.feedback_grid_unavailable));
             return;
         }
 

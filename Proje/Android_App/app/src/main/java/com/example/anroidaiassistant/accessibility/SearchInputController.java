@@ -72,13 +72,37 @@ public final class SearchInputController {
             return false;
         }
 
-        AccessibilityNodeInfo inputNode = findBestWritableInput();
-        return inputNode != null && setText(inputNode, text);
+        InputSelection selection = findWritableInputSelection();
+        if (selection.selectedInput != null) {
+            return setText(selection.selectedInput, text);
+        }
+
+        if (selection.inputs.size() > 1) {
+            return showInputSelection(selection.inputs, inputNode -> {
+                if (!setText(inputNode, text)) {
+                    service.showFeedback("Text could not be written");
+                }
+            });
+        }
+
+        return false;
     }
 
     public boolean clearText() {
-        AccessibilityNodeInfo inputNode = findBestWritableInput();
-        return inputNode != null && setText(inputNode, "");
+        InputSelection selection = findWritableInputSelection();
+        if (selection.selectedInput != null) {
+            return setText(selection.selectedInput, "");
+        }
+
+        if (selection.inputs.size() > 1) {
+            return showInputSelection(selection.inputs, inputNode -> {
+                if (!setText(inputNode, "")) {
+                    service.showFeedback("Text could not be cleared");
+                }
+            });
+        }
+
+        return false;
     }
 
     public boolean pressKeyboardAction(String actionText) {
@@ -188,23 +212,27 @@ public final class SearchInputController {
     }
 
     private AccessibilityNodeInfo findBestWritableInput() {
+        return findWritableInputSelection().selectedInput;
+    }
+
+    private InputSelection findWritableInputSelection() {
         AccessibilityNodeInfo rootNode = service.getRootInActiveWindow();
         if (rootNode == null) {
-            return null;
+            return new InputSelection(new ArrayList<>(), null);
         }
 
         List<AccessibilityNodeInfo> inputs = new ArrayList<>();
         collectTextInputs(rootNode, inputs);
         for (AccessibilityNodeInfo input : inputs) {
             if (input.isFocused()) {
-                return input;
+                return new InputSelection(inputs, input);
             }
         }
 
         if (inputs.size() == 1) {
-            return inputs.get(0);
+            return new InputSelection(inputs, inputs.get(0));
         }
-        return null;
+        return new InputSelection(inputs, null);
     }
 
     private void collectTextInputs(AccessibilityNodeInfo node, List<AccessibilityNodeInfo> inputs) {
@@ -212,13 +240,98 @@ public final class SearchInputController {
             return;
         }
 
-        if (isTextInput(node) && (node.getActions() & AccessibilityNodeInfo.ACTION_SET_TEXT) != 0) {
+        if (node.isVisibleToUser()
+                && isTextInput(node)
+                && (node.getActions() & AccessibilityNodeInfo.ACTION_SET_TEXT) != 0) {
             inputs.add(node);
         }
 
         for (int i = 0; i < node.getChildCount(); i++) {
             collectTextInputs(node.getChild(i), inputs);
         }
+    }
+
+    private boolean showInputSelection(
+            List<AccessibilityNodeInfo> inputs,
+            TextInputSelectionCallback callback
+    ) {
+        if (inputs == null || inputs.isEmpty() || callback == null) {
+            return false;
+        }
+
+        List<MyAccessibilityService.ClickTargetChoice> choices = new ArrayList<>();
+        for (int i = 0; i < inputs.size(); i++) {
+            Rect bounds = new Rect();
+            inputs.get(i).getBoundsInScreen(bounds);
+            choices.add(new MyAccessibilityService.ClickTargetChoice(
+                    describeInput(inputs.get(i), i),
+                    "Text field",
+                    bounds
+            ));
+        }
+
+        service.startClickTargetSelection(
+                choices,
+                new MyAccessibilityService.NumberSelectionCallback() {
+                    @Override
+                    public void onSelected(int selectedIndex) {
+                        if (selectedIndex < 0 || selectedIndex >= inputs.size()) {
+                            service.showFeedback("Text field not found");
+                            return;
+                        }
+                        callback.onSelected(inputs.get(selectedIndex));
+                    }
+
+                    @Override
+                    public void onCancelled() {
+                        service.showFeedback("Selection cancelled.");
+                    }
+                },
+                inputSelectionHint()
+        );
+        return true;
+    }
+
+    private String inputSelectionHint() {
+        if ("EN".equalsIgnoreCase(service.getSelectedLanguage())) {
+            return "Say the number of the text field you want.";
+        }
+        if ("AR".equalsIgnoreCase(service.getSelectedLanguage())) {
+            return "\u0642\u0644 \u0631\u0642\u0645 \u062D\u0642\u0644 \u0627\u0644\u0646\u0635 \u0627\u0644\u0630\u064A \u062A\u0631\u064A\u062F\u0647.";
+        }
+        return "Yazmak istediginiz metin alaninin numarasini soyleyin.";
+    }
+
+    private String describeInput(AccessibilityNodeInfo node, int index) {
+        String hint = getNodeHint(node);
+        if (TextNormalizer.hasText(hint)) {
+            return hint;
+        }
+
+        if (node.getText() != null && TextNormalizer.hasText(node.getText().toString())) {
+            return node.getText().toString().trim();
+        }
+
+        if (node.getContentDescription() != null
+                && TextNormalizer.hasText(node.getContentDescription().toString())) {
+            return node.getContentDescription().toString().trim();
+        }
+
+        String viewId = node.getViewIdResourceName();
+        if (TextNormalizer.hasText(viewId)) {
+            int slashIndex = viewId.lastIndexOf('/');
+            String label = slashIndex >= 0 ? viewId.substring(slashIndex + 1) : viewId;
+            return label.replace('_', ' ').trim();
+        }
+
+        return "Text field " + (index + 1);
+    }
+
+    private String getNodeHint(AccessibilityNodeInfo node) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || node.getHintText() == null) {
+            return null;
+        }
+        return node.getHintText().toString().trim();
     }
 
     private int scoreSearchInput(AccessibilityNodeInfo node) {
@@ -413,5 +526,19 @@ public final class SearchInputController {
             this.node = node;
             this.score = score;
         }
+    }
+
+    private static final class InputSelection {
+        private final List<AccessibilityNodeInfo> inputs;
+        private final AccessibilityNodeInfo selectedInput;
+
+        private InputSelection(List<AccessibilityNodeInfo> inputs, AccessibilityNodeInfo selectedInput) {
+            this.inputs = inputs;
+            this.selectedInput = selectedInput;
+        }
+    }
+
+    private interface TextInputSelectionCallback {
+        void onSelected(AccessibilityNodeInfo inputNode);
     }
 }

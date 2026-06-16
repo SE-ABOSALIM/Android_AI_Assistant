@@ -4,6 +4,8 @@ import android.accessibilityservice.AccessibilityService;
 import android.os.Handler;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import com.example.anroidaiassistant.MyAccessibilityService;
+import com.example.anroidaiassistant.R;
 import com.example.anroidaiassistant.resources.QuickSettingsAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
@@ -49,7 +51,7 @@ public final class QuickSettingsTileController {
         Boolean desiredEnabled = parseDesiredState(rawState);
         if (desiredEnabled == null) {
             if (feedback != null) {
-                feedback.showMessage("Quick setting state not supported");
+                feedback.showMessage(message(R.string.feedback_quick_setting_state_not_supported));
             }
             return true;
         }
@@ -57,7 +59,7 @@ public final class QuickSettingsTileController {
         boolean opened = service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS);
         if (!opened) {
             if (feedback != null) {
-                feedback.showMessage("Quick settings panel is unavailable");
+                feedback.showMessage(message(R.string.feedback_quick_settings_unavailable));
             }
             return true;
         }
@@ -84,7 +86,10 @@ public final class QuickSettingsTileController {
 
         if (attempt >= MAX_SEARCH_ATTEMPTS - 1) {
             if (feedback != null) {
-                feedback.showMessage(target.displayName + " tile was not found");
+                feedback.showMessage(message(
+                        R.string.feedback_quick_setting_not_found,
+                        targetName(target)
+                ));
             }
             return;
         }
@@ -110,7 +115,11 @@ public final class QuickSettingsTileController {
         Boolean currentState = readCheckedState(tileNode);
         if (currentState != null && currentState == desiredEnabled) {
             if (feedback != null) {
-                feedback.showMessage(target.displayName + " is already " + stateText(desiredEnabled));
+                feedback.showMessage(message(
+                        R.string.feedback_quick_setting_already,
+                        targetName(target),
+                        stateText(desiredEnabled)
+                ));
             }
             return;
         }
@@ -122,8 +131,15 @@ public final class QuickSettingsTileController {
 
         if (feedback != null) {
             feedback.showMessage(clicked
-                    ? target.displayName + " " + stateText(desiredEnabled) + " requested"
-                    : target.displayName + " tile could not be clicked");
+                    ? message(
+                    R.string.feedback_quick_setting_requested,
+                    targetName(target),
+                    stateText(desiredEnabled)
+            )
+                    : message(
+                    R.string.feedback_quick_setting_click_failed,
+                    targetName(target)
+            ));
         }
     }
 
@@ -258,20 +274,31 @@ public final class QuickSettingsTileController {
         Boolean currentState = readBluetoothState(bluetoothNode, candidates);
         if (currentState != null && currentState == desiredEnabled) {
             if (feedback != null) {
-                feedback.showMessage("Bluetooth is already " + stateText(desiredEnabled));
+                feedback.showMessage(message(
+                        R.string.feedback_quick_setting_already,
+                        targetName(targets.get("SET_BLUETOOTH")),
+                        stateText(desiredEnabled)
+                ));
             }
             return;
         }
 
         if (!clickBluetoothCandidate(candidates, 0)) {
             if (feedback != null) {
-                feedback.showMessage("Bluetooth tile could not be clicked");
+                feedback.showMessage(message(
+                        R.string.feedback_quick_setting_click_failed,
+                        targetName(targets.get("SET_BLUETOOTH"))
+                ));
             }
             return;
         }
 
         if (feedback != null) {
-            feedback.showMessage("Bluetooth " + stateText(desiredEnabled) + " requested");
+            feedback.showMessage(message(
+                    R.string.feedback_quick_setting_requested,
+                    targetName(targets.get("SET_BLUETOOTH")),
+                    stateText(desiredEnabled)
+            ));
         }
 
         if (desiredEnabled) {
@@ -293,7 +320,10 @@ public final class QuickSettingsTileController {
         AccessibilityNodeInfo bluetoothNode = findBluetoothTextNode(rootNode);
         if (bluetoothNode == null) {
             if (feedback != null) {
-                feedback.showMessage("Bluetooth tile was not found");
+                feedback.showMessage(message(
+                        R.string.feedback_quick_setting_not_found,
+                        targetName(targets.get("SET_BLUETOOTH"))
+                ));
             }
             return;
         }
@@ -306,14 +336,20 @@ public final class QuickSettingsTileController {
 
         if (nextCandidateIndex >= MAX_BLUETOOTH_CLICK_ATTEMPTS) {
             if (feedback != null) {
-                feedback.showMessage("Bluetooth did not change state");
+                feedback.showMessage(message(
+                        R.string.feedback_quick_setting_did_not_change,
+                        targetName(targets.get("SET_BLUETOOTH"))
+                ));
             }
             return;
         }
 
         if (!clickBluetoothCandidate(bluetoothNode, nextCandidateIndex)) {
             if (feedback != null) {
-                feedback.showMessage("Bluetooth tile could not be clicked");
+                feedback.showMessage(message(
+                        R.string.feedback_quick_setting_click_failed,
+                        targetName(targets.get("SET_BLUETOOTH"))
+                ));
             }
             return;
         }
@@ -538,7 +574,32 @@ public final class QuickSettingsTileController {
     }
 
     private String stateText(boolean enabled) {
-        return enabled ? "on" : "off";
+        return message(enabled
+                ? R.string.quick_setting_state_on
+                : R.string.quick_setting_state_off);
+    }
+
+    private String targetName(TileTarget target) {
+        if (target == null) {
+            return "";
+        }
+        if (service instanceof MyAccessibilityService) {
+            return ((MyAccessibilityService) service).localizedQuickSettingName(
+                    target.intent,
+                    target.displayName
+            );
+        }
+        return target.displayName;
+    }
+
+    private String message(int resId, Object... args) {
+        if (service instanceof MyAccessibilityService) {
+            return ((MyAccessibilityService) service).localizedOverlayString(resId, args);
+        }
+        if (args == null || args.length == 0) {
+            return service.getString(resId);
+        }
+        return service.getString(resId, args);
     }
 
     private void registerTargets() {
@@ -546,6 +607,7 @@ public final class QuickSettingsTileController {
             targets.put(
                     spec.intent,
                     new TileTarget(
+                            spec.intent,
                             spec.displayName,
                             spec.labels,
                             spec.useBluetoothToggleFallback
@@ -555,15 +617,22 @@ public final class QuickSettingsTileController {
     }
 
     private static final class TileTarget {
+        private final String intent;
         private final String displayName;
         private final String[] labels;
         private final boolean useBluetoothToggleFallback;
 
-        private TileTarget(String displayName, String[] labels) {
-            this(displayName, labels, false);
+        private TileTarget(String intent, String displayName, String[] labels) {
+            this(intent, displayName, labels, false);
         }
 
-        private TileTarget(String displayName, String[] labels, boolean useBluetoothToggleFallback) {
+        private TileTarget(
+                String intent,
+                String displayName,
+                String[] labels,
+                boolean useBluetoothToggleFallback
+        ) {
+            this.intent = intent;
             this.displayName = displayName;
             this.labels = labels;
             this.useBluetoothToggleFallback = useBluetoothToggleFallback;
