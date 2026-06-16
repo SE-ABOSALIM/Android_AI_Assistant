@@ -126,20 +126,7 @@ public final class HomeFragment extends Fragment {
     }
 
     public void showPredictionResult(PredictResponse response) {
-        if (response == null) {
-            setStatusText(getString(R.string.backend_no_response));
-            return;
-        }
-
-        String responseInfo = "intent: " + response.getIntent() + "\n"
-                + "language: " + response.getLanguage() + "\n"
-                + "confidence: " + response.getConfidence() + "\n"
-                + "accepted: " + response.isAccepted() + "\n"
-                + "parameters: " + response.getParameters() + "\n"
-                + "missing_slots: " + response.getMissingSlots() + "\n"
-                + "error_code: " + response.getErrorCode() + "\n"
-                + "error_message: " + response.getErrorMessage();
-        setStatusText(responseInfo);
+        // Prediction details are intentionally not rendered on the home screen.
     }
 
     private MainActivity mainActivity() {
