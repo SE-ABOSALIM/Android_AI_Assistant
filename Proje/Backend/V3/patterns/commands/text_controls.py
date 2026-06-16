@@ -7,6 +7,12 @@ CLEAR_TEXT_PATTERNS = {
         "erase text",
         "erase the text",
         "delete text",
+        "delete what i wrote",
+        "delete what i have written",
+        "erase what i wrote",
+        "erase what i have written",
+        "clear what i wrote",
+        "clear what i have written",
     ],
     "TR": [
         "metni temizle",

@@ -597,10 +597,11 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"state": "on"})
         self.assertEqual(result["rule_matched"], "set_mobile_data_on")
 
-    def test_open_app_rejects_text_delete_commands(self):
+    def test_text_delete_commands_clear_text_before_app_delete(self):
         result = rule_based_command("delete what i wrote", "EN")
 
-        self.assertIsNone(result)
+        self.assertEqual(result["intent"], "CLEAR_TEXT")
+        self.assertEqual(result["rule_matched"], "clear_text")
 
 
 if __name__ == "__main__":
