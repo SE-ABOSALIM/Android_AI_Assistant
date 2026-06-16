@@ -8,6 +8,7 @@ import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
+import com.example.anroidaiassistant.ui.screens.BackPressHandler;
 import com.example.anroidaiassistant.ui.screens.CustomCommandsFragment;
 import com.example.anroidaiassistant.ui.screens.GuideFragment;
 import com.example.anroidaiassistant.ui.screens.HomeFragment;
@@ -20,6 +21,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
@@ -37,6 +39,8 @@ import retrofit2.Response;
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
+    private static final String STATE_CURRENT_NAV_ITEM_ID = "current_nav_item_id";
+    private static final String STATE_NAV_BACK_STACK = "nav_back_stack";
 
     private String selectedLanguage = "TR";
     private ApiService apiService;
@@ -51,6 +55,9 @@ public class MainActivity extends AppCompatActivity {
     private Runnable pendingPermissionAction;
     private HomeFragment homeFragment;
     private BottomNavigationView bottomNavigationView;
+    private final ArrayList<Integer> navigationBackStack = new ArrayList<>();
+    private int currentNavigationItemId = 0;
+    private boolean updatingBottomNavigationSelection = false;
 
     private static MainActivity instance;
 
@@ -80,13 +87,76 @@ public class MainActivity extends AppCompatActivity {
     private void setupBottomNavigation(Bundle savedInstanceState) {
         bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setOnItemSelectedListener(item -> {
-            showSection(item.getItemId());
+            if (!updatingBottomNavigationSelection) {
+                navigateToSection(item.getItemId(), true);
+            }
             return true;
         });
+        setupBackHandling();
 
         if (savedInstanceState == null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_home);
+            navigateToSection(R.id.nav_home, false);
+        } else {
+            currentNavigationItemId = savedInstanceState.getInt(STATE_CURRENT_NAV_ITEM_ID, R.id.nav_home);
+            ArrayList<Integer> restoredStack = savedInstanceState.getIntegerArrayList(STATE_NAV_BACK_STACK);
+            navigationBackStack.clear();
+            if (restoredStack != null) {
+                navigationBackStack.addAll(restoredStack);
+            }
+            updateBottomNavigationSelection(currentNavigationItemId);
         }
+    }
+
+    private void setupBackHandling() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                Fragment currentFragment = getSupportFragmentManager()
+                        .findFragmentById(R.id.main_content_container);
+                if (currentFragment instanceof BackPressHandler
+                        && ((BackPressHandler) currentFragment).handleBackPressed()) {
+                    return;
+                }
+
+                if (!navigationBackStack.isEmpty()) {
+                    int previousItemId = navigationBackStack.remove(navigationBackStack.size() - 1);
+                    navigateToSection(previousItemId, false);
+                    return;
+                }
+
+                if (currentNavigationItemId != R.id.nav_home) {
+                    navigateToSection(R.id.nav_home, false);
+                    return;
+                }
+
+                setEnabled(false);
+                getOnBackPressedDispatcher().onBackPressed();
+            }
+        });
+    }
+
+    private void navigateToSection(int itemId, boolean addCurrentToBackStack) {
+        if (itemId == currentNavigationItemId
+                && getSupportFragmentManager().findFragmentById(R.id.main_content_container) != null) {
+            return;
+        }
+
+        if (addCurrentToBackStack && currentNavigationItemId != 0 && currentNavigationItemId != itemId) {
+            navigationBackStack.add(currentNavigationItemId);
+        }
+
+        currentNavigationItemId = itemId;
+        updateBottomNavigationSelection(itemId);
+        showSection(itemId);
+    }
+
+    private void updateBottomNavigationSelection(int itemId) {
+        if (bottomNavigationView == null || bottomNavigationView.getSelectedItemId() == itemId) {
+            return;
+        }
+        updatingBottomNavigationSelection = true;
+        bottomNavigationView.setSelectedItemId(itemId);
+        updatingBottomNavigationSelection = false;
     }
 
     private void showSection(int itemId) {
@@ -110,11 +180,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void showPermissionsPage() {
-        if (bottomNavigationView != null) {
-            bottomNavigationView.setSelectedItemId(R.id.nav_permissions);
-        } else {
-            showSection(R.id.nav_permissions);
-        }
+        navigateToSection(R.id.nav_permissions, true);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@androidx.annotation.NonNull Bundle outState) {
+        outState.putInt(STATE_CURRENT_NAV_ITEM_ID, currentNavigationItemId);
+        outState.putIntegerArrayList(STATE_NAV_BACK_STACK, new ArrayList<>(navigationBackStack));
+        super.onSaveInstanceState(outState);
     }
 
     public void updateSelectedLanguage(String language) {

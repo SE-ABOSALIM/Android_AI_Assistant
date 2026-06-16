@@ -37,7 +37,7 @@ import com.example.anroidaiassistant.settings.AssistantSettings;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class PermissionsFragment extends Fragment {
+public final class PermissionsFragment extends Fragment implements BackPressHandler {
     private static final int REQUEST_RUNTIME_PERMISSION = 610;
 
     private LinearLayout summaryCard;
@@ -77,6 +77,16 @@ public final class PermissionsFragment extends Fragment {
     public void onResume() {
         super.onResume();
         render();
+    }
+
+    @Override
+    public boolean handleBackPressed() {
+        if (activeGroup == null) {
+            return false;
+        }
+        activeGroup = null;
+        render();
+        return true;
     }
 
     @Override

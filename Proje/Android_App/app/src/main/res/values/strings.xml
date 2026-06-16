@@ -71,7 +71,7 @@
     <string name="custom_commands_name_label">Name</string>
     <string name="custom_commands_steps_label">Workflow steps</string>
     <string name="custom_commands_add_step">Add step</string>
-    <string name="custom_commands_phrase_format">Say: custom command: %1$s</string>
+    <string name="custom_commands_phrase_format">Say: custom command %1$s</string>
     <string name="custom_commands_step_count">%1$d steps</string>
     <string name="custom_commands_validation_name">Enter a command name</string>
     <string name="custom_commands_validation_step">Add at least one valid step</string>
