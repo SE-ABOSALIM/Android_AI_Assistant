@@ -1,17 +1,12 @@
 import asyncio
 import time
 
-from fastapi import BackgroundTasks, FastAPI, Query
+from fastapi import BackgroundTasks, FastAPI
 
 from V3.cache.app_catalog_cache import delete_cached_app_catalog_snapshot, set_cached_app_catalog_snapshot
 from V3.config import MODEL_DIR
 from V3.database.app_catalog_repository import delete_stale_device_records, save_app_catalog_snapshot
-from V3.database.command_history_repository import (
-    clear_command_history,
-    delete_command_history_item,
-    list_command_history,
-    record_command_history,
-)
+from V3.database.command_history_repository import record_command_history
 from V3.database.custom_command_repository import (
     delete_custom_command,
     list_custom_commands,
@@ -23,8 +18,6 @@ from V3.schemas import (
     AppCatalogRequest,
     AppCatalogResponse,
     AppCatalogStatusResponse,
-    CommandHistoryMutationResponse,
-    CommandHistoryResponse,
     CustomCommandListResponse,
     CustomCommandMutationRequest,
     CustomCommandMutationResponse,
@@ -184,47 +177,6 @@ def _record_command_history_background(
             flush=True,
         )
 
-
-@app.get("/command-history", response_model=CommandHistoryResponse)
-async def command_history(
-    session_id: str | None = None,
-    device_id: str | None = None,
-    limit: int = Query(default=20, ge=1, le=50),
-    offset: int = Query(default=0, ge=0),
-    q: str | None = None,
-):
-    return await list_command_history(
-        session_id=session_id,
-        device_id=device_id,
-        limit=limit,
-        offset=offset,
-        query=q,
-    )
-
-
-@app.delete("/command-history", response_model=CommandHistoryMutationResponse)
-async def clear_history(session_id: str | None = None, device_id: str | None = None):
-    deleted_count = await clear_command_history(
-        session_id=session_id,
-        device_id=device_id,
-    )
-    return CommandHistoryMutationResponse(
-        accepted=True,
-        deleted_count=deleted_count,
-    )
-
-
-@app.delete("/command-history/{history_id}", response_model=CommandHistoryMutationResponse)
-async def delete_history_item(history_id: str, session_id: str | None = None, device_id: str | None = None):
-    deleted_count = await delete_command_history_item(
-        history_id=history_id,
-        session_id=session_id,
-        device_id=device_id,
-    )
-    return CommandHistoryMutationResponse(
-        accepted=deleted_count > 0,
-        deleted_count=deleted_count,
-    )
 
 @app.post("/app-catalog", response_model=AppCatalogResponse)
 async def app_catalog(request: AppCatalogRequest):
