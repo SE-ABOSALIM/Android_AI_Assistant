@@ -238,4 +238,18 @@ public class ClickTextMatcherTest {
 
         assertTrue(match.score >= 66);
     }
+
+    @Test
+    public void treatsMoreActionsAsMenuOnlyWhenMenuIsRequested() {
+        ClickIconAliasMatcher aliasMatcher = new ClickIconAliasMatcher();
+
+        assertTrue(ClickCandidateCollector.isMenuActionMatchForNonMenuTarget(
+                "more actions for do this to go from b1 to c2 english in 9 minutes",
+                aliasMatcher.targetVariants("do this to go", "com.google.android.youtube")
+        ));
+        assertFalse(ClickCandidateCollector.isMenuActionMatchForNonMenuTarget(
+                "more actions",
+                aliasMatcher.targetVariants("three dots", "com.google.android.youtube")
+        ));
+    }
 }

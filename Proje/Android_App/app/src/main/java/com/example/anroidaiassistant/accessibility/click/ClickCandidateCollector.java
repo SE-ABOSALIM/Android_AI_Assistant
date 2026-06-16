@@ -83,13 +83,6 @@ public final class ClickCandidateCollector {
             return null;
         }
 
-        Rect nodeBounds = new Rect();
-        node.getBoundsInScreen(nodeBounds);
-        Rect bounds = chooseTapBounds(nodeBounds, clickBounds);
-        if (bounds.isEmpty() || !positionFilter.matches(bounds, position, screenWidth, screenHeight)) {
-            return null;
-        }
-
         List<NodeField> fields = collectNodeFields(node, clickNode);
         if (fields.isEmpty()) {
             return null;
@@ -97,6 +90,18 @@ public final class ClickCandidateCollector {
 
         FieldMatch bestFieldMatch = bestFieldMatch(fields, targetVariants);
         if (bestFieldMatch == null || bestFieldMatch.score <= 0) {
+            return null;
+        }
+        if (isMenuActionMatchForNonMenuTarget(bestFieldMatch.matchedText, targetVariants)) {
+            return null;
+        }
+
+        Rect nodeBounds = new Rect();
+        node.getBoundsInScreen(nodeBounds);
+        Rect bounds = bestFieldMatch.fromClickableParent
+                ? new Rect(clickBounds)
+                : chooseTapBounds(nodeBounds, clickBounds);
+        if (bounds.isEmpty() || !positionFilter.matches(bounds, position, screenWidth, screenHeight)) {
             return null;
         }
 
@@ -108,7 +113,9 @@ public final class ClickCandidateCollector {
             score += 1;
         }
 
-        boolean preferBoundsTap = clickNode != node && !sameBounds(bounds, clickBounds);
+        boolean preferBoundsTap = !bestFieldMatch.fromClickableParent
+                && clickNode != node
+                && !sameBounds(bounds, clickBounds);
         return new ClickCandidate(
                 clickNode,
                 bounds,
@@ -125,27 +132,38 @@ public final class ClickCandidateCollector {
 
     private List<NodeField> collectNodeFields(AccessibilityNodeInfo node, AccessibilityNodeInfo clickNode) {
         List<NodeField> fields = new ArrayList<>();
-        addDirectNodeFields(fields, node, 0);
+        addDirectNodeFields(fields, node, 0, false);
         if (clickNode != null && clickNode != node) {
-            addDirectNodeFields(fields, clickNode, CLICKABLE_PARENT_SOURCE_BONUS);
+            addDirectNodeFields(fields, clickNode, CLICKABLE_PARENT_SOURCE_BONUS, true);
         }
         return fields;
     }
 
-    private void addDirectNodeFields(List<NodeField> fields, AccessibilityNodeInfo node, int extraBonus) {
+    private void addDirectNodeFields(
+            List<NodeField> fields,
+            AccessibilityNodeInfo node,
+            int extraBonus,
+            boolean fromClickableParent
+    ) {
         if (node == null) {
             return;
         }
 
-        addField(fields, "text", node.getText(), TEXT_SOURCE_BONUS + extraBonus);
-        addField(fields, "content_description", node.getContentDescription(), CONTENT_DESCRIPTION_SOURCE_BONUS + extraBonus);
-        addField(fields, "resource_id", resourceIdSearchText(node.getViewIdResourceName()), RESOURCE_ID_SOURCE_BONUS + extraBonus);
+        addField(fields, "text", node.getText(), TEXT_SOURCE_BONUS + extraBonus, fromClickableParent);
+        addField(fields, "content_description", node.getContentDescription(), CONTENT_DESCRIPTION_SOURCE_BONUS + extraBonus, fromClickableParent);
+        addField(fields, "resource_id", resourceIdSearchText(node.getViewIdResourceName()), RESOURCE_ID_SOURCE_BONUS + extraBonus, fromClickableParent);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            addField(fields, "hint", node.getHintText(), HINT_SOURCE_BONUS + extraBonus);
+            addField(fields, "hint", node.getHintText(), HINT_SOURCE_BONUS + extraBonus, fromClickableParent);
         }
     }
 
-    private void addField(List<NodeField> fields, String source, CharSequence rawValue, int sourceBonus) {
+    private void addField(
+            List<NodeField> fields,
+            String source,
+            CharSequence rawValue,
+            int sourceBonus,
+            boolean fromClickableParent
+    ) {
         if (rawValue == null) {
             return;
         }
@@ -153,7 +171,7 @@ public final class ClickCandidateCollector {
         String raw = rawValue.toString();
         String normalized = ClickTextUtils.normalize(raw);
         if (TextNormalizer.hasText(normalized)) {
-            fields.add(new NodeField(source, raw, normalized, sourceBonus));
+            fields.add(new NodeField(source, raw, normalized, sourceBonus, fromClickableParent));
         }
     }
 
@@ -200,13 +218,41 @@ public final class ClickCandidateCollector {
                     field.source + ":" + textMatch.reason,
                     field.source,
                     textMatch.matchedTarget,
-                    field.normalizedValue
+                    field.normalizedValue,
+                    field.fromClickableParent
             );
             if (best == null || candidate.score > best.score) {
                 best = candidate;
             }
         }
         return best;
+    }
+
+    static boolean isMenuActionMatchForNonMenuTarget(String matchedText, List<String> targetVariants) {
+        if (!TextNormalizer.hasText(matchedText) || targetVariants == null || targetVariants.isEmpty()) {
+            return false;
+        }
+
+        String normalizedMatchedText = ClickTextUtils.normalize(matchedText);
+        boolean menuActionText = normalizedMatchedText.contains("more actions")
+                || normalizedMatchedText.contains("more options")
+                || normalizedMatchedText.contains("overflow menu")
+                || normalizedMatchedText.contains("kebab menu");
+        if (!menuActionText) {
+            return false;
+        }
+
+        for (String targetVariant : targetVariants) {
+            String normalizedTarget = ClickTextUtils.normalize(targetVariant);
+            if (normalizedTarget.contains("more options")
+                    || normalizedTarget.contains("more actions")
+                    || normalizedTarget.contains("overflow")
+                    || normalizedTarget.contains("kebab")
+                    || normalizedTarget.contains("three dots")) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void addOrReplaceEquivalentCandidate(List<ClickCandidate> candidates, ClickCandidate candidate) {
@@ -229,7 +275,7 @@ public final class ClickCandidateCollector {
         if (candidate.bounds.width() * candidate.bounds.height()
                 != existing.bounds.width() * existing.bounds.height()) {
             return candidate.bounds.width() * candidate.bounds.height()
-                    < existing.bounds.width() * existing.bounds.height();
+                    > existing.bounds.width() * existing.bounds.height();
         }
         return TextNormalizer.hasText(candidate.label) && !TextNormalizer.hasText(existing.label);
     }
@@ -291,12 +337,20 @@ public final class ClickCandidateCollector {
         final String rawValue;
         final String normalizedValue;
         final int sourceBonus;
+        final boolean fromClickableParent;
 
-        NodeField(String source, String rawValue, String normalizedValue, int sourceBonus) {
+        NodeField(
+                String source,
+                String rawValue,
+                String normalizedValue,
+                int sourceBonus,
+                boolean fromClickableParent
+        ) {
             this.source = source;
             this.rawValue = rawValue;
             this.normalizedValue = normalizedValue;
             this.sourceBonus = sourceBonus;
+            this.fromClickableParent = fromClickableParent;
         }
     }
 
@@ -306,13 +360,22 @@ public final class ClickCandidateCollector {
         final String source;
         final String matchedTarget;
         final String matchedText;
+        final boolean fromClickableParent;
 
-        FieldMatch(int score, String reason, String source, String matchedTarget, String matchedText) {
+        FieldMatch(
+                int score,
+                String reason,
+                String source,
+                String matchedTarget,
+                String matchedText,
+                boolean fromClickableParent
+        ) {
             this.score = score;
             this.reason = reason;
             this.source = source;
             this.matchedTarget = matchedTarget;
             this.matchedText = matchedText;
+            this.fromClickableParent = fromClickableParent;
         }
     }
 
