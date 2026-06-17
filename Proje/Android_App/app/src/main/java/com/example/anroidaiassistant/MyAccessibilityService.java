@@ -833,6 +833,8 @@ public class MyAccessibilityService extends AccessibilityService {
                 return localizedOverlayString(R.string.feedback_text_clear_failed);
             case "Text field not found":
                 return localizedOverlayString(R.string.feedback_text_field_not_found);
+            case "Text field could not be focused":
+                return localizedOverlayString(R.string.feedback_text_field_focus_failed);
             default:
                 return text;
         }
@@ -1597,6 +1599,14 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean clearFocusedInputText() {
         return searchInputController != null && searchInputController.clearText();
+    }
+
+    public boolean focusInputField() {
+        return searchInputController != null && searchInputController.focusInput();
+    }
+
+    public boolean unfocusInputField() {
+        return searchInputController != null && searchInputController.unfocusInput();
     }
 
     public void confirmSystemUninstallDialog(String packageName, String label) {

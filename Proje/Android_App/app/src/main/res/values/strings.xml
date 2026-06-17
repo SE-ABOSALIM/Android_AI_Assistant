@@ -147,6 +147,7 @@
     <string name="feedback_text_write_failed">Text could not be written</string>
     <string name="feedback_text_clear_failed">Text could not be cleared</string>
     <string name="feedback_text_field_not_found">Text field not found</string>
+    <string name="feedback_text_field_focus_failed">Text field could not be focused</string>
     <string name="feedback_quick_setting_state_not_supported">Quick setting state not supported</string>
     <string name="feedback_quick_settings_unavailable">Quick settings panel is unavailable</string>
     <string name="feedback_quick_setting_not_found">%1$s tile was not found</string>

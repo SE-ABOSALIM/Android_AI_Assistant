@@ -144,6 +144,7 @@
     <string name="feedback_text_write_failed">Metin yazılamadı</string>
     <string name="feedback_text_clear_failed">Metin temizlenemedi</string>
     <string name="feedback_text_field_not_found">Metin alanı bulunamadı</string>
+    <string name="feedback_text_field_focus_failed">Metin alanına odaklanılamadı</string>
     <string name="feedback_quick_setting_state_not_supported">Hızlı ayar durumu desteklenmiyor</string>
     <string name="feedback_quick_settings_unavailable">Hızlı ayarlar paneli kullanılamıyor</string>
     <string name="feedback_quick_setting_not_found">%1$s kutucuğu bulunamadı</string>

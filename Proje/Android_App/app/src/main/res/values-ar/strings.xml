@@ -144,6 +144,7 @@
     <string name="feedback_text_write_failed">تعذرت كتابة النص</string>
     <string name="feedback_text_clear_failed">تعذر مسح النص</string>
     <string name="feedback_text_field_not_found">لم يتم العثور على حقل النص</string>
+    <string name="feedback_text_field_focus_failed">تعذر التركيز على حقل النص</string>
     <string name="feedback_quick_setting_state_not_supported">حالة الإعداد السريع غير مدعومة</string>
     <string name="feedback_quick_settings_unavailable">لوحة الإعدادات السريعة غير متاحة</string>
     <string name="feedback_quick_setting_not_found">لم يتم العثور على مربع %1$s</string>

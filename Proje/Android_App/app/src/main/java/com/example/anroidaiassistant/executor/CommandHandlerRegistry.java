@@ -12,6 +12,7 @@ import com.example.anroidaiassistant.executor.handlers.ClearTextCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ClickItemCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.ContactCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.GridCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.InputFocusCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.LabelsCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.MediaPlaybackCommandHandler;
 import com.example.anroidaiassistant.executor.handlers.NavigationCommandHandler;
@@ -82,6 +83,7 @@ public final class CommandHandlerRegistry {
                 new SearchCommandHandler(),
                 new WriteTextCommandHandler(),
                 new ClearTextCommandHandler(),
+                new InputFocusCommandHandler(),
                 new ClickItemCommandHandler(),
                 new SystemSettingCommandHandler("SET_WIFI"),
                 new SystemSettingCommandHandler("SET_BLUETOOTH"),

@@ -105,6 +105,31 @@ public final class SearchInputController {
         return false;
     }
 
+    public boolean focusInput() {
+        InputSelection selection = findWritableInputSelection();
+        if (selection.selectedInput != null) {
+            return focusInputNode(selection.selectedInput);
+        }
+
+        if (selection.inputs.size() > 1) {
+            return showInputSelection(selection.inputs, inputNode -> {
+                if (!focusInputNode(inputNode)) {
+                    service.showFeedback("Text field could not be focused");
+                }
+            });
+        }
+
+        return false;
+    }
+
+    public boolean unfocusInput() {
+        AccessibilityNodeInfo focusedInput = findFocusedWritableInput();
+        boolean cleared = focusedInput != null
+                && focusedInput.performAction(AccessibilityNodeInfo.ACTION_CLEAR_FOCUS);
+        boolean keyboardHidden = service.setSoftKeyboardVisible(false);
+        return cleared || keyboardHidden;
+    }
+
     public boolean pressKeyboardAction(String actionText) {
         if (!isKeyboardActionText(actionText)) {
             return false;
@@ -157,6 +182,13 @@ public final class SearchInputController {
         );
 
         return inputNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments);
+    }
+
+    private boolean focusInputNode(AccessibilityNodeInfo inputNode) {
+        boolean focused = inputNode.performAction(AccessibilityNodeInfo.ACTION_FOCUS);
+        boolean clicked = inputNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+        service.setSoftKeyboardVisible(true);
+        return focused || clicked;
     }
 
     private boolean submitSearch(AccessibilityNodeInfo inputNode) {
@@ -213,6 +245,20 @@ public final class SearchInputController {
 
     private AccessibilityNodeInfo findBestWritableInput() {
         return findWritableInputSelection().selectedInput;
+    }
+
+    private AccessibilityNodeInfo findFocusedWritableInput() {
+        InputSelection selection = findWritableInputSelection();
+        if (selection.selectedInput != null && selection.selectedInput.isFocused()) {
+            return selection.selectedInput;
+        }
+
+        for (AccessibilityNodeInfo input : selection.inputs) {
+            if (input.isFocused()) {
+                return input;
+            }
+        }
+        return null;
     }
 
     private InputSelection findWritableInputSelection() {
