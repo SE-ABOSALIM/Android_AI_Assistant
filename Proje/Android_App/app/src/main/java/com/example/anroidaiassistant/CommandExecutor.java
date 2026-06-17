@@ -394,7 +394,6 @@ public class CommandExecutor {
 
     private boolean shouldResolveCustomStepThroughBackend(String intent) {
         return "OPEN_APP".equalsIgnoreCase(intent)
-                || "SEARCH_QUERY".equalsIgnoreCase(intent)
                 || "CLICK_ITEM".equalsIgnoreCase(intent);
     }
 
