@@ -58,12 +58,13 @@ def _looks_like_turkish_merged_click(context: RuleContext) -> bool:
         return False
 
     words = normalized_lower(context.original).split()
-    if len(words) < 2:
+    if not words:
         return False
 
-    return (
-        words[-1].endswith("yamaz")
-        or words[-1].endswith("yemez")
-        or words[-1] == "kapatamaz"
-        or words[-1] in {"sebas", "sebasin"}
+    last_word = words[-1]
+    if last_word in {"sebas", "sebasin"}:
+        return len(words) >= 2
+
+    return last_word == "kapatamaz" or last_word.endswith(
+        ("amaz", "emez", "yamaz", "yemez")
     )

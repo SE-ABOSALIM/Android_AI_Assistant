@@ -103,7 +103,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "CLOSE_APP": _contract(
         "CLOSE_APP",
-        threshold=0.92,
+        threshold=0.98,
         android_supported=True
     ),
     "DOUBLE_TAP": _contract(

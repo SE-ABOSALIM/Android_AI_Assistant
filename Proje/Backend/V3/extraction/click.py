@@ -78,10 +78,10 @@ def _strip_turkish_click_suffix(word: str) -> str:
 
 def _extract_turkish_merged_click_target(normalized_text: str) -> Optional[str]:
     words = normalized_text.split()
-    if len(words) < 2:
+    if not words:
         return None
 
-    if _is_turkish_stt_sebas_click_word(words[-1]):
+    if len(words) >= 2 and _is_turkish_stt_sebas_click_word(words[-1]):
         target_words = words[:-1]
         if not target_words:
             return None
@@ -91,6 +91,9 @@ def _extract_turkish_merged_click_target(normalized_text: str) -> Optional[str]:
     repaired_word = _repair_turkish_merged_click_word(words[-1])
     if not repaired_word:
         return None
+
+    if len(words) == 1:
+        return normalize_text(repaired_word)
 
     words[-1] = repaired_word
     return normalize_text(" ".join(words))
@@ -103,6 +106,8 @@ def _repair_turkish_merged_click_word(word: str) -> Optional[str]:
     for suffix, repaired_ending in (
         ("yamaz", ""),
         ("yemez", ""),
+        ("amaz", ""),
+        ("emez", ""),
     ):
         if len(word) > len(suffix) + 2 and word.endswith(suffix):
             return word[: -len(suffix)] + repaired_ending

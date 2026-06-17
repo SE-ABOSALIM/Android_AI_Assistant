@@ -155,6 +155,13 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["parameters"], {"target_text": "tumunu kapat"})
         self.assertEqual(result["rule_matched"], "click_item")
 
+    def test_click_item_rule_repairs_single_word_turkish_merged_bas_stt(self):
+        result = rule_based_command("payla\u015famaz", "TR")
+
+        self.assertEqual(result["intent"], "CLICK_ITEM")
+        self.assertEqual(result["parameters"], {"target_text": "paylas"})
+        self.assertEqual(result["rule_matched"], "click_item")
+
     def test_click_item_rule_repairs_turkish_sebas_stt(self):
         result = rule_based_command("Real Sebas", "TR")
 
