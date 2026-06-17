@@ -330,9 +330,12 @@ public final class GuideFragment extends Fragment implements BackPressHandler {
                                         "ara <kişi adı> | Örnek: annemi ara",
                                         "<kişi adı> kişisini ara | Örnek: Ali'yi ara"),
                                 cmd("Özel komut çalıştır", "Kaydettiğin çok adımlı özel komutları adını söyleyerek çalıştırır.",
-                                        "özel komut: <komut adı>",
-                                        "özel komutu çalıştır <komut adı>",
-                                        "özel komut <komut adı>")
+                                        "özel komut <komut adı>",
+                                        "özel komutu çalıştır <komut adı>"),
+                                cmd("Özel komut iptal et", "Çalışmakta olan özel komut akışını durdurur.",
+                                        "özel komutu iptal et",
+                                        "özel komut iptal",
+                                        "özel komutu durdur")
                         ),
                         group("Gezinme", "Geri, ana ekran, son uygulamalar ve bildirimler.",
                                 cmd("Geri git", "Geçerli ekranda geri aksiyonunu çalıştırır.",
@@ -460,8 +463,12 @@ public final class GuideFragment extends Fragment implements BackPressHandler {
                                         "phone <contact name> | Example: phone mom",
                                         "call <contact name> now | Example: call Ali now"),
                                 cmd("Run custom command", "Runs a saved multi-step custom command by name.",
-                                        "run custom command <command name>",
-                                        "custom command <command name>")
+                                        "custom command <command name>",
+                                        "run custom command <command name>"),
+                                cmd("Cancel custom command", "Stops the currently running custom command workflow.",
+                                        "cancel custom command",
+                                        "stop custom command",
+                                        "cancel the custom command")
                         ),
                         group("Navigation", "Back, home, recents, notifications, and app closing.",
                                 cmd("Go back", "Runs the current screen back action.",
@@ -589,9 +596,12 @@ public final class GuideFragment extends Fragment implements BackPressHandler {
                                         "اتصل على <اسم جهة الاتصال> | مثال: اتصل على أمي",
                                         "اتصل الآن بـ <اسم جهة الاتصال> | مثال: اتصل الآن بعلي"),
                                 cmd("تشغيل أمر مخصص", "يشغل أمرا مخصصا محفوظا يحتوي على عدة خطوات.",
-                                        "أمر مخصص: <اسم الأمر>",
-                                        "نفذ أمر مخصص <اسم الأمر>",
-                                        "أمر مخصص <اسم الأمر>")
+                                        "أمر مخصص <اسم الأمر>",
+                                        "نفذ أمر مخصص <اسم الأمر>"),
+                                cmd("إلغاء أمر مخصص", "يوقف تسلسل الأمر المخصص الجاري تشغيله.",
+                                        "ألغ الأمر المخصص",
+                                        "إلغاء الأمر المخصص",
+                                        "أوقف الأمر المخصص")
                         ),
                         group("التنقل", "الرجوع، الرئيسية، التطبيقات الأخيرة، والإشعارات.",
                                 cmd("الرجوع", "ينفذ زر الرجوع في الشاشة الحالية.",
