@@ -89,7 +89,9 @@
     <string name="custom_step_hint_query">نص البحث</string>
     <string name="custom_step_hint_target">اسم زر أو نص أو أيقونة</string>
     <string name="custom_step_hint_label_number">الرقم المطلوب اختياره</string>
-    <string name="custom_step_hint_wait_ms">مدة الانتظار بالميلي ثانية</string>
+    <string name="custom_step_hint_wait_seconds">مدة الانتظار بالثواني</string>
+    <string name="custom_step_wait_seconds_format">%1$s ث</string>
+    <string name="custom_commands_validation_wait_seconds">أدخل مدة انتظار صحيحة بالثواني</string>
     <string name="custom_step_display">%1$d. %2$s: %3$s</string>
 
     <string name="settings_title">الإعدادات</string>

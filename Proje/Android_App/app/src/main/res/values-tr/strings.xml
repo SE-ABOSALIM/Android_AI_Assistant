@@ -89,7 +89,9 @@
     <string name="custom_step_hint_query">Aranacak metin</string>
     <string name="custom_step_hint_target">Buton, metin veya ikon adı</string>
     <string name="custom_step_hint_label_number">Seçilecek numara</string>
-    <string name="custom_step_hint_wait_ms">Milisaniye cinsinden bekleme</string>
+    <string name="custom_step_hint_wait_seconds">Saniye cinsinden bekleme</string>
+    <string name="custom_step_wait_seconds_format">%1$s sn</string>
+    <string name="custom_commands_validation_wait_seconds">Geçerli bir saniye değeri gir</string>
     <string name="custom_step_display">%1$d. %2$s: %3$s</string>
 
     <string name="settings_title">Ayarlar</string>

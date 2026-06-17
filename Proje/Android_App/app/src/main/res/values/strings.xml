@@ -91,7 +91,9 @@
     <string name="custom_step_hint_query">Search text</string>
     <string name="custom_step_hint_target">Button, text, or icon name</string>
     <string name="custom_step_hint_label_number">Number to select</string>
-    <string name="custom_step_hint_wait_ms">Delay in milliseconds</string>
+    <string name="custom_step_hint_wait_seconds">Delay in seconds</string>
+    <string name="custom_step_wait_seconds_format">%1$s s</string>
+    <string name="custom_commands_validation_wait_seconds">Enter a valid delay in seconds</string>
     <string name="custom_step_show_only">show only</string>
     <string name="custom_step_display">%1$d. %2$s: %3$s</string>
 

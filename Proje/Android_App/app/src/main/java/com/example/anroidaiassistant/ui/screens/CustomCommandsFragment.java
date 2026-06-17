@@ -3,6 +3,7 @@ package com.example.anroidaiassistant.ui.screens;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -35,6 +36,7 @@ import com.example.anroidaiassistant.util.DeviceIdentity;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 
 import java.util.ArrayList;
+import java.util.Locale;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -415,6 +417,7 @@ public final class CustomCommandsFragment extends Fragment {
         valueInput.setTextDirection(isRtl() ? View.TEXT_DIRECTION_RTL : View.TEXT_DIRECTION_LTR);
         valueInput.setGravity((isRtl() ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL);
         valueInput.setHint(options[spinner.getSelectedItemPosition()].hint);
+        configureValueInputForIntent(valueInput, options[spinner.getSelectedItemPosition()].intent);
         card.addView(valueInput, matchWrapParams());
 
         StepRow row = new StepRow(spinner, valueInput);
@@ -425,6 +428,7 @@ public final class CustomCommandsFragment extends Fragment {
             @Override
             public void onItemSelected(android.widget.AdapterView<?> parent, View view, int position, long id) {
                 valueInput.setHint(options[position].hint);
+                configureValueInputForIntent(valueInput, options[position].intent);
             }
 
             @Override
@@ -447,6 +451,10 @@ public final class CustomCommandsFragment extends Fragment {
             String value = row.valueInput.getText().toString().trim();
             if (TextUtils.isEmpty(value) && !"SHOW_LABELS".equals(intent)) {
                 continue;
+            }
+            if ("WAIT".equals(intent) && !isValidSeconds(value)) {
+                Toast.makeText(requireContext(), R.string.custom_commands_validation_wait_seconds, Toast.LENGTH_SHORT).show();
+                return new ArrayList<>();
             }
 
             CustomStep step = new CustomStep();
@@ -597,7 +605,7 @@ public final class CustomCommandsFragment extends Fragment {
         } else if ("SHOW_LABELS".equals(step.intent) && hasText(step.value)) {
             parameters.put("label_number", step.value);
         } else if ("WAIT".equals(step.intent)) {
-            parameters.put("duration_ms", step.value);
+            parameters.put("duration_ms", secondsToMillis(step.value));
         }
         return parameters;
     }
@@ -616,7 +624,7 @@ public final class CustomCommandsFragment extends Fragment {
             return stringParam(parameters, "label_number");
         }
         if ("WAIT".equals(intent)) {
-            return stringParam(parameters, "duration_ms");
+            return millisToSecondsText(stringParam(parameters, "duration_ms"));
         }
         return "";
     }
@@ -632,6 +640,9 @@ public final class CustomCommandsFragment extends Fragment {
         if (step == null || !hasText(step.value)) {
             return getString(R.string.custom_step_show_only);
         }
+        if ("WAIT".equals(step.intent)) {
+            return getString(R.string.custom_step_wait_seconds_format, step.value);
+        }
         return step.value;
     }
 
@@ -641,7 +652,7 @@ public final class CustomCommandsFragment extends Fragment {
                 new StepOption("SEARCH_QUERY", getString(R.string.custom_step_search_query), getString(R.string.custom_step_hint_query)),
                 new StepOption("CLICK_ITEM", getString(R.string.custom_step_click_item), getString(R.string.custom_step_hint_target)),
                 new StepOption("SHOW_LABELS", getString(R.string.custom_step_show_labels), getString(R.string.custom_step_hint_label_number)),
-                new StepOption("WAIT", getString(R.string.custom_step_wait), getString(R.string.custom_step_hint_wait_ms))
+                new StepOption("WAIT", getString(R.string.custom_step_wait), getString(R.string.custom_step_hint_wait_seconds))
         };
     }
 
@@ -663,6 +674,83 @@ public final class CustomCommandsFragment extends Fragment {
             }
         }
         return intent;
+    }
+
+    private void configureValueInputForIntent(EditText valueInput, String intent) {
+        if ("WAIT".equals(intent)) {
+            valueInput.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        } else {
+            valueInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        }
+    }
+
+    private int secondsToMillis(String secondsText) {
+        Double seconds = parseSeconds(secondsText);
+        if (seconds == null) {
+            return 0;
+        }
+        return (int) Math.max(0, Math.round(seconds * 1000.0d));
+    }
+
+    private String millisToSecondsText(String millisText) {
+        if (!hasText(millisText)) {
+            return "";
+        }
+        try {
+            double millis = Double.parseDouble(millisText.trim());
+            return formatSeconds(millis / 1000.0d);
+        } catch (NumberFormatException ignored) {
+            return "";
+        }
+    }
+
+    private boolean isValidSeconds(String value) {
+        return parseSeconds(value) != null;
+    }
+
+    private Double parseSeconds(String value) {
+        if (!hasText(value)) {
+            return null;
+        }
+        try {
+            double seconds = Double.parseDouble(normalizeSecondsText(value));
+            if (Double.isNaN(seconds) || Double.isInfinite(seconds) || seconds < 0) {
+                return null;
+            }
+            return seconds;
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private String normalizeSecondsText(String value) {
+        StringBuilder result = new StringBuilder();
+        boolean hasDecimalSeparator = false;
+
+        for (int index = 0; index < value.length(); index++) {
+            char c = value.charAt(index);
+            int digit = Character.getNumericValue(c);
+
+            if (digit >= 0 && digit <= 9) {
+                result.append(digit);
+            } else if ((c == '.' || c == ',' || c == '\u066B') && !hasDecimalSeparator) {
+                result.append('.');
+                hasDecimalSeparator = true;
+            } else if (c == '\u066C' || Character.isWhitespace(c)) {
+                // Ignore Arabic thousands separator and accidental spaces.
+            } else {
+                result.append(c);
+            }
+        }
+
+        return result.toString().trim();
+    }
+
+    private String formatSeconds(double seconds) {
+        if (Math.abs(seconds - Math.rint(seconds)) < 0.000001d) {
+            return String.valueOf((long) Math.rint(seconds));
+        }
+        return String.format(Locale.US, "%.2f", seconds).replaceAll("0+$", "").replaceAll("\\.$", "");
     }
 
     private TextView text(Context context, String value, int sizeSp, int colorRes, boolean bold) {
