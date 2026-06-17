@@ -35,6 +35,10 @@ public class CommandExecutor {
     private final CommandDispatcher commandDispatcher;
     private final ApiService apiService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private boolean isCustomCommandRunning = false;
+    private boolean isCustomCommandCancelled = false;
+    private Runnable pendingCustomCommandRunnable;
+    private Call<PredictResponse> activeCustomStepCall;
 
     public CommandExecutor(Context context) {
         this.context = context;
@@ -102,11 +106,18 @@ public class CommandExecutor {
             return;
         }
 
+        clearActiveCustomCommand(false);
+        isCustomCommandRunning = true;
+        isCustomCommandCancelled = false;
         executeCustomStep(steps, 0);
     }
 
     private void executeCustomStep(List<Map<String, Object>> steps, int index) {
+        if (!isCustomCommandRunning || isCustomCommandCancelled) {
+            return;
+        }
         if (index >= steps.size()) {
+            finishCustomCommand();
             return;
         }
 
@@ -123,10 +134,7 @@ public class CommandExecutor {
 
         if ("WAIT".equalsIgnoreCase(intent)) {
             int waitMs = ParameterReader.getIntParam(parameters, "duration_ms");
-            mainHandler.postDelayed(
-                    () -> executeCustomStep(steps, index + 1),
-                    Math.max(0, waitMs)
-            );
+            scheduleCustomCommandRunnable(() -> executeCustomStep(steps, index + 1), waitMs);
             return;
         }
 
@@ -142,7 +150,7 @@ public class CommandExecutor {
 
         boolean dispatched = commandDispatcher.dispatch(intent, parameters, executionContext);
         if (!dispatched && stopOnFailure) {
-            showMessage("Custom command step failed: " + intent);
+            failCustomCommand("Custom command step failed: " + intent);
             return;
         }
 
@@ -161,7 +169,7 @@ public class CommandExecutor {
         String commandText = buildCustomStepCommandText(intent, parameters, language);
         if (!hasText(commandText)) {
             if (stopOnFailure) {
-                showMessage("Custom command step failed: " + intent);
+                failCustomCommand("Custom command step failed: " + intent);
                 return;
             }
             scheduleNextCustomStep(steps, index, waitAfterMs);
@@ -177,12 +185,20 @@ public class CommandExecutor {
                 hasSearchInputForCustomCommand()
         );
 
-        apiService.predict(request).enqueue(new Callback<PredictResponse>() {
+        Call<PredictResponse> call = apiService.predict(request);
+        activeCustomStepCall = call;
+        call.enqueue(new Callback<PredictResponse>() {
             @Override
             public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {
+                if (activeCustomStepCall == call) {
+                    activeCustomStepCall = null;
+                }
+                if (!isCustomCommandRunning || isCustomCommandCancelled) {
+                    return;
+                }
                 if (!response.isSuccessful() || response.body() == null) {
                     if (stopOnFailure) {
-                        showMessage("Custom command step failed: " + intent);
+                        failCustomCommand("Custom command step failed: " + intent);
                         return;
                     }
                     scheduleNextCustomStep(steps, index, waitAfterMs);
@@ -190,7 +206,12 @@ public class CommandExecutor {
                 }
 
                 boolean executed = executeResolvedCustomStep(response.body());
-                if (!executed && stopOnFailure) {
+                if (!executed) {
+                    if (stopOnFailure) {
+                        finishCustomCommand();
+                        return;
+                    }
+                    scheduleNextCustomStep(steps, index, waitAfterMs);
                     return;
                 }
 
@@ -199,8 +220,14 @@ public class CommandExecutor {
 
             @Override
             public void onFailure(Call<PredictResponse> call, Throwable t) {
+                if (activeCustomStepCall == call) {
+                    activeCustomStepCall = null;
+                }
+                if (!isCustomCommandRunning || isCustomCommandCancelled || call.isCanceled()) {
+                    return;
+                }
                 if (stopOnFailure) {
-                    showMessage("Custom command step failed: " + intent);
+                    failCustomCommand("Custom command step failed: " + intent);
                     return;
                 }
                 scheduleNextCustomStep(steps, index, waitAfterMs);
@@ -269,13 +296,13 @@ public class CommandExecutor {
     ) {
         MyAccessibilityService service = MyAccessibilityService.getInstance();
         if (service == null) {
-            showMessage("Accessibility service is not connected");
+            failCustomCommand("Accessibility service is not connected");
             return;
         }
 
         if (!service.showScreenLabels()) {
             if (stopOnFailure) {
-                showMessage("No clickable labels found");
+                failCustomCommand("No clickable labels found");
                 return;
             }
             scheduleNextCustomStep(steps, index, waitAfterMs);
@@ -284,12 +311,16 @@ public class CommandExecutor {
 
         int labelNumber = ParameterReader.getIntParam(parameters, "label_number");
         if (labelNumber <= 0) {
+            finishCustomCommand();
             return;
         }
 
-        mainHandler.postDelayed(() -> {
+        scheduleCustomCommandRunnable(() -> {
+            if (!isCustomCommandRunning || isCustomCommandCancelled) {
+                return;
+            }
             if (!service.selectNumberedChoice(labelNumber) && stopOnFailure) {
-                showMessage("Label number could not be selected");
+                failCustomCommand("Label number could not be selected");
                 return;
             }
             scheduleNextCustomStep(steps, index, waitAfterMs);
@@ -297,10 +328,68 @@ public class CommandExecutor {
     }
 
     private void scheduleNextCustomStep(List<Map<String, Object>> steps, int index, int waitAfterMs) {
-        mainHandler.postDelayed(
-                () -> executeCustomStep(steps, index + 1),
-                Math.max(0, waitAfterMs)
-        );
+        scheduleCustomCommandRunnable(() -> executeCustomStep(steps, index + 1), waitAfterMs);
+    }
+
+    public boolean isCustomCommandRunning() {
+        return isCustomCommandRunning;
+    }
+
+    public boolean cancelCustomCommand() {
+        if (!isCustomCommandRunning) {
+            return false;
+        }
+        clearActiveCustomCommand(true);
+        return true;
+    }
+
+    private void scheduleCustomCommandRunnable(Runnable action, int delayMillis) {
+        if (!isCustomCommandRunning || isCustomCommandCancelled) {
+            return;
+        }
+
+        Runnable wrapper = new Runnable() {
+            @Override
+            public void run() {
+                if (pendingCustomCommandRunnable == this) {
+                    pendingCustomCommandRunnable = null;
+                }
+                if (!isCustomCommandRunning || isCustomCommandCancelled) {
+                    return;
+                }
+                action.run();
+            }
+        };
+        pendingCustomCommandRunnable = wrapper;
+        mainHandler.postDelayed(wrapper, Math.max(0, delayMillis));
+    }
+
+    private void failCustomCommand(String message) {
+        showMessage(message);
+        finishCustomCommand();
+    }
+
+    private void finishCustomCommand() {
+        clearActiveCustomCommand(false);
+    }
+
+    private void clearActiveCustomCommand(boolean notifyCancellation) {
+        isCustomCommandCancelled = true;
+        isCustomCommandRunning = false;
+
+        if (pendingCustomCommandRunnable != null) {
+            mainHandler.removeCallbacks(pendingCustomCommandRunnable);
+            pendingCustomCommandRunnable = null;
+        }
+
+        if (activeCustomStepCall != null) {
+            activeCustomStepCall.cancel();
+            activeCustomStepCall = null;
+        }
+
+        if (notifyCancellation) {
+            showMessage(context.getString(R.string.custom_commands_cancelled));
+        }
     }
 
     private boolean shouldResolveCustomStepThroughBackend(String intent) {

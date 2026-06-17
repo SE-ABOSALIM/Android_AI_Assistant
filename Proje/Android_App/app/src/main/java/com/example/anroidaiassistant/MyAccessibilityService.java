@@ -371,6 +371,24 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
+        if (commandExecutor != null && commandExecutor.isCustomCommandRunning()) {
+            if (isCustomCommandCancelCommand(spokenText)) {
+                updateOverlayText(localizedOverlayString(R.string.custom_commands_cancelled));
+                commandExecutor.cancelCustomCommand();
+                return;
+            }
+            if (isStopListeningCommand(spokenText)) {
+                stopContinuousListening();
+                MainActivity mainActivity = MainActivity.getInstance();
+                if (mainActivity != null) {
+                    mainActivity.syncListeningUiState();
+                }
+                return;
+            }
+            updateOverlayText(localizedOverlayString(R.string.custom_commands_busy));
+            return;
+        }
+
         if (isGridActive() && handleGridSpeech(spokenText)) {
             return;
         }
@@ -568,6 +586,9 @@ public class MyAccessibilityService extends AccessibilityService {
         isListening = false;
         isPausedForPhoneCall = false;
         isSpellAppMode = false;
+        if (commandExecutor != null) {
+            commandExecutor.cancelCustomCommand();
+        }
         clearNumberSelection();
         hideGrid();
         cancelAppCatalogSyncIfNeeded();
@@ -649,6 +670,110 @@ public class MyAccessibilityService extends AccessibilityService {
             setupSpeechRecognizer();
         }
         startListeningSession();
+    }
+
+    private boolean isCustomCommandCancelCommand(String spokenText) {
+        String normalized = TextNormalizer.normalizeAsciiText(spokenText);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        boolean hasCancelAction = containsAny(normalized, "cancel", "stop", "abort", "iptal", "durdur", "vazgec");
+        boolean hasCustomTarget = containsAny(
+                normalized,
+                "custom command",
+                "command flow",
+                "workflow",
+                "ozel komut",
+                "komut akisi",
+                "komut akis",
+                "akisi",
+                "akis"
+        );
+        if (hasCancelAction && hasCustomTarget) {
+            return true;
+        }
+
+        String arabic = TextNormalizer.normalizeText(spokenText);
+        if (isArabicCustomCommandCancelCommand(arabic)) {
+            return true;
+        }
+        boolean hasArabicCancelAction = containsAny(arabic, "الغ", "الغاء", "اوقف", "وقف", "ابطل");
+        boolean hasArabicCustomTarget = containsAny(arabic, "امر مخصص", "الامر المخصص", "امر خاص", "تسلسل");
+        return hasArabicCancelAction && hasArabicCustomTarget;
+    }
+
+    private boolean isArabicCustomCommandCancelCommand(String arabic) {
+        boolean hasArabicCancelAction = containsAny(
+                arabic,
+                "\u0627\u0644\u063a",
+                "\u0627\u0644\u063a\u0627\u0621",
+                "\u0627\u0648\u0642\u0641",
+                "\u0648\u0642\u0641",
+                "\u0627\u0628\u0637\u0644"
+        );
+        boolean hasArabicCustomTarget = containsAny(
+                arabic,
+                "\u0627\u0645\u0631 \u0645\u062e\u0635\u0635",
+                "\u0627\u0644\u0627\u0645\u0631 \u0627\u0644\u0645\u062e\u0635\u0635",
+                "\u0627\u0645\u0631 \u062e\u0627\u0635",
+                "\u062a\u0633\u0644\u0633\u0644"
+        );
+        return hasArabicCancelAction && hasArabicCustomTarget;
+    }
+
+    private boolean isStopListeningCommand(String spokenText) {
+        String normalized = TextNormalizer.normalizeAsciiText(spokenText);
+        if (containsAny(
+                normalized,
+                "stop listening",
+                "stop assistant",
+                "stop the assistant",
+                "assistant stop",
+                "turn off assistant",
+                "turn off voice assistant",
+                "stop voice commands",
+                "disable voice commands",
+                "do not listen anymore",
+                "dinlemeyi birak",
+                "dinleme artik",
+                "beni dinleme",
+                "beni artik dinleme",
+                "asistani durdur",
+                "asistan dur",
+                "sesli asistani kapat",
+                "sesli komutlari kapat",
+                "simdilik kapat"
+        )) {
+            return true;
+        }
+
+        String arabic = TextNormalizer.normalizeText(spokenText);
+        return containsAny(
+                arabic,
+                "\u062a\u0648\u0642\u0641 \u0639\u0646 \u0627\u0644\u0627\u0633\u062a\u0645\u0627\u0639",
+                "\u062a\u0648\u0642\u0641 \u0639\u0646 \u0627\u0644\u0633\u0645\u0627\u0639",
+                "\u062a\u0648\u0642\u0641 \u0627\u0644\u0627\u0646",
+                "\u0627\u0648\u0642\u0641 \u0627\u0644\u0627\u0633\u062a\u0645\u0627\u0639",
+                "\u0627\u0648\u0642\u0641 \u0627\u0644\u0645\u0633\u0627\u0639\u062f",
+                "\u0627\u063a\u0644\u0642 \u0627\u0644\u0645\u0633\u0627\u0639\u062f",
+                "\u0627\u0642\u0641\u0644 \u0627\u0644\u0645\u0633\u0627\u0639\u062f",
+                "\u0627\u0648\u0642\u0641 \u0627\u0644\u0627\u0648\u0627\u0645\u0631 \u0627\u0644\u0635\u0648\u062a\u064a\u0647",
+                "\u0627\u063a\u0644\u0642 \u0627\u0644\u0627\u0648\u0627\u0645\u0631 \u0627\u0644\u0635\u0648\u062a\u064a\u0647",
+                "\u0644\u0627 \u062a\u0633\u062a\u0645\u0639 \u0627\u0644\u064a"
+        );
+    }
+
+    private boolean containsAny(String text, String... parts) {
+        if (text == null) {
+            return false;
+        }
+        for (String part : parts) {
+            if (part != null && !part.isEmpty() && text.contains(part)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void showOverlay() {
