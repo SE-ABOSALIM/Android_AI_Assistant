@@ -22,7 +22,8 @@ ARABIC_LEADING_SEARCH_QUERY_NOISE_PATTERN = r"^(?:\u0639\u0646|\u062d\u0648\u064
 
 WRITE_TEXT_PATTERNS = {
     "EN": [
-        r"^(?:write|type)\s+(.+)$",
+        r"^(?:write|type|enter)\s+this\s+(.+)$",
+        r"^(?:write|type|enter)\s+(.+)$",
     ],
     "TR": [
         r"^(?:sunu|\u015funu|bunu)\s+yaz\s+(.+)$",

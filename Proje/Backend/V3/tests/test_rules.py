@@ -10,6 +10,21 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "UNKNOWN_COMMAND")
         self.assertEqual(result["rule_matched"], "negated_command")
 
+    def test_write_text_rule_allows_negated_content(self):
+        examples = {
+            "enter I'm not good": "I'm not good",
+            "enter I am not good": "I am not good",
+            "type I am not good today so I can't come": "I am not good today so I can't come",
+        }
+
+        for text, expected in examples.items():
+            with self.subTest(text=text):
+                result = rule_based_command(text, "EN")
+
+                self.assertEqual(result["intent"], "WRITE_TEXT")
+                self.assertEqual(result["parameters"], {"text": expected})
+                self.assertEqual(result["rule_matched"], "write_text")
+
     def test_scroll_rule(self):
         result = rule_based_command("scroll down", "EN")
 
@@ -256,6 +271,28 @@ class RuleServiceTests(unittest.TestCase):
         self.assertEqual(result["intent"], "CLEAR_TEXT")
         self.assertEqual(result["rule_matched"], "clear_text")
 
+    def test_focus_input_rules(self):
+        examples = [
+            ("focus text field", "EN", "focus"),
+            ("metin alanina odaklan", "TR", "focus"),
+            ("\u0631\u0643\u0632 \u0639\u0644\u0649 \u062d\u0642\u0644 \u0627\u0644\u0646\u0635", "AR", "focus"),
+            ("unfocus", "EN", "unfocus"),
+            ("unfocused", "EN", "unfocus"),
+            ("unfocused inputs", "EN", "unfocus"),
+            ("unfocused the text", "EN", "unfocus"),
+            ("unfocused the text field", "EN", "unfocus"),
+            ("clear focus", "EN", "unfocus"),
+            ("odagi kaldir", "TR", "unfocus"),
+            ("\u0627\u0644\u063a \u0627\u0644\u062a\u0631\u0643\u064a\u0632", "AR", "unfocus"),
+        ]
+
+        for text, language, action in examples:
+            with self.subTest(text=text, language=language):
+                result = rule_based_command(text, language)
+
+                self.assertEqual(result["intent"], "SET_INPUT_FOCUS")
+                self.assertEqual(result["parameters"], {"focus_action": action})
+
     def test_turkish_search_query_rules(self):
         examples = {
             "hava durumu icin ara": "hava durumu",
@@ -311,6 +348,20 @@ class RuleServiceTests(unittest.TestCase):
 
         self.assertEqual(result["intent"], "WRITE_TEXT")
         self.assertEqual(result["parameters"], {"text": "remember to call Mehmet tomorrow"})
+        self.assertEqual(result["rule_matched"], "write_text")
+
+    def test_write_text_rule_for_english_enter_prefix(self):
+        result = rule_based_command("enter Muhammad", "EN")
+
+        self.assertEqual(result["intent"], "WRITE_TEXT")
+        self.assertEqual(result["parameters"], {"text": "Muhammad"})
+        self.assertEqual(result["rule_matched"], "write_text")
+
+    def test_write_text_rule_drops_english_this_filler(self):
+        result = rule_based_command("write this I'm not good today", "EN")
+
+        self.assertEqual(result["intent"], "WRITE_TEXT")
+        self.assertEqual(result["parameters"], {"text": "I'm not good today"})
         self.assertEqual(result["rule_matched"], "write_text")
 
     def test_write_text_rule_for_arabic_prefix(self):

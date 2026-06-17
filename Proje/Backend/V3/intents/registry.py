@@ -67,7 +67,7 @@ def _contract(
 INTENT_CONTRACTS: Dict[str, IntentContract] = {
     "ADJUST_BRIGHTNESS": _contract(
         "ADJUST_BRIGHTNESS",
-        threshold=0.92,
+        threshold=0.98,
         required=("brightness",),
         android_supported=True,
     ),
@@ -91,7 +91,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "CLEAR_TEXT": _contract(
         "CLEAR_TEXT",
-        threshold=0.92,
+        threshold=0.98,
         android_supported=True,
     ),
     "CLICK_ITEM": _contract(
@@ -211,6 +211,12 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         "SET_KEYBOARD",
         threshold=0.95,
         required=("state",),
+        android_supported=True,
+    ),
+    "SET_INPUT_FOCUS": _contract(
+        "SET_INPUT_FOCUS",
+        threshold=0.92,
+        required=("focus_action",),
         android_supported=True,
     ),
     "SET_MEDIA_PLAYBACK": _contract(

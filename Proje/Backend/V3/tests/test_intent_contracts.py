@@ -200,6 +200,17 @@ class IntentContractTests(unittest.TestCase):
                 self.assertTrue(response["backend_supported"])
                 self.assertTrue(response["android_supported"])
 
+        focus = _validate(
+            "SET_INPUT_FOCUS",
+            {"focus_action": "focus"},
+            text="focus text field",
+            language="EN",
+        )
+
+        self.assertTrue(focus["accepted"])
+        self.assertTrue(focus["backend_supported"])
+        self.assertTrue(focus["android_supported"])
+
     def test_click_item_extracts_target_and_position(self):
         bottom_plus = _validate("CLICK_ITEM", {}, text="a\u015fa\u011f\u0131daki art\u0131ya bas", language="TR")
         search = _validate("CLICK_ITEM", {}, text="tap the search button", language="EN")

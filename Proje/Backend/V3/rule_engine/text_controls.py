@@ -2,7 +2,13 @@ from typing import Any, Dict, Optional
 
 from V3.extraction.common import clean_free_text, extract_first_match
 from V3.extraction.text import extract_search_query
-from V3.patterns.commands.text_controls import CLEAR_TEXT_PATTERNS, DOUBLE_TAP_PATTERNS, HOLD_SCREEN_PATTERNS
+from V3.patterns.commands.text_controls import (
+    CLEAR_TEXT_PATTERNS,
+    DOUBLE_TAP_PATTERNS,
+    FOCUS_INPUT_PATTERNS,
+    HOLD_SCREEN_PATTERNS,
+    UNFOCUS_INPUT_PATTERNS,
+)
 from V3.patterns.extraction.text import WRITE_TEXT_PATTERNS
 from V3.rule_engine.context import RuleContext
 from V3.rule_engine.pattern_rules import PatternRule, match_first_pattern_rule
@@ -12,6 +18,8 @@ from V3.utils.text import normalize_text
 
 
 TEXT_CONTROL_RULES = [
+    PatternRule("SET_INPUT_FOCUS", "focus_input", FOCUS_INPUT_PATTERNS, {"focus_action": "focus"}),
+    PatternRule("SET_INPUT_FOCUS", "unfocus_input", UNFOCUS_INPUT_PATTERNS, {"focus_action": "unfocus"}),
     PatternRule("CLEAR_TEXT", "clear_text", CLEAR_TEXT_PATTERNS),
     PatternRule("DOUBLE_TAP", "double_tap", DOUBLE_TAP_PATTERNS),
     PatternRule("HOLD_SCREEN", "hold_screen", HOLD_SCREEN_PATTERNS),
