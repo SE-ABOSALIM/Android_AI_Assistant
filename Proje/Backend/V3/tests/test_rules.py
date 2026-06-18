@@ -1,9 +1,23 @@
 import unittest
 
+from V3.extraction.contact import extract_contact_name
 from V3.services.rule_service import rule_based_command
 
 
 class RuleServiceTests(unittest.TestCase):
+    def test_arabic_call_contact_extracts_name_after_connectors(self):
+        examples = {
+            "اتصل الان بمحمد": "محمد",
+            "اتصل الآن بمحمد": "محمد",
+            "اتصل على محمد": "محمد",
+            "اتصل بمحمد": "محمد",
+            "اتصل بـ أحمد": "أحمد",
+        }
+
+        for text, expected in examples.items():
+            with self.subTest(text=text):
+                self.assertEqual(extract_contact_name(text, "AR"), expected)
+
     def test_guard_negated_command_wins_before_matching(self):
         result = rule_based_command("do not scroll down", "EN")
 

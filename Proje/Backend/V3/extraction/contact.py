@@ -26,6 +26,10 @@ def _clean_contact_name(contact_name: str) -> str:
     contact_name = clean_app_name(contact_name)
     normalized = normalized_lower(contact_name)
 
+    if re.search(r"[\u0600-\u06FF]", contact_name):
+        contact_name = _clean_arabic_contact_name(contact_name)
+        normalized = normalized_lower(contact_name)
+
     if " " not in normalized:
         for suffix in ("yi", "yu", "ni", "nu"):
             if len(normalized) > len(suffix) + 2 and normalized.endswith(suffix):
@@ -35,3 +39,17 @@ def _clean_contact_name(contact_name: str) -> str:
             return contact_name[:-1].strip()
 
     return contact_name
+
+
+def _clean_arabic_contact_name(contact_name: str) -> str:
+    contact_name = re.sub(r"^[\sـ]+", "", contact_name).strip()
+
+    while True:
+        cleaned = re.sub(r"^(?:الان|الآن|على|بـ)\s+", "", contact_name).strip()
+        cleaned = re.sub(r"^(?:الان|الآن|على)\s+ب", "", cleaned).strip()
+        cleaned = re.sub(r"^ب(?=[\u0621-\u064A])", "", cleaned).strip()
+        cleaned = re.sub(r"^[\sـ]+", "", cleaned).strip()
+
+        if cleaned == contact_name:
+            return cleaned
+        contact_name = cleaned
