@@ -66,6 +66,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final int RESTART_DELAY_FAST_MS = 200;
     private static final int RESTART_DELAY_SLOW_MS = 800;
     private static final int PARTIAL_RESULT_FINALIZE_DELAY_MS = 1200;
+    private static final int RECOGNIZER_READY_WATCHDOG_MS = 9000;
     private static final int CLOSE_APP_BACK_RETRY_DELAY_MS = 450;
     private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 15;
     private static final int SCREENSHOT_OVERLAY_HIDE_DELAY_MS = 250;
@@ -130,6 +131,7 @@ public class MyAccessibilityService extends AccessibilityService {
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final Runnable restartListeningRunnable = this::startListeningSession;
     private final Runnable partialResultFinalizeRunnable = this::finalizeLatestPartialResult;
+    private final Runnable recognizerReadyWatchdogRunnable = this::handleRecognizerReadyWatchdogTimeout;
 
     public static MyAccessibilityService getInstance() {
         return instance;
@@ -217,20 +219,25 @@ public class MyAccessibilityService extends AccessibilityService {
             public void onReadyForSpeech(Bundle params) {
                 isRecognizerReadyForSpeech = true;
                 showRecognizerReadyState();
+                scheduleRecognizerReadyWatchdog();
             }
             @Override
-            public void onBeginningOfSpeech() {}
+            public void onBeginningOfSpeech() {
+                clearRecognizerReadyWatchdog();
+            }
             @Override
             public void onRmsChanged(float rmsdB) {}
             @Override
             public void onBufferReceived(byte[] buffer) {}
             @Override
             public void onEndOfSpeech() {
+                clearRecognizerReadyWatchdog();
                 isRecognizerReadyForSpeech = false;
             }
 
             @Override
             public void onError(int error) {
+                clearRecognizerReadyWatchdog();
                 if (hasHandledCurrentRecognitionResult) {
                     return;
                 }
@@ -283,6 +290,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
             @Override
             public void onResults(Bundle results) {
+                clearRecognizerReadyWatchdog();
                 if (hasHandledCurrentRecognitionResult) {
                     return;
                 }
@@ -304,6 +312,7 @@ public class MyAccessibilityService extends AccessibilityService {
             public void onPartialResults(Bundle partialResults) {
                 ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null && !matches.isEmpty()) {
+                    clearRecognizerReadyWatchdog();
                     String spokenText = matches.get(0);
                     schedulePartialResultFallback(spokenText);
                     if (!isNumberSelectionMode && !isGridActive()) {
@@ -321,6 +330,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void destroySpeechRecognizer() {
         mainHandler.removeCallbacks(restartListeningRunnable);
+        clearRecognizerReadyWatchdog();
         clearPartialResultFallback();
         stopActiveRecognizerAudioSource();
         isRecognitionSessionActive = false;
@@ -350,6 +360,7 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         try {
+            clearRecognizerReadyWatchdog();
             isRecognitionSessionActive = true;
             isRecognizerReadyForSpeech = false;
             hasHandledCurrentRecognitionResult = false;
@@ -425,7 +436,49 @@ public class MyAccessibilityService extends AccessibilityService {
         latestPartialRecognitionText = null;
     }
 
+    private void scheduleRecognizerReadyWatchdog() {
+        clearRecognizerReadyWatchdog();
+        if (!isListening
+                || isPausedForPhoneCall
+                || !isRecognitionSessionActive
+                || !isRecognizerReadyForSpeech
+                || hasHandledCurrentRecognitionResult) {
+            return;
+        }
+
+        mainHandler.postDelayed(recognizerReadyWatchdogRunnable, RECOGNIZER_READY_WATCHDOG_MS);
+    }
+
+    private void clearRecognizerReadyWatchdog() {
+        mainHandler.removeCallbacks(recognizerReadyWatchdogRunnable);
+    }
+
+    private void handleRecognizerReadyWatchdogTimeout() {
+        if (!isListening
+                || isPausedForPhoneCall
+                || !isRecognitionSessionActive
+                || !isRecognizerReadyForSpeech
+                || hasHandledCurrentRecognitionResult) {
+            return;
+        }
+
+        clearPartialResultFallback();
+        stopActiveRecognizerAudioSource();
+        isRecognitionSessionActive = false;
+        isRecognizerReadyForSpeech = false;
+
+        if (speechRecognizer != null) {
+            try {
+                speechRecognizer.cancel();
+            } catch (Exception ignored) {}
+        }
+
+        showRecognizerPreparingState();
+        scheduleListeningRestart(RESTART_DELAY_FAST_MS);
+    }
+
     private void finalizeLatestPartialResult() {
+        clearRecognizerReadyWatchdog();
         String spokenText = latestPartialRecognitionText;
         clearPartialResultFallback();
 
@@ -490,6 +543,7 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
+        clearRecognizerReadyWatchdog();
         mainHandler.removeCallbacks(restartListeningRunnable);
         mainHandler.postDelayed(restartListeningRunnable, delayMillis);
     }
@@ -593,6 +647,7 @@ public class MyAccessibilityService extends AccessibilityService {
         hideGrid();
         cancelAppCatalogSyncIfNeeded();
         mainHandler.removeCallbacks(restartListeningRunnable);
+        clearRecognizerReadyWatchdog();
         clearPartialResultFallback();
         stopActiveRecognizerAudioSource();
         setRecognizerSoundsMuted(false);
@@ -636,6 +691,7 @@ public class MyAccessibilityService extends AccessibilityService {
         clearNumberSelection(false);
         hideGrid();
         mainHandler.removeCallbacks(restartListeningRunnable);
+        clearRecognizerReadyWatchdog();
         clearPartialResultFallback();
         stopActiveRecognizerAudioSource();
         isRecognitionSessionActive = false;
