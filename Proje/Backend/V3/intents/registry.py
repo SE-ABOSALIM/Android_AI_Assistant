@@ -233,7 +233,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_MOBILE_DATA": _contract(
         "SET_MOBILE_DATA",
-        threshold=0.95,
+        threshold=0.99,
         required=("state",),
         android_supported=True,
     ),
@@ -245,7 +245,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_SOUND_MODE": _contract(
         "SET_SOUND_MODE",
-        threshold=0.92,
+        threshold=0.98,
         required=("sound_mode",),
         android_supported=True,
     ),
