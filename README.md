@@ -196,6 +196,16 @@ Current verification status: Android unit tests pass, and the backend unittest s
 - The Android client requires network access to the backend in the current architecture.
 - Android speech-recognition session behavior can vary by device and installed recognition service.
 
+## Future Work
+
+- **Continuous speech recognition:** replace the session-based Android `SpeechRecognizer` flow with an `AudioRecord`, voice activity detection, and continuous STT pipeline to reduce listening interruptions.
+- **Background-media protection:** reduce false command activation from videos and other media through wake-word detection, playback-state checks, and acoustic echo-cancellation techniques.
+- **Optional offline operation:** evaluate on-device speech recognition and intent processing so that core commands can run without a backend connection where device resources permit.
+- **More robust UI interaction:** supplement Accessibility metadata with OCR or lightweight computer-vision techniques when applications expose incomplete labels, descriptions, or resource identifiers.
+- **Broader Android compatibility testing:** validate behavior across additional Android versions, device manufacturers, screen sizes, and vendor-specific Accessibility implementations.
+- **User and pronunciation personalization:** support user-specific command aliases, pronunciation variants, and adaptive matching to improve recognition for names, applications, and frequently used commands.
+- **More resilient custom command flows:** improve custom command execution to make multi-step workflows more flexible, scalable, and reliable across dynamic UI states.
+
 ## Author
 
 **Muhammed Chreiki**<br>
