@@ -82,6 +82,7 @@
     <string name="custom_commands_deleted">Custom command deleted</string>
     <string name="custom_commands_cancelled">Custom command cancelled</string>
     <string name="custom_commands_busy">Custom command is running</string>
+    <string name="custom_commands_not_running">No custom command is running</string>
     <string name="custom_step_open_app">Open app</string>
     <string name="custom_step_search_query">Search query</string>
     <string name="custom_step_click_item">Click item</string>

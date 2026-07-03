@@ -80,6 +80,7 @@
     <string name="custom_commands_deleted">تم حذف الأمر المخصص</string>
     <string name="custom_commands_cancelled">تم إلغاء الأمر المخصص</string>
     <string name="custom_commands_busy">الأمر المخصص قيد التشغيل</string>
+    <string name="custom_commands_not_running">لا يوجد أمر مخصص قيد التشغيل</string>
     <string name="custom_step_open_app">فتح تطبيق</string>
     <string name="custom_step_search_query">بحث</string>
     <string name="custom_step_click_item">الضغط على عنصر</string>

@@ -29,6 +29,9 @@ import retrofit2.Response;
 
 public class CommandExecutor {
 
+    private static final Object CUSTOM_COMMAND_LOCK = new Object();
+    private static CommandExecutor activeCustomCommandExecutor;
+
     private final Context context;
     private final CommandExecutionContext executionContext;
     private final AppOpenController appOpenController;
@@ -107,6 +110,14 @@ public class CommandExecutor {
         }
 
         clearActiveCustomCommand(false);
+        CommandExecutor previousExecutor;
+        synchronized (CUSTOM_COMMAND_LOCK) {
+            previousExecutor = activeCustomCommandExecutor;
+            activeCustomCommandExecutor = this;
+        }
+        if (previousExecutor != null && previousExecutor != this) {
+            previousExecutor.clearActiveCustomCommand(false);
+        }
         isCustomCommandRunning = true;
         isCustomCommandCancelled = false;
         executeCustomStep(steps, 0);
@@ -335,6 +346,21 @@ public class CommandExecutor {
         return isCustomCommandRunning;
     }
 
+    public static boolean isAnyCustomCommandRunning() {
+        synchronized (CUSTOM_COMMAND_LOCK) {
+            return activeCustomCommandExecutor != null
+                    && activeCustomCommandExecutor.isCustomCommandRunning;
+        }
+    }
+
+    public static boolean cancelActiveCustomCommand() {
+        CommandExecutor executor;
+        synchronized (CUSTOM_COMMAND_LOCK) {
+            executor = activeCustomCommandExecutor;
+        }
+        return executor != null && executor.cancelCustomCommand();
+    }
+
     public boolean cancelCustomCommand() {
         if (!isCustomCommandRunning) {
             return false;
@@ -376,6 +402,12 @@ public class CommandExecutor {
     private void clearActiveCustomCommand(boolean notifyCancellation) {
         isCustomCommandCancelled = true;
         isCustomCommandRunning = false;
+
+        synchronized (CUSTOM_COMMAND_LOCK) {
+            if (activeCustomCommandExecutor == this) {
+                activeCustomCommandExecutor = null;
+            }
+        }
 
         if (pendingCustomCommandRunnable != null) {
             mainHandler.removeCallbacks(pendingCustomCommandRunnable);

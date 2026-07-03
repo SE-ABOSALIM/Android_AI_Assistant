@@ -80,6 +80,7 @@
     <string name="custom_commands_deleted">Özel komut silindi</string>
     <string name="custom_commands_cancelled">Özel komut iptal edildi</string>
     <string name="custom_commands_busy">Özel komut çalışıyor</string>
+    <string name="custom_commands_not_running">Çalışan bir özel komut yok</string>
     <string name="custom_step_open_app">Uygulama aç</string>
     <string name="custom_step_search_query">Arama yap</string>
     <string name="custom_step_click_item">Öğeye bas</string>
