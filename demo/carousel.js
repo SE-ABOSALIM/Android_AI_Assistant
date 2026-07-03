@@ -26,6 +26,8 @@ let currentIndex = 0;
 let loopTimer = null;
 let restartCounter = 0;
 let isAnimating = false;
+const TRANSITION_EXIT_MS = 160;
+const TRANSITION_ENTER_MS = 220;
 
 const media = document.getElementById("demo-media");
 const title = document.getElementById("demo-title");
@@ -39,10 +41,10 @@ function mediaSrc(src) {
   return `${src}?restart=${restartCounter}`;
 }
 
-function setDemoContent(index) {
+function setDemoContent(index, preparedSrc = null) {
   currentIndex = (index + demos.length) % demos.length;
   const demo = demos[currentIndex];
-  media.src = mediaSrc(demo.src);
+  media.src = preparedSrc || mediaSrc(demo.src);
   media.alt = demo.alt;
   title.textContent = demo.title;
   description.textContent = demo.description;
@@ -61,6 +63,19 @@ function clearLoopTimer() {
   }
 }
 
+function preloadDemoImage(index) {
+  const demo = demos[(index + demos.length) % demos.length];
+  const src = mediaSrc(demo.src);
+
+  return new Promise((resolve) => {
+    const image = new Image();
+    const resolveWithSrc = () => resolve(src);
+    image.onload = resolveWithSrc;
+    image.onerror = resolveWithSrc;
+    image.src = src;
+  });
+}
+
 function scheduleReplayCue() {
   clearLoopTimer();
   loopTimer = window.setTimeout(() => {
@@ -76,6 +91,10 @@ function scheduleReplayCue() {
   }, demos[currentIndex].durationMs);
 }
 
+function resetTransitionState() {
+  phoneFrame.classList.remove("is-changing", "is-leaving", "is-entering");
+}
+
 function renderDemo(index, direction = 0, skipAnimation = false) {
   const nextIndex = (index + demos.length) % demos.length;
   if (nextIndex === currentIndex && !skipAnimation) return;
@@ -83,6 +102,7 @@ function renderDemo(index, direction = 0, skipAnimation = false) {
   clearLoopTimer();
 
   if (skipAnimation || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    resetTransitionState();
     setDemoContent(nextIndex);
     scheduleReplayCue();
     return;
@@ -90,21 +110,32 @@ function renderDemo(index, direction = 0, skipAnimation = false) {
 
   if (isAnimating) return;
   isAnimating = true;
-  phoneFrame.style.setProperty("--slide-offset", `${direction < 0 ? -18 : 18}px`);
-  phoneFrame.classList.add("is-changing");
+
+  const enterOffset = direction < 0 ? -18 : 18;
+  const leaveOffset = -enterOffset;
+  const nextImage = preloadDemoImage(nextIndex);
+  phoneFrame.style.setProperty("--slide-offset", `${leaveOffset}px`);
+  phoneFrame.classList.add("is-leaving");
 
   window.setTimeout(() => {
-    setDemoContent(nextIndex);
-    phoneFrame.style.setProperty("--slide-offset", `${direction < 0 ? 18 : -18}px`);
-    window.requestAnimationFrame(() => {
-      phoneFrame.classList.remove("is-changing");
+    nextImage.then((preparedSrc) => {
+      setDemoContent(nextIndex, preparedSrc);
+      phoneFrame.style.setProperty("--slide-offset", `${enterOffset}px`);
+      phoneFrame.classList.remove("is-leaving");
+      phoneFrame.classList.add("is-entering");
+      void media.offsetWidth;
+
+      window.requestAnimationFrame(() => {
+        phoneFrame.classList.remove("is-entering");
+      });
+
+      window.setTimeout(() => {
+        resetTransitionState();
+        isAnimating = false;
+        scheduleReplayCue();
+      }, TRANSITION_ENTER_MS);
     });
-  }, 180);
-
-  window.setTimeout(() => {
-    isAnimating = false;
-    scheduleReplayCue();
-  }, 460);
+  }, TRANSITION_EXIT_MS);
 }
 
 document.querySelectorAll("[data-direction]").forEach((button) => {

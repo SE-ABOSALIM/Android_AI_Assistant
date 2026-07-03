@@ -94,14 +94,14 @@ h1 {
   object-fit: cover;
   transform: translateX(0) scale(1);
   opacity: 1;
-  filter: blur(0);
-  transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
+  transition: opacity 180ms ease, transform 220ms ease;
+  will-change: opacity, transform;
 }
 
-.phone-frame.is-changing .phone-screen img {
-  transform: translateX(var(--slide-offset, 18px)) scale(0.985);
+.phone-frame.is-leaving .phone-screen img,
+.phone-frame.is-entering .phone-screen img {
+  transform: translateX(var(--slide-offset, 18px)) scale(0.992);
   opacity: 0;
-  filter: blur(4px);
 }
 
 .phone-screen::after {
