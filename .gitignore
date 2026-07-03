@@ -1,16 +1,45 @@
-*.idea
-*.venv
-*venv
-*__pycache__
-~*.xlsx
-~*.docx
-*.docx
-.env
-UML
+# IDE and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Android and Gradle output
+**/.gradle/
+**/build/
+**/local.properties
+**/captures/
+**/.externalNativeBuild/
+**/.cxx/
+
+# Python environments and caches
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# Secrets and runtime files
+**/.env
+!**/.env.example
+*.log
+
+# Large generated model artifacts
+Proje/Backend/V3/models/result_model/
+Proje/Machine Learning Model/result_model/
+Proje/Machine Learning Model/checkpoints/
+*.safetensors
+
+# Temporary Office files
+~$*.docx
+~$*.xlsx
+~$*.pptx
+
+# Local archives and working documents
 Diger
-Backup
-documentation
-Important_Documents
-xlmr-intent-model-best
-result_model
-testing
+
+# Local agent metadata
+**/.codex/
