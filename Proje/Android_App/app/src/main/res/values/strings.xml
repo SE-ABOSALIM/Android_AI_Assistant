@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Anroid AI Assistant</string>
+    <string name="app_name">Android AI Assistant</string>
 
     <string name="nav_home">Home</string>
     <string name="nav_permissions">Permissions</string>

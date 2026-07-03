@@ -2,6 +2,13 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+def backendBaseUrl = localProperties.getProperty("backend.baseUrl", "http://10.0.2.2:8001/")
+
 android {
     namespace 'com.example.anroidaiassistant'
     compileSdk 35
@@ -12,6 +19,8 @@ android {
         targetSdk 35
         versionCode 1
         versionName "1.0"
+
+        buildConfigField "String", "BACKEND_BASE_URL", "\"${backendBaseUrl}\""
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -25,6 +34,9 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
+    }
+    buildFeatures {
+        buildConfig true
     }
 }
 

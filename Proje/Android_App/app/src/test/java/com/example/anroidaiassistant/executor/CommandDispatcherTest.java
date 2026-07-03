@@ -8,10 +8,14 @@ import com.example.anroidaiassistant.apps.AppOpenController;
 
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class CommandDispatcherTest {
     @Test
@@ -50,6 +54,55 @@ public class CommandDispatcherTest {
                 Collections.emptyMap(),
                 new CommandExecutionContext(null, null)
         ));
+    }
+    @Test
+    public void defaultRegistryContainsAllCurrentAndroidCommandHandlers() throws Exception {
+        CommandDispatcher dispatcher = CommandHandlerRegistry.createDefaultDispatcher(new AppOpenController());
+
+        Set<String> expectedIntents = new HashSet<>(Arrays.asList(
+                "OPEN_APP",
+                "ANSWER_CALL",
+                "REJECT_CALL",
+                "OPEN_APP_INFO",
+                "UNINSTALL_APP",
+                "ADJUST_VOLUME",
+                "SET_MEDIA_PLAYBACK",
+                "ADJUST_BRIGHTNESS",
+                "SCROLL_SCREEN",
+                "SWIPE_GESTURE",
+                "DOUBLE_TAP",
+                "HOLD_SCREEN",
+                "GO_HOME",
+                "GO_BACK",
+                "CLOSE_APP",
+                "SHOW_RECENTS",
+                "OPEN_NOTIFICATIONS",
+                "TAKE_SCREENSHOT",
+                "POWER_OFF",
+                "RESTART_DEVICE",
+                "SHOW_GRID",
+                "SHOW_LABELS",
+                "SET_TIMER",
+                "SET_ALARM",
+                "TAKE_PHOTO",
+                "CALL_CONTACT",
+                "SEARCH_QUERY",
+                "WRITE_TEXT",
+                "CLEAR_TEXT",
+                "SET_INPUT_FOCUS",
+                "CLICK_ITEM",
+                "SET_WIFI",
+                "SET_BLUETOOTH",
+                "SET_FLASHLIGHT",
+                "SET_LOCATION",
+                "SET_MOBILE_DATA",
+                "SET_MOBILE_HOTSPOT",
+                "SET_SOUND_MODE",
+                "SET_KEYBOARD",
+                "STOP_LISTENING"
+        ));
+
+        assertEquals(expectedIntents, registeredIntents(dispatcher));
     }
     @Test
     public void defaultRegistryDispatchesContactIntent() {
@@ -361,5 +414,13 @@ public class CommandDispatcherTest {
 
         assertTrue(serviceDispatched);
         assertEquals(Collections.singletonList("Accessibility service is not connected"), serviceMessages);
+    }
+    @SuppressWarnings("unchecked")
+    private Set<String> registeredIntents(CommandDispatcher dispatcher) throws Exception {
+        Field handlersField = CommandDispatcher.class.getDeclaredField("handlersByIntent");
+        handlersField.setAccessible(true);
+        Map<String, CommandHandler> handlers =
+                (Map<String, CommandHandler>) handlersField.get(dispatcher);
+        return new HashSet<>(handlers.keySet());
     }
 }
