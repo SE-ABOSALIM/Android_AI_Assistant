@@ -152,7 +152,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "OPEN_NOTIFICATIONS": _contract(
         "OPEN_NOTIFICATIONS",
-        threshold=0.96,
+        threshold=0.98,
         android_supported=True
     ),
     "POWER_OFF": _contract(
