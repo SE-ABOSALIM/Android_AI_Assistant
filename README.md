@@ -186,8 +186,8 @@ Current verification status: Android unit tests pass, and the backend unittest s
 
 ## Documentation
 
-- [Graduation Thesis (PDF)](docs/Android_AI_Assistant_Thesis.pdf)
-- [Project Presentation (PPTX)](docs/Android_AI_Assistant_Presentation.pptx)
+- [Graduation Thesis (TR)](<docs/Android_AI_Assistant_Thesis(TR).pdf>)
+- [Project Presentation (TR)](<docs/Android_AI_Assistant_Presentation(TR).pdf>)
 
 ## Current Limitations
 
