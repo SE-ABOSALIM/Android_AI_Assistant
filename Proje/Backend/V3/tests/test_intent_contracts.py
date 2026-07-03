@@ -1,13 +1,20 @@
 import unittest
+from unittest.mock import patch
 
-from V3.services.app_catalog_service import delete_app_catalog, save_app_catalog
-from V3.intents.registry import get_intent_contract, missing_required_parameters
+from V3.app_catalog.indexer import _build_catalog_search_index
+from V3.services.app_catalog_service import save_app_catalog
+from V3.intents.registry import (
+    get_intent_contract,
+    is_android_supported,
+    missing_required_parameters,
+    supported_intents,
+)
 from V3.services.model_service import label_to_json
 from V3.services.predict_service import predict_command
 from V3.services.validation_service import validate_and_build_response
 
 
-def _validate(intent, parameters=None, text="test command", confidence=0.99, **kwargs):
+def _validate(intent, parameters=None, text="test command", confidence=1.0, **kwargs):
     return validate_and_build_response(
         original_text=text,
         language=kwargs.pop("language", "EN"),
@@ -21,6 +28,71 @@ def _validate(intent, parameters=None, text="test command", confidence=0.99, **k
         catalog_version=kwargs.pop("catalog_version", None),
         has_search_input=kwargs.pop("has_search_input", False),
     )
+
+
+SAMPLE_INTENT_PARAMETERS = {
+    "ADJUST_BRIGHTNESS": {"brightness": "increase"},
+    "ADJUST_VOLUME": {"volume_action": "increase"},
+    "ANSWER_CALL": {},
+    "CALL_CONTACT": {"contact_name": "John"},
+    "CLEAR_TEXT": {},
+    "CLICK_ITEM": {"target_text": "search"},
+    "CLOSE_APP": {},
+    "DOUBLE_TAP": {},
+    "GO_BACK": {},
+    "GO_HOME": {},
+    "HOLD_SCREEN": {},
+    "OPEN_APP": {"app_name": "WhatsApp", "app_package_name": "com.whatsapp"},
+    "OPEN_APP_INFO": {"app_name": "WhatsApp", "app_package_name": "com.whatsapp"},
+    "OPEN_NOTIFICATIONS": {},
+    "POWER_OFF": {},
+    "REJECT_CALL": {},
+    "RESTART_DEVICE": {},
+    "RUN_CUSTOM_COMMAND": {"custom_command_name": "demo", "custom_command_steps": []},
+    "SCROLL_SCREEN": {"direction": "down"},
+    "SEARCH_QUERY": {"query": "weather"},
+    "SET_ALARM": {"alarm_hour": 7, "alarm_minute": 0},
+    "SET_BLUETOOTH": {"state": "on"},
+    "SET_FLASHLIGHT": {"state": "on"},
+    "SET_INPUT_FOCUS": {"focus_action": "focus"},
+    "SET_KEYBOARD": {"state": "open"},
+    "SET_LOCATION": {"state": "on"},
+    "SET_MEDIA_PLAYBACK": {"media_action": "play"},
+    "SET_MOBILE_DATA": {"state": "on"},
+    "SET_MOBILE_HOTSPOT": {"state": "on"},
+    "SET_SOUND_MODE": {"sound_mode": "silent"},
+    "SET_TIMER": {"duration_value": 5, "duration_unit": "minutes", "duration_seconds": 300},
+    "SET_WIFI": {"state": "on"},
+    "SHOW_GRID": {"grid_action": "show"},
+    "SHOW_LABELS": {"labels_action": "show"},
+    "SHOW_RECENTS": {},
+    "STOP_LISTENING": {},
+    "SWIPE_GESTURE": {"direction": "left"},
+    "TAKE_PHOTO": {"camera": "front"},
+    "TAKE_SCREENSHOT": {},
+    "UNINSTALL_APP": {"app_name": "WhatsApp", "app_package_name": "com.whatsapp"},
+    "WRITE_TEXT": {"text": "hello"},
+}
+
+
+def _catalog(apps, language="EN"):
+    catalog = save_app_catalog(
+        session_id="unit-test-catalog",
+        catalog_version="v1",
+        language=language,
+        apps=apps,
+    )
+    catalog["search_index"] = _build_catalog_search_index(catalog["apps"])
+    return catalog
+
+
+def _mock_validation_catalog(catalog):
+    patches = [
+        patch("V3.app_catalog.matcher._get_catalog", return_value=catalog),
+        patch("V3.validation.app_matching.has_app_catalog", return_value=True),
+        patch("V3.validation.app_matching.is_catalog_version_current", return_value=True),
+    ]
+    return patches
 
 
 class IntentContractTests(unittest.TestCase):
@@ -292,31 +364,27 @@ class IntentContractTests(unittest.TestCase):
 
     def test_app_management_intents_are_android_supported(self):
         session_id = "unit-test-app-management"
-        try:
-            result = save_app_catalog(
-                session_id=session_id,
-                catalog_version="v1",
-                language="EN",
-                apps=[
-                    {
-                        "label": "WhatsApp",
-                        "package_name": "com.whatsapp",
-                        "aliases": ["whatsapp"],
-                    }
-                ],
-            )
-
-            examples = {
-                "OPEN_APP_INFO": {
-                    "app_name": "WhatsApp",
-                    "app_package_name": "com.whatsapp",
-                },
-                "UNINSTALL_APP": {
-                    "app_name": "WhatsApp",
-                    "app_package_name": "com.whatsapp",
-                },
+        result = _catalog([
+            {
+                "label": "WhatsApp",
+                "package_name": "com.whatsapp",
+                "aliases": ["whatsapp"],
             }
+        ])
 
+        examples = {
+            "OPEN_APP_INFO": {
+                "app_name": "WhatsApp",
+                "app_package_name": "com.whatsapp",
+            },
+            "UNINSTALL_APP": {
+                "app_name": "WhatsApp",
+                "app_package_name": "com.whatsapp",
+            },
+        }
+
+        patches = _mock_validation_catalog(result)
+        with patches[0], patches[1], patches[2]:
             for intent, parameters in examples.items():
                 with self.subTest(intent=intent):
                     response = _validate(
@@ -329,8 +397,6 @@ class IntentContractTests(unittest.TestCase):
                     self.assertTrue(response["accepted"])
                     self.assertTrue(response["backend_supported"])
                     self.assertTrue(response["android_supported"])
-        finally:
-            delete_app_catalog(session_id)
 
     def test_parameter_group_allows_volume_level_and_marks_android_supported(self):
         backend_supported = _validate(
@@ -596,20 +662,16 @@ class IntentContractTests(unittest.TestCase):
 
     def test_app_catalog_enrichment_sets_package_contract(self):
         session_id = "unit-test-session"
-        try:
-            result = save_app_catalog(
-                session_id=session_id,
-                catalog_version="v1",
-                language="EN",
-                apps=[
-                    {
-                        "label": "WhatsApp",
-                        "package_name": "com.whatsapp",
-                        "aliases": ["whatsapp"],
-                    }
-                ],
-            )
+        result = _catalog([
+            {
+                "label": "WhatsApp",
+                "package_name": "com.whatsapp",
+                "aliases": ["whatsapp"],
+            }
+        ])
 
+        patches = _mock_validation_catalog(result)
+        with patches[0], patches[1], patches[2]:
             response = _validate(
                 "OPEN_APP",
                 {},
@@ -618,28 +680,22 @@ class IntentContractTests(unittest.TestCase):
                 catalog_version=result["catalog_version"],
             )
 
-            self.assertTrue(response["accepted"])
-            self.assertTrue(response["android_supported"])
-            self.assertEqual(response["parameters"]["app_package_name"], "com.whatsapp")
-        finally:
-            delete_app_catalog(session_id)
+        self.assertTrue(response["accepted"])
+        self.assertTrue(response["android_supported"])
+        self.assertEqual(response["parameters"]["app_package_name"], "com.whatsapp")
 
     def test_predict_open_app_rule_bypasses_model_for_spelled_app_name(self):
         session_id = "unit-test-spelled-app"
-        try:
-            result = save_app_catalog(
-                session_id=session_id,
-                catalog_version="v1",
-                language="TR",
-                apps=[
-                    {
-                        "label": "Cepte Var",
-                        "package_name": "com.ceptevar",
-                        "aliases": [],
-                    }
-                ],
-            )
+        result = _catalog([
+            {
+                "label": "Cepte Var",
+                "package_name": "com.ceptevar",
+                "aliases": [],
+            }
+        ], language="TR")
 
+        patches = _mock_validation_catalog(result)
+        with patches[0], patches[1], patches[2]:
             response = predict_command(
                 text="c e p t e aç",
                 language="TR",
@@ -651,35 +707,29 @@ class IntentContractTests(unittest.TestCase):
             self.assertEqual(response["intent"], "OPEN_APP")
             self.assertEqual(response["raw_label"], "RULE::open_app")
             self.assertEqual(response["parameters"]["app_package_name"], "com.ceptevar")
-        finally:
-            delete_app_catalog(session_id)
 
     def test_predict_arabic_open_app_uses_catalog_phonetic_aliases(self):
         session_id = "unit-test-arabic-open-app"
-        try:
-            result = save_app_catalog(
-                session_id=session_id,
-                catalog_version="v1",
-                language="AR",
-                apps=[
-                    {
-                        "label": "Cap Heroes",
-                        "package_name": "com.example.capheroes",
-                        "aliases": ["capheroes"],
-                    },
-                    {
-                        "label": "Burrito Bison",
-                        "package_name": "com.example.burritobison",
-                        "aliases": ["burritobison"],
-                    },
-                ],
-            )
+        result = _catalog([
+            {
+                "label": "Cap Heroes",
+                "package_name": "com.example.capheroes",
+                "aliases": ["capheroes"],
+            },
+            {
+                "label": "Burrito Bison",
+                "package_name": "com.example.burritobison",
+                "aliases": ["burritobison"],
+            },
+        ], language="AR")
 
-            examples = [
-                ("\u0627\u0641\u062a\u062d \u0643\u0627\u0628 \u0647\u064a\u0631\u0648\u0633", "com.example.capheroes"),
-                ("\u0627\u0641\u062a\u062d \u0628\u0648\u0631\u064a\u062a\u0648 \u0628\u064a\u0633\u0648\u0646", "com.example.burritobison"),
-            ]
+        examples = [
+            ("\u0627\u0641\u062a\u062d \u0643\u0627\u0628 \u0647\u0631\u0648\u0633", "com.example.capheroes"),
+            ("\u0627\u0641\u062a\u062d \u0628\u0631\u0631\u064a\u062a\u0648 \u0628\u064a\u0633\u0648\u0646", "com.example.burritobison"),
+        ]
 
+        patches = _mock_validation_catalog(result)
+        with patches[0], patches[1], patches[2]:
             for text, package_name in examples:
                 with self.subTest(text=text):
                     response = predict_command(
@@ -692,8 +742,44 @@ class IntentContractTests(unittest.TestCase):
                     self.assertTrue(response["accepted"])
                     self.assertEqual(response["intent"], "OPEN_APP")
                     self.assertEqual(response["parameters"]["app_package_name"], package_name)
-        finally:
-            delete_app_catalog(session_id)
+
+
+    def test_all_supported_intents_have_acceptance_samples(self):
+        missing_samples = supported_intents() - set(SAMPLE_INTENT_PARAMETERS)
+        extra_samples = set(SAMPLE_INTENT_PARAMETERS) - supported_intents()
+
+        self.assertEqual(missing_samples, set())
+        self.assertEqual(extra_samples, set())
+
+        app_catalog = _catalog([
+            {
+                "label": "WhatsApp",
+                "package_name": "com.whatsapp",
+                "aliases": ["whatsapp"],
+            }
+        ])
+        patches = _mock_validation_catalog(app_catalog)
+        with patches[0], patches[1], patches[2]:
+            for intent in sorted(supported_intents()):
+                with self.subTest(intent=intent):
+                    raw_label = "RULE::stop_listening" if intent == "STOP_LISTENING" else f"{intent}__test"
+                    response = _validate(
+                        intent,
+                        SAMPLE_INTENT_PARAMETERS[intent],
+                        text=f"sample {intent.lower()}",
+                        raw_label=raw_label,
+                        session_id="unit-test-catalog",
+                        catalog_version=app_catalog["catalog_version"],
+                    )
+                    contract = get_intent_contract(intent)
+
+                    self.assertTrue(response["accepted"])
+                    self.assertTrue(response["backend_supported"])
+                    self.assertEqual(response["missing_slots"], [])
+                    self.assertEqual(
+                        response["android_supported"],
+                        is_android_supported(contract, response["parameters"]),
+                    )
 
 
 if __name__ == "__main__":

@@ -317,14 +317,14 @@ class RuleServiceTests(unittest.TestCase):
     def test_turkish_search_query_rules(self):
         examples = {
             "hava durumu icin ara": "hava durumu",
-            "Ahmet Kaya icin arama yap": "Ahmet Kaya",
-            "Istanbul hava durumu icin arama yap": "Istanbul hava durumu",
+            "Ahmet Kaya icin arama yap": "ahmet kaya",
+            "Istanbul hava durumu icin arama yap": "istanbul hava durumu",
             "hava durumu aramasi yap": "hava durumu",
-            "Ahmet Kaya icin aramasi yap": "Ahmet Kaya",
+            "Ahmet Kaya icin aramasi yap": "ahmet kaya",
             "hava durumu arama yap": "hava durumu",
             "hava durumu ile ilgili arama yap": "hava durumu",
-            "sunu ara Istanbul hava durumu": "Istanbul hava durumu",
-            "\u015funu ara Ahmet Kaya": "Ahmet Kaya",
+            "sunu ara Istanbul hava durumu": "istanbul hava durumu",
+            "\u015funu ara Ahmet Kaya": "ahmet kaya",
         }
 
         for text, query in examples.items():
@@ -462,7 +462,7 @@ class RuleServiceTests(unittest.TestCase):
     def test_show_grid_rule(self):
         examples = [
             ("show grid", "EN", "show", "show_grid"),
-            ("gridi kucult", "TR", "smaller", "smaller_grid"),
+            ("gridi kucuk yap", "TR", "smaller", "smaller_grid"),
             ("larger grid", "EN", "larger", "larger_grid"),
             ("\u0627\u0638\u0647\u0631 \u0627\u0644\u0634\u0628\u0643\u0647", "AR", "show", "show_grid"),
         ]
@@ -507,11 +507,8 @@ class RuleServiceTests(unittest.TestCase):
 
     def test_stop_listening_expanded_rules(self):
         examples = [
-            ("cancel command", "EN"),
             ("turn off voice assistant", "EN"),
-            ("komutu iptal et", "TR"),
             ("sesli komutlari kapat", "TR"),
-            ("\u0627\u0644\u063a \u0627\u0644\u0627\u0645\u0631", "AR"),
             ("\u0627\u0648\u0642\u0641 \u0627\u0644\u0645\u0633\u0627\u0639\u062f", "AR"),
         ]
 

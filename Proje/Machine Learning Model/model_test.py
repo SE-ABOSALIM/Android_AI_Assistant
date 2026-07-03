@@ -1,57 +1,64 @@
+import argparse
 import json
+from pathlib import Path
+
 import torch
-from transformers import AutoTokenizer, MT5ForConditionalGeneration
+from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
-MODEL_DIR = "result_model"
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-tokenizer = AutoTokenizer.from_pretrained(MODEL_DIR, use_fast=False)
-model = MT5ForConditionalGeneration.from_pretrained(MODEL_DIR).to(DEVICE)
-model.eval()
+DEFAULT_MODEL_DIR = Path(__file__).resolve().parents[1] / "Backend" / "V3" / "models" / "result_model"
 
-def predict(text: str, lang: str):
-    source = f"[{lang.strip().upper()}] {text.strip()}"
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Run a command through the trained XLM-RoBERTa classifier.")
+    parser.add_argument("text", help="Voice command text")
+    parser.add_argument("--language", "-l", default="EN", choices=("EN", "TR", "AR"))
+    parser.add_argument("--model", type=Path, default=DEFAULT_MODEL_DIR)
+    return parser.parse_args()
+
+
+def load_label_targets(model_dir: Path):
+    path = model_dir / "label_to_target_json.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def predict(text: str, language: str, model_dir: Path):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+    model = AutoModelForSequenceClassification.from_pretrained(model_dir).to(device)
+    model.eval()
+
+    source = f"[{language.strip().upper()}] {text.strip()}"
     inputs = tokenizer(
         source,
         return_tensors="pt",
         truncation=True,
-        max_length=64
-    ).to(DEVICE)
+        max_length=96,
+    ).to(device)
 
     with torch.no_grad():
-        outputs = model.generate(
-            **inputs,
-            max_length=128,
-            num_beams=4,
-            early_stopping=True
-        )
+        probabilities = torch.softmax(model(**inputs).logits, dim=-1)[0]
 
-    decoded = tokenizer.decode(outputs[0], skip_special_tokens=True).strip()
+    label_id = int(torch.argmax(probabilities).item())
+    label = model.config.id2label[label_id]
+    target = load_label_targets(model_dir).get(label, {})
 
-    try:
-        parsed = json.loads(decoded)
-    except json.JSONDecodeError:
-        parsed = {
-            "intent": "PARSE_ERROR",
-            "parameters": {},
-            "accepted": False,
-            "missing_slots": ["json_parse_failed"],
-            "raw_output": decoded
-        }
-
-    return parsed
+    return {
+        "label": label,
+        "intent": target.get("intent"),
+        "parameters": target.get("parameters", {}),
+        "confidence": round(float(probabilities[label_id].item()), 6),
+        "device": str(device),
+    }
 
 
-tests = [
-    ("open WhatsApp", "en"),
-    ("sesi azalt", "tr"),
-    ("camera aç", "tr"),
-    ("set timer for 5 seconds", "en"),
-    ("اقفل الصوت", "ar"),
-]
-
-for text, lang in tests:
-    result = predict(text, lang)
-    print("=" * 60)
-    print("INPUT:", f"[{lang}] {text}")
+def main():
+    args = parse_args()
+    result = predict(args.text, args.language, args.model)
     print(json.dumps(result, ensure_ascii=False, indent=2))
+
+
+if __name__ == "__main__":
+    main()
