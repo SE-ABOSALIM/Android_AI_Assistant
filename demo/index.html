@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Android AI Assistant Demo Gallery</title>
+  <link rel="stylesheet" href="carousel.css">
+</head>
+<body>
+  <main class="page-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">Android AI Assistant</p>
+      <h1 id="page-title">Interactive Demo Gallery</h1>
+      <p class="lead">Voice-controlled Android workflows shown inside a phone-style preview.</p>
+    </section>
+
+    <section class="carousel" aria-label="Demo carousel">
+      <button class="nav-button nav-button--prev" type="button" data-direction="prev" aria-label="Previous demo">
+        <span aria-hidden="true">‹</span>
+      </button>
+
+      <div class="phone-stage">
+        <div class="phone-frame" aria-live="polite">
+          <div class="phone-screen">
+            <img id="demo-media" src="../assets/demos/app-search.gif" alt="Application search demo" draggable="false">
+          </div>
+          <img class="phone-shell" src="../assets/phone-frame.svg" alt="" aria-hidden="true" draggable="false">
+        </div>
+      </div>
+
+      <button class="nav-button nav-button--next" type="button" data-direction="next" aria-label="Next demo">
+        <span aria-hidden="true">›</span>
+      </button>
+    </section>
+
+    <section class="demo-caption" aria-labelledby="demo-title">
+      <p id="demo-kicker" class="demo-kicker">Demo 1 of 3</p>
+      <h2 id="demo-title">Application Search</h2>
+      <p id="demo-description">Opening an application and performing an in-app search through voice commands.</p>
+      <div class="dots" role="tablist" aria-label="Choose demo">
+        <button class="dot is-active" type="button" data-index="0" aria-label="Show application search demo" aria-selected="true"></button>
+        <button class="dot" type="button" data-index="1" aria-label="Show dynamic selection demo" aria-selected="false"></button>
+        <button class="dot" type="button" data-index="2" aria-label="Show custom command demo" aria-selected="false"></button>
+      </div>
+    </section>
+  </main>
+  <script src="carousel.js"></script>
+</body>
+</html>

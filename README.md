@@ -28,18 +28,33 @@ The application supports **English, Turkish, and Arabic**, including an RTL-awar
 - **Persistent data layer:** PostgreSQL stores devices, app catalogs, command history, and custom flows; Redis accelerates app-catalog lookup.
 - **Localized Android UI:** Home, Permissions, Custom Commands, Guide, and Settings screens are available in three languages.
 
+
+## Interactive Demo
+
+The project includes an arrow-based demo gallery with a phone-frame preview for the main workflows. GitHub README files do not execute JavaScript, so the interactive carousel is served from the repository's GitHub Pages demo page.
+
+<p align="center">
+  <a href="https://se-abosalim.github.io/Android_AI_Assistant/demo/">
+    <img src="assets/demos/app-search.gif" width="230" alt="Android AI Assistant demo preview">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://se-abosalim.github.io/Android_AI_Assistant/demo/"><b>Open the interactive demo gallery</b></a>
+</p>
+
 ## Application Screens
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/home.jpg" width="180" alt="Home screen"><br><b>Home</b></td>
-    <td align="center"><img src="docs/images/permissions.jpg" width="180" alt="Permissions screen"><br><b>Permissions</b></td>
-    <td align="center"><img src="docs/images/custom-commands.jpg" width="180" alt="Custom commands screen"><br><b>Custom Commands</b></td>
+    <td align="center"><img src="assets/screenshots/home.jpg" width="180" alt="Home screen"><br><b>Home</b></td>
+    <td align="center"><img src="assets/screenshots/permissions.jpg" width="180" alt="Permissions screen"><br><b>Permissions</b></td>
+    <td align="center"><img src="assets/screenshots/custom-commands.jpg" width="180" alt="Custom commands screen"><br><b>Custom Commands</b></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/images/guide.jpg" width="180" alt="Guide screen"><br><b>Guide</b></td>
-    <td align="center"><img src="docs/images/settings.jpg" width="180" alt="Settings screen"><br><b>Settings</b></td>
-    <td align="center"><img src="docs/images/dynamic-ui-selection.jpg" width="180" alt="Numbered UI candidates"><br><b>Dynamic Selection</b></td>
+    <td align="center"><img src="assets/screenshots/guide.jpg" width="180" alt="Guide screen"><br><b>Guide</b></td>
+    <td align="center"><img src="assets/screenshots/settings.jpg" width="180" alt="Settings screen"><br><b>Settings</b></td>
+    <td align="center"><img src="assets/screenshots/dynamic-ui-selection.jpg" width="180" alt="Numbered UI candidates"><br><b>Dynamic Selection</b></td>
   </tr>
 </table>
 
@@ -87,7 +102,9 @@ Android_AI_Assistant/
 |   |-- Android_App/             # Android client and command execution
 |   |-- Backend/V3/              # FastAPI, NLP pipeline, database, and cache
 |   `-- Machine Learning Model/  # Dataset and model training scripts
-|-- docs/                        # Thesis, presentation, and README media
+|-- assets/                      # README screenshots and demo GIFs
+|-- demo/                        # GitHub Pages interactive demo gallery
+|-- docs/                        # Thesis and presentation files
 `-- README.md
 ```
 
