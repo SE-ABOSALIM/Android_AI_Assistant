@@ -92,6 +92,45 @@ h1 {
   height: 100%;
   display: block;
   object-fit: cover;
+  transform: translateX(0) scale(1);
+  opacity: 1;
+  filter: blur(0);
+  transition: opacity 220ms ease, transform 260ms ease, filter 260ms ease;
+}
+
+.phone-frame.is-changing .phone-screen img {
+  transform: translateX(var(--slide-offset, 18px)) scale(0.985);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+.phone-screen::after {
+  content: "Replay";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  background: radial-gradient(circle, rgba(15, 37, 63, 0.72), rgba(15, 37, 63, 0.16) 54%, transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.96);
+  transition: opacity 180ms ease, transform 260ms ease;
+}
+
+.phone-frame.is-restarting .phone-screen::after {
+  opacity: 1;
+  transform: scale(1);
+  animation: replayPulse 760ms ease;
+}
+
+@keyframes replayPulse {
+  0% { opacity: 0; transform: scale(0.92); }
+  34% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.035); }
 }
 
 .phone-shell {
@@ -186,6 +225,16 @@ h1 {
   background: var(--accent);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .phone-screen img,
+  .phone-screen::after,
+  .nav-button,
+  .dot {
+    transition: none;
+    animation: none;
+  }
+}
+
 @media (max-width: 760px) {
   .page-shell { padding-top: 30px; }
   .carousel {
@@ -197,3 +246,4 @@ h1 {
   .phone-frame { width: min(320px, 76vw); }
   .demo-caption { padding: 20px; }
 }
+

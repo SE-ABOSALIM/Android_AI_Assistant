@@ -43,3 +43,6 @@ Diger
 
 # Local agent metadata
 **/.codex/
+
+# Local demo source videos
+assets/demos/*.mp4
