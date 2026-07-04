@@ -4,10 +4,10 @@ const demos = [
     alt: "Application search demo",
     title: "Application Search",
     description: "Opening an application and performing an in-app search through voice commands.",
-    durationMs: 15375
+    durationMs: 11375
   },
   {
-    src: "../assets/demos/dynamic-selection.gif",
+    src: "../assets/demos/separated-commands.gif",
     alt: "Step-by-step product search demo",
     title: "Step-by-Step Search",
     description: "Opening Trendyol and searching for a product through separate voice commands.",
