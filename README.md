@@ -33,13 +33,13 @@ The application supports **English, Turkish, and Arabic**, including an RTL-awar
 A separate demo page is available for previewing the main app workflows. It includes three short demos that can be viewed interactively. GitHub README files do not run JavaScript, so the interactive preview is hosted on GitHub Pages.
 
 <p align="center">
-  <a href="https://se-abosalim.github.io/Android_AI_Assistant/demo/">
+  <a href="https://se-abosalim.github.io/Android_AI_Assistant/demo/" target="_blank">
     <img src="assets/demos/app-search.gif" width="230" alt="Android AI Assistant demo preview">
   </a>
 </p>
 
 <p align="center">
-  <a href="https://se-abosalim.github.io/Android_AI_Assistant/demo/"><b>Open the interactive demo gallery</b></a>
+  <a href="https://se-abosalim.github.io/Android_AI_Assistant/demo/" target="_blank"><b>Open the interactive demo gallery</b></a>
 </p>
 
 ## Application Screens
