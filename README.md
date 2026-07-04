@@ -100,11 +100,11 @@ Android_AI_Assistant/
 |-- Proje/
 |   |-- Android_App/             # Android client and command execution
 |   |-- Backend/V3/              # FastAPI, NLP pipeline, database, and cache
-|   `-- Machine Learning Model/  # Dataset and model training scripts
+|   |-- Machine Learning Model/  # Dataset and model training scripts
 |-- assets/                      # README screenshots and demo GIFs
 |-- demo/                        # GitHub Pages interactive demo gallery
 |-- docs/                        # Thesis and presentation files
-`-- README.md
+|-- README.md
 ```
 
 ## Getting Started
