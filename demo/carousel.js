@@ -7,11 +7,11 @@ const demos = [
     durationMs: 11375
   },
   {
-    src: "../assets/demos/separated-commands.gif",
-    alt: "Step-by-step product search demo",
-    title: "Step-by-Step Search",
-    description: "Opening Trendyol and searching for a product through separate voice commands.",
-    durationMs: 14000
+    src: "../assets/demos/dynamic-ui.gif",
+    alt: "Dynamic UI selection demo",
+    title: "Dynamic UI Selection",
+    description: "When multiple matching UI elements appear, the assistant labels them on screen and lets the user choose the target by number.",
+    durationMs: 18000
   },
   {
     src: "../assets/demos/custom-command.gif",
