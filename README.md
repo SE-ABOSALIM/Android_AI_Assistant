@@ -4,11 +4,11 @@
 
 **A multilingual, AI-assisted voice control system for Android devices.**
 
-[![Android](https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white)](Proje/Android_App)
-[![Java](https://img.shields.io/badge/Java-11-ED8B00?logo=openjdk&logoColor=white)](Proje/Android_App)
-[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](Proje/Backend)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white)](Proje/Backend/V3)
-[![XLM--RoBERTa](https://img.shields.io/badge/Model-XLM--RoBERTa-FFD21E)](Proje/Machine%20Learning%20Model)
+[![Android](https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white)](project/Android_App)
+[![Java](https://img.shields.io/badge/Java-11-ED8B00?logo=openjdk&logoColor=white)](project/Android_App)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](project/Backend)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Backend-009688?logo=fastapi&logoColor=white)](project/Backend/V3)
+[![XLM--RoBERTa](https://img.shields.io/badge/Model-XLM--RoBERTa-FFD21E)](project/Machine%20Learning%20Model)
 
 </div>
 
@@ -97,7 +97,7 @@ The multilingual classifier was fine-tuned from `FacebookAI/xlm-roberta-base` us
 
 ```text
 Android_AI_Assistant/
-|-- Proje/
+|-- project/
 |   |-- Android_App/             # Android client and command execution
 |   |-- Backend/V3/              # FastAPI, NLP pipeline, database, and cache
 |   |-- Machine Learning Model/  # Dataset and model training scripts
@@ -130,7 +130,7 @@ cd Android_AI_Assistant
 The trained model is not stored in Git because of its size. Download the complete model bundle and place it under:
 
 ```text
-Proje/Backend/V3/models/result_model/
+project/Backend/V3/models/result_model/
 ```
 
 The directory must contain `model.safetensors`, tokenizer files, and model configuration files.
@@ -140,7 +140,7 @@ The directory must contain `model.safetensors`, tokenizer files, and model confi
 ### 3. Install backend dependencies
 
 ```bash
-cd Proje/Backend
+cd project/Backend
 pip install pipenv
 pipenv sync
 ```
@@ -184,13 +184,13 @@ sdk.dir=C\:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
 backend.baseUrl=http://YOUR_COMPUTER_LAN_IP:8001/
 ```
 
-A physical phone cannot reach the computer backend through `localhost`; use the computer's LAN IP and keep both devices on the same network. Open `Proje/Android_App` in Android Studio, build the app, then grant the requested runtime and advanced Android permissions from the Permissions screen.
+A physical phone cannot reach the computer backend through `localhost`; use the computer's LAN IP and keep both devices on the same network. Open `project/Android_App` in Android Studio, build the app, then grant the requested runtime and advanced Android permissions from the Permissions screen.
 
 ## Verification
 
 ```powershell
 # Android unit tests
-cd Proje/Android_App
+cd project/Android_App
 .\gradlew.bat :app:testDebugUnitTest
 
 # Backend tests
