@@ -28,9 +28,9 @@ Thumbs.db
 *.log
 
 # Large generated model artifacts
-Proje/Backend/V3/models/result_model/
-Proje/Machine Learning Model/result_model/
-Proje/Machine Learning Model/checkpoints/
+project/Backend/V3/models/result_model/
+project/Machine Learning Model/result_model/
+project/Machine Learning Model/checkpoints/
 *.safetensors
 
 # Temporary Office files
@@ -39,7 +39,7 @@ Proje/Machine Learning Model/checkpoints/
 ~$*.pptx
 
 # Local archives and working documents
-Diger
+other
 
 # Local agent metadata
 **/.codex/
