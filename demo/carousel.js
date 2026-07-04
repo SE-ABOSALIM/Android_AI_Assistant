@@ -8,9 +8,9 @@ const demos = [
   },
   {
     src: "../assets/demos/dynamic-selection.gif",
-    alt: "Dynamic UI selection demo",
-    title: "Dynamic UI Selection",
-    description: "Numbered on-screen candidates help the user choose the correct matching UI element.",
+    alt: "Step-by-step product search demo",
+    title: "Step-by-Step Search",
+    description: "Opening Trendyol and searching for a product through separate voice commands.",
     durationMs: 14000
   },
   {
