@@ -37,7 +37,7 @@ public class CommandExecutor {
     private final AppOpenController appOpenController;
     private final CommandDispatcher commandDispatcher;
     private final ApiService apiService;
-    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private final Handler mainHandler;
     private boolean isCustomCommandRunning = false;
     private boolean isCustomCommandCancelled = false;
     private Runnable pendingCustomCommandRunnable;
@@ -45,10 +45,23 @@ public class CommandExecutor {
 
     public CommandExecutor(Context context) {
         this.context = context;
-        this.executionContext = new CommandExecutionContext(context, this::showMessage);
+        this.executionContext = new CommandExecutionContext(context, this::showToastMessage);
         this.appOpenController = new AppOpenController();
         this.commandDispatcher = CommandHandlerRegistry.createDefaultDispatcher(appOpenController);
         this.apiService = RetrofitClient.getClient().create(ApiService.class);
+        this.mainHandler = new Handler(Looper.getMainLooper());
+    }
+
+    CommandExecutor(
+            CommandDispatcher commandDispatcher,
+            CommandExecutionContext executionContext
+    ) {
+        this.context = executionContext.getAndroidContext();
+        this.executionContext = executionContext;
+        this.appOpenController = new AppOpenController();
+        this.commandDispatcher = commandDispatcher;
+        this.apiService = null;
+        this.mainHandler = null;
     }
 
     public void executeCommand(PredictResponse response) {
@@ -630,6 +643,14 @@ public class CommandExecutor {
     }
 
     private void showMessage(String message) {
+        if (!hasText(message)) {
+            return;
+        }
+
+        executionContext.showMessage(message);
+    }
+
+    private void showToastMessage(String message) {
         if (!hasText(message)) {
             return;
         }

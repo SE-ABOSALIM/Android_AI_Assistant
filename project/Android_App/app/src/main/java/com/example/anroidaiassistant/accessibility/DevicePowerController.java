@@ -15,6 +15,18 @@ public final class DevicePowerController {
         RESTART
     }
 
+    interface GlobalActionPerformer {
+        boolean perform(int action);
+    }
+
+    interface RootNodeReader {
+        AccessibilityNodeInfo readRootNode();
+    }
+
+    interface DelayScheduler {
+        void postDelayed(Runnable runnable, long delayMillis);
+    }
+
     private static final int MAX_CLICK_ATTEMPTS = 6;
     private static final int POWER_MENU_OPEN_DELAY_MS = 450;
     private static final int POWER_MENU_CONFIRM_DELAY_MS = 850;
@@ -47,16 +59,30 @@ public final class DevicePowerController {
             "اعادة تشغيل"
     };
 
-    private final AccessibilityService service;
-    private final Handler handler;
+    private final GlobalActionPerformer globalActionPerformer;
+    private final RootNodeReader rootNodeReader;
+    private final DelayScheduler delayScheduler;
 
     public DevicePowerController(AccessibilityService service, Handler handler) {
-        this.service = service;
-        this.handler = handler;
+        this(
+                action -> service.performGlobalAction(action),
+                () -> service.getRootInActiveWindow(),
+                (runnable, delayMillis) -> handler.postDelayed(runnable, delayMillis)
+        );
+    }
+
+    DevicePowerController(
+            GlobalActionPerformer globalActionPerformer,
+            RootNodeReader rootNodeReader,
+            DelayScheduler delayScheduler
+    ) {
+        this.globalActionPerformer = globalActionPerformer;
+        this.rootNodeReader = rootNodeReader;
+        this.delayScheduler = delayScheduler;
     }
 
     public boolean perform(Action action) {
-        if (!service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_POWER_DIALOG)) {
+        if (!globalActionPerformer.perform(AccessibilityService.GLOBAL_ACTION_POWER_DIALOG)) {
             return false;
         }
 
@@ -65,8 +91,8 @@ public final class DevicePowerController {
     }
 
     private void attemptClick(Action action, int attempt, int delayMillis) {
-        handler.postDelayed(() -> {
-            AccessibilityNodeInfo root = service.getRootInActiveWindow();
+        delayScheduler.postDelayed(() -> {
+            AccessibilityNodeInfo root = rootNodeReader.readRootNode();
             if (root == null || !isLikelyPowerMenu(root)) {
                 if (attempt < MAX_CLICK_ATTEMPTS) {
                     attemptClick(action, attempt + 1, POWER_MENU_OPEN_DELAY_MS);
