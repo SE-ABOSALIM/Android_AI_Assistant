@@ -68,8 +68,6 @@ public class MyAccessibilityService extends AccessibilityService {
     private static final int RESTART_DELAY_SLOW_MS = 800;
     private static final int PARTIAL_RESULT_FINALIZE_DELAY_MS = 1200;
     private static final int RECOGNIZER_READY_WATCHDOG_MS = 9000;
-    private static final int CLOSE_APP_BACK_RETRY_DELAY_MS = 450;
-    private static final int CLOSE_APP_MAX_BACK_ATTEMPTS = 15;
     private static final int SCREENSHOT_OVERLAY_HIDE_DELAY_MS = 250;
     private static final int SCREENSHOT_OVERLAY_RESTORE_DELAY_MS = 1300;
     private static final int[] BASE_RECOGNIZER_SOUND_STREAMS_TO_MUTE = {
@@ -130,7 +128,17 @@ public class MyAccessibilityService extends AccessibilityService {
     private SelectionOverlayController selectionOverlayController;
     private UninstallConfirmationOverlayController uninstallConfirmationOverlayController;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
-    private final Runnable restartListeningRunnable = this::startListeningSession;
+    private final CloseAppRetryController closeAppRetryController = new CloseAppRetryController(
+            this::getActivePackageName,
+            this::performBack,
+            (runnable, delayMillis) -> mainHandler.postDelayed(runnable, delayMillis),
+            () -> showFeedback(localizedOverlayString(R.string.feedback_close_app_failed))
+    );
+    private final ListeningRestartScheduler listeningRestartScheduler = new ListeningRestartScheduler(
+            this::startListeningSession,
+            runnable -> mainHandler.removeCallbacks(runnable),
+            (runnable, delayMillis) -> mainHandler.postDelayed(runnable, delayMillis)
+    );
     private final Runnable partialResultFinalizeRunnable = this::finalizeLatestPartialResult;
     private final Runnable recognizerReadyWatchdogRunnable = this::handleRecognizerReadyWatchdogTimeout;
 
@@ -1556,28 +1564,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public void performCloseApp() {
-        String initialPackageName = getActivePackageName();
-        if (!TextNormalizer.hasText(initialPackageName)) {
-            performBack();
-            return;
-        }
-
-        performCloseAppBackAttempt(initialPackageName, 1);
-    }
-
-    private void performCloseAppBackAttempt(String initialPackageName, int attempt) {
-        performBack();
-        mainHandler.postDelayed(() -> {
-            String currentPackageName = getActivePackageName();
-            if (!initialPackageName.equals(currentPackageName)) {
-                return;
-            }
-            if (attempt >= CLOSE_APP_MAX_BACK_ATTEMPTS) {
-                showFeedback(localizedOverlayString(R.string.feedback_close_app_failed));
-                return;
-            }
-            performCloseAppBackAttempt(initialPackageName, attempt + 1);
-        }, CLOSE_APP_BACK_RETRY_DELAY_MS);
+        closeAppRetryController.performCloseApp();
     }
 
     public void performRecents() {
