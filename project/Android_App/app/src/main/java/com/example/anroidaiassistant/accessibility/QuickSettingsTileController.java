@@ -20,6 +20,18 @@ public final class QuickSettingsTileController {
         void showMessage(String message);
     }
 
+    interface GlobalActionPerformer {
+        boolean perform(int action);
+    }
+
+    interface DelayScheduler {
+        void postDelayed(Runnable runnable, long delayMillis);
+    }
+
+    interface PageMover {
+        void moveLeft();
+    }
+
     private static final int FIRST_SEARCH_DELAY_MS = 450;
     private static final int NEXT_SEARCH_DELAY_MS = 450;
     private static final int BLUETOOTH_VERIFY_DELAY_MS = 1200;
@@ -27,8 +39,10 @@ public final class QuickSettingsTileController {
     private static final int MAX_SEARCH_ATTEMPTS = 4;
 
     private final AccessibilityService service;
-    private final Handler handler;
     private final GestureController gestureController;
+    private final GlobalActionPerformer globalActionPerformer;
+    private final DelayScheduler delayScheduler;
+    private final PageMover pageMover;
     private final Map<String, TileTarget> targets = new HashMap<>();
 
     public QuickSettingsTileController(
@@ -36,9 +50,31 @@ public final class QuickSettingsTileController {
             Handler handler,
             GestureController gestureController
     ) {
+        this(
+                service,
+                gestureController,
+                action -> service.performGlobalAction(action),
+                (runnable, delayMillis) -> handler.postDelayed(runnable, delayMillis),
+                () -> {
+                    if (gestureController != null) {
+                        gestureController.swipe("left");
+                    }
+                }
+        );
+    }
+
+    QuickSettingsTileController(
+            AccessibilityService service,
+            GestureController gestureController,
+            GlobalActionPerformer globalActionPerformer,
+            DelayScheduler delayScheduler,
+            PageMover pageMover
+    ) {
         this.service = service;
-        this.handler = handler;
         this.gestureController = gestureController;
+        this.globalActionPerformer = globalActionPerformer;
+        this.delayScheduler = delayScheduler;
+        this.pageMover = pageMover;
         registerTargets();
     }
 
@@ -56,7 +92,9 @@ public final class QuickSettingsTileController {
             return true;
         }
 
-        boolean opened = service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS);
+        boolean opened = globalActionPerformer.perform(
+                AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS
+        );
         if (!opened) {
             if (feedback != null) {
                 feedback.showMessage(message(R.string.feedback_quick_settings_unavailable));
@@ -64,7 +102,7 @@ public final class QuickSettingsTileController {
             return true;
         }
 
-        handler.postDelayed(
+        delayScheduler.postDelayed(
                 () -> findAndToggle(target, desiredEnabled, feedback, 0),
                 FIRST_SEARCH_DELAY_MS
         );
@@ -95,7 +133,7 @@ public final class QuickSettingsTileController {
         }
 
         moveToNextQuickSettingsPage(attempt);
-        handler.postDelayed(
+        delayScheduler.postDelayed(
                 () -> findAndToggle(target, desiredEnabled, feedback, attempt + 1),
                 NEXT_SEARCH_DELAY_MS
         );
@@ -305,7 +343,7 @@ public final class QuickSettingsTileController {
             return;
         }
 
-        handler.postDelayed(
+        delayScheduler.postDelayed(
                 () -> verifyBluetoothStateOrRetry(desiredEnabled, feedback, 1),
                 BLUETOOTH_VERIFY_DELAY_MS
         );
@@ -354,7 +392,7 @@ public final class QuickSettingsTileController {
             return;
         }
 
-        handler.postDelayed(
+        delayScheduler.postDelayed(
                 () -> verifyBluetoothStateOrRetry(
                         desiredEnabled,
                         feedback,
@@ -528,13 +566,11 @@ public final class QuickSettingsTileController {
 
     private void moveToNextQuickSettingsPage(int attempt) {
         if (attempt == 0) {
-            service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS);
+            globalActionPerformer.perform(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS);
             return;
         }
 
-        if (gestureController != null) {
-            gestureController.swipe("left");
-        }
+        pageMover.moveLeft();
     }
 
     private Boolean parseDesiredState(String rawState) {
