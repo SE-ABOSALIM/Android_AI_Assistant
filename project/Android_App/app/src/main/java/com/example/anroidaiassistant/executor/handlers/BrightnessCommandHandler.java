@@ -1,9 +1,6 @@
 package com.example.anroidaiassistant.executor.handlers;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
-import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -20,6 +17,15 @@ public final class BrightnessCommandHandler implements CommandHandler {
     private static final int BRIGHTNESS_MIN = 10;
     private static final int BRIGHTNESS_MAX = 255;
     private static final int BRIGHTNESS_STEP = 45;
+    private final SystemSettingsAccess systemSettingsAccess;
+
+    public BrightnessCommandHandler() {
+        this(new AndroidSystemSettingsAccess());
+    }
+
+    BrightnessCommandHandler(SystemSettingsAccess systemSettingsAccess) {
+        this.systemSettingsAccess = systemSettingsAccess;
+    }
 
     @Override
     public String getIntent() {
@@ -40,14 +46,14 @@ public final class BrightnessCommandHandler implements CommandHandler {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.System.canWrite(androidContext)) {
+        if (!systemSettingsAccess.canWrite(androidContext)) {
             openWriteSettingsPermission(androidContext, context);
             return;
         }
 
         try {
-            int current = Settings.System.getInt(
-                    androidContext.getContentResolver(),
+            int current = systemSettingsAccess.getInt(
+                    androidContext,
                     Settings.System.SCREEN_BRIGHTNESS,
                     125
             );
@@ -64,13 +70,13 @@ public final class BrightnessCommandHandler implements CommandHandler {
                     return;
             }
 
-            Settings.System.putInt(
-                    androidContext.getContentResolver(),
+            systemSettingsAccess.putInt(
+                    androidContext,
                     Settings.System.SCREEN_BRIGHTNESS_MODE,
                     Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL
             );
-            Settings.System.putInt(
-                    androidContext.getContentResolver(),
+            systemSettingsAccess.putInt(
+                    androidContext,
                     Settings.System.SCREEN_BRIGHTNESS,
                     target
             );
@@ -81,11 +87,8 @@ public final class BrightnessCommandHandler implements CommandHandler {
     }
 
     private void openWriteSettingsPermission(Context androidContext, CommandExecutionContext context) {
-        Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
-                .setData(Uri.parse("package:" + androidContext.getPackageName()))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
-            androidContext.startActivity(intent);
+            systemSettingsAccess.openWriteSettingsPermission(androidContext);
             context.showMessage("Allow modify system settings to adjust brightness");
         } catch (Exception exception) {
             Log.e(TAG, "Failed to open write settings permission", exception);
