@@ -2,8 +2,6 @@ package com.example.anroidaiassistant.ui.screens;
 
 import android.Manifest;
 import android.app.NotificationManager;
-import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -30,8 +28,8 @@ import androidx.core.widget.ImageViewCompat;
 import androidx.fragment.app.Fragment;
 
 import com.example.anroidaiassistant.MainActivity;
-import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.R;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureFlow;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 
 import java.util.ArrayList;
@@ -426,7 +424,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                 getString(R.string.permission_accessibility_description),
                 R.drawable.ic_perm_accessibility,
                 fragment -> fragment.isAccessibilityEnabled(),
-                this::openAccessibilityServiceSettings
+                this::requestAccessibilitySetup
         ));
         items.add(PermissionItem.advanced(
                 getString(R.string.permission_popup_title),
@@ -494,19 +492,8 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
         startActivity(intent);
     }
 
-    private void openAccessibilityServiceSettings() {
-        ComponentName serviceComponent = new ComponentName(
-                requireContext(),
-                MyAccessibilityService.class
-        );
-        Intent detailsIntent = new Intent("android.settings.ACCESSIBILITY_DETAILS_SETTINGS");
-        detailsIntent.putExtra(Intent.EXTRA_COMPONENT_NAME, serviceComponent);
-
-        try {
-            startActivity(detailsIntent);
-        } catch (ActivityNotFoundException | SecurityException exception) {
-            openSettings(Settings.ACTION_ACCESSIBILITY_SETTINGS);
-        }
+    private void requestAccessibilitySetup() {
+        AccessibilityDisclosureFlow.show(requireActivity(), isAccessibilityEnabled());
     }
 
     private MainActivity mainActivity() {
