@@ -27,6 +27,12 @@ public class AssistantStartupPolicyTest {
     }
 
     @Test
+    public void popupCapability_remainsCoreButIsNotAndroidSpecialAccess() {
+        assertTrue(AssistantCapability.POPUP.isCore());
+        assertFalse(AssistantCapability.POPUP.isSpecialAccess());
+    }
+
+    @Test
     public void assistantStartup_doesNotRequireContacts() {
         assertTrue(policy.canActivate(stateWithout(AssistantCapability.CONTACTS)));
     }
