@@ -1,8 +1,6 @@
 package com.example.anroidaiassistant.executor.handlers;
 
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 
@@ -13,7 +11,6 @@ interface SystemSettingsAccess {
 
     void putInt(Context context, String name, int value);
 
-    void openWriteSettingsPermission(Context context);
 }
 
 final class AndroidSystemSettingsAccess implements SystemSettingsAccess {
@@ -30,13 +27,5 @@ final class AndroidSystemSettingsAccess implements SystemSettingsAccess {
     @Override
     public void putInt(Context context, String name, int value) {
         Settings.System.putInt(context.getContentResolver(), name, value);
-    }
-
-    @Override
-    public void openWriteSettingsPermission(Context context) {
-        Intent intent = new Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS)
-                .setData(Uri.parse("package:" + context.getPackageName()))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
     }
 }

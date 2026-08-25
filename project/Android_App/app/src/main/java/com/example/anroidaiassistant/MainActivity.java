@@ -6,6 +6,12 @@ import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.api.dto.AppCatalogStatusResponse;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureFlow;
+import com.example.anroidaiassistant.permissions.AssistantCapability;
+import com.example.anroidaiassistant.permissions.AssistantCapabilityState;
+import com.example.anroidaiassistant.permissions.AssistantStartupPolicy;
+import com.example.anroidaiassistant.permissions.FeaturePermissionAccess;
+import com.example.anroidaiassistant.permissions.FeaturePermissionFlow;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.ui.screens.BackPressHandler;
@@ -16,8 +22,10 @@ import com.example.anroidaiassistant.ui.screens.PermissionsFragment;
 import com.example.anroidaiassistant.ui.screens.SettingsFragment;
 import com.example.anroidaiassistant.util.DeviceIdentity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -52,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private Call<AppCatalogStatusResponse> appCatalogStatusCall;
     private final List<Runnable> pendingCatalogReadyActions = new ArrayList<>();
     private AlertDialog spellingSuggestionDialog;
-    private Runnable pendingPermissionAction;
+    private final AssistantStartupPolicy assistantStartupPolicy = new AssistantStartupPolicy();
     private HomeFragment homeFragment;
     private BottomNavigationView bottomNavigationView;
     private final ArrayList<Integer> navigationBackStack = new ArrayList<>();
@@ -64,8 +72,6 @@ public class MainActivity extends AppCompatActivity {
     public static MainActivity getInstance() {
         return instance;
     }
-
-    private static final int REQUEST_CODE_RUNTIME_PERMISSIONS = 200;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,9 +85,31 @@ public class MainActivity extends AppCompatActivity {
         apiService = RetrofitClient.getClient().create(ApiService.class);
         commandExecutor = new CommandExecutor(this);
         setupBottomNavigation(savedInstanceState);
+        handleAccessibilityDisclosureIntent(getIntent());
+        FeaturePermissionFlow.handleIntent(this, getIntent());
 
         refreshListeningUiState();
         warmUpAppCatalog();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleAccessibilityDisclosureIntent(intent);
+        FeaturePermissionFlow.handleIntent(this, intent);
+    }
+
+    private void handleAccessibilityDisclosureIntent(Intent intent) {
+        if (intent == null
+                || !intent.getBooleanExtra(
+                        AccessibilityDisclosureFlow.EXTRA_REQUEST_DISCLOSURE,
+                        false
+                )) {
+            return;
+        }
+        intent.removeExtra(AccessibilityDisclosureFlow.EXTRA_REQUEST_DISCLOSURE);
+        AccessibilityDisclosureFlow.show(this, isAssistantAccessibilityServiceEnabled());
     }
 
     private void setupBottomNavigation(Bundle savedInstanceState) {
@@ -229,10 +257,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         final String finalCommandText = commandText;
-        if (!ensureRuntimePermissions(() -> triggerTestCommand(finalCommandText))) {
-            return;
-        }
-
         ensureAppCatalogThen(() -> sendManualPredictionRequest(finalCommandText));
     }
 
@@ -271,6 +295,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        FeaturePermissionFlow.onActivityResumed(this);
         MyAccessibilityService service = MyAccessibilityService.getInstance();
         if (service != null) {
             service.updateLanguage(selectedLanguage);
@@ -281,6 +306,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        FeaturePermissionFlow.onActivityDestroyed(this);
         cancelAppCatalogSyncIfNeeded();
         if (spellingSuggestionDialog != null) {
             spellingSuggestionDialog.dismiss();
@@ -306,31 +332,52 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean hasRequiredAssistantPermissions() {
-        return missingRuntimePermissions().isEmpty()
-                && Settings.canDrawOverlays(this)
-                && isAssistantAccessibilityServiceEnabled();
+        return assistantStartupPolicy.canActivate(currentCapabilityState());
     }
 
-    private List<String> missingRuntimePermissions() {
-        List<String> missingPermissions = new ArrayList<>();
-        addMissingPermission(missingPermissions, android.Manifest.permission.RECORD_AUDIO);
-        addMissingPermission(missingPermissions, android.Manifest.permission.READ_CONTACTS);
-        addMissingPermission(missingPermissions, android.Manifest.permission.CALL_PHONE);
-        addMissingPermission(missingPermissions, android.Manifest.permission.READ_PHONE_STATE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            addMissingPermission(missingPermissions, android.Manifest.permission.ANSWER_PHONE_CALLS);
+    private AssistantCapabilityState currentCapabilityState() {
+        AssistantCapabilityState state = AssistantCapabilityState.noneGranted();
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO)
+                == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            state = state.withGranted(AssistantCapability.MICROPHONE);
         }
-        addMissingPermission(missingPermissions, android.Manifest.permission.CAMERA);
-        return missingPermissions;
+        if (isAssistantAccessibilityServiceEnabled()) {
+            state = state.withGranted(AssistantCapability.ACCESSIBILITY_SERVICE);
+        }
+        if (FeaturePermissionAccess.isGranted(this, AssistantCapability.POPUP)) {
+            state = state.withGranted(AssistantCapability.POPUP);
+        }
+        return state;
     }
 
     private void showPermissionRequiredDialog() {
+        List<String> missingNames = new ArrayList<>();
+        for (AssistantCapability capability
+                : assistantStartupPolicy.missingCoreCapabilities(currentCapabilityState())) {
+            missingNames.add(
+                    getString(coreCapabilityTitle(capability))
+            );
+        }
+        String missingList = "• " + TextUtils.join("\n• ", missingNames);
         new MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.permission_required_title)
-                .setMessage(R.string.permission_required_message)
+                .setMessage(getString(R.string.permission_required_message, missingList))
                 .setPositiveButton(R.string.permission_required_action, (dialog, which) -> showPermissionsPage())
                 .setNegativeButton(R.string.common_cancel, (dialog, which) -> dialog.dismiss())
                 .show();
+    }
+
+    private int coreCapabilityTitle(AssistantCapability capability) {
+        switch (capability) {
+            case MICROPHONE:
+                return R.string.permission_microphone_title;
+            case ACCESSIBILITY_SERVICE:
+                return R.string.permission_accessibility_title;
+            case POPUP:
+                return R.string.permission_popup_title;
+            default:
+                throw new IllegalArgumentException("Not a core capability: " + capability);
+        }
     }
 
     private void toggleListening() {
@@ -360,35 +407,6 @@ public class MainActivity extends AppCompatActivity {
             service.stopContinuousListening();
             isServiceListening = false;
             refreshListeningUiState();
-        }
-    }
-
-    private boolean ensureRuntimePermissions(Runnable onGranted) {
-        List<String> missingPermissions = new ArrayList<>();
-        addMissingPermission(missingPermissions, android.Manifest.permission.RECORD_AUDIO);
-        addMissingPermission(missingPermissions, android.Manifest.permission.READ_CONTACTS);
-        addMissingPermission(missingPermissions, android.Manifest.permission.CALL_PHONE);
-        addMissingPermission(missingPermissions, android.Manifest.permission.READ_PHONE_STATE);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            addMissingPermission(missingPermissions, android.Manifest.permission.ANSWER_PHONE_CALLS);
-        }
-        addMissingPermission(missingPermissions, android.Manifest.permission.CAMERA);
-
-        if (missingPermissions.isEmpty()) {
-            return true;
-        }
-
-        pendingPermissionAction = onGranted;
-        requestPermissions(
-                missingPermissions.toArray(new String[0]),
-                REQUEST_CODE_RUNTIME_PERMISSIONS
-        );
-        return false;
-    }
-
-    private void addMissingPermission(List<String> permissions, String permission) {
-        if (checkSelfPermission(permission) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            permissions.add(permission);
         }
     }
 
@@ -635,23 +653,11 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CODE_RUNTIME_PERMISSIONS) {
-            boolean allGranted = grantResults.length > 0;
-            for (int grantResult : grantResults) {
-                if (grantResult != android.content.pm.PackageManager.PERMISSION_GRANTED) {
-                    allGranted = false;
-                    break;
-                }
-            }
-
-            Runnable action = pendingPermissionAction;
-            pendingPermissionAction = null;
-            if (allGranted && action != null) {
-                action.run();
-                return;
-            }
-
-            Toast.makeText(this, R.string.runtime_permissions_required, Toast.LENGTH_SHORT).show();
-        }
+        FeaturePermissionFlow.onRequestPermissionsResult(
+                this,
+                requestCode,
+                permissions,
+                grantResults
+        );
     }
 }

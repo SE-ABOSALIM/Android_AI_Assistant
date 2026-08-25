@@ -58,7 +58,7 @@ public final class PhoneDialer {
         Intent dialIntent = buildPhoneIntent(Intent.ACTION_DIAL, phoneNumber);
         if (tryStartPhoneIntentWithResolvedPackage(context, dialIntent, dialerPackageName)) {
             if (!canCallDirectly) {
-                executionContext.showMessage("Phone call permission is required");
+                executionContext.showMessage("Opened the dialer for confirmation");
             }
             return;
         }

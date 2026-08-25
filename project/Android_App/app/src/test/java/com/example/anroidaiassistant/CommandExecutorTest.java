@@ -3,6 +3,8 @@ package com.example.anroidaiassistant;
 import static org.junit.Assert.assertEquals;
 
 import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityAutomationGate;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityConsentState;
 import com.example.anroidaiassistant.executor.CommandDispatcher;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.executor.CommandHandler;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CommandExecutorTest {
     private final Gson gson = new Gson();
@@ -87,6 +90,61 @@ public class CommandExecutorTest {
         assertEquals(Collections.singletonList("Unsupported intent: UNREGISTERED_INTENT"), messages);
     }
 
+    @Test
+    public void accessibilityExecutionBlockedWithoutConsent_routesToDisclosure() {
+        List<String> dispatchedValues = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
+        AtomicInteger disclosureRoutes = new AtomicInteger();
+        CommandExecutor executor = executorWithGate(
+                "CLICK_ITEM",
+                false,
+                true,
+                dispatchedValues,
+                messages,
+                disclosureRoutes::incrementAndGet
+        );
+
+        executor.executeCommand(responseForIntent("CLICK_ITEM", "button"));
+
+        assertEquals(Collections.emptyList(), dispatchedValues);
+        assertEquals(1, messages.size());
+        assertEquals(1, disclosureRoutes.get());
+    }
+
+    @Test
+    public void accessibilityExecutionAllowedWithConsentAndService() {
+        List<String> dispatchedValues = new ArrayList<>();
+        CommandExecutor executor = executorWithGate(
+                "CLICK_ITEM",
+                true,
+                true,
+                dispatchedValues,
+                new ArrayList<>(),
+                () -> {}
+        );
+
+        executor.executeCommand(responseForIntent("CLICK_ITEM", "button"));
+
+        assertEquals(Collections.singletonList("button"), dispatchedValues);
+    }
+
+    @Test
+    public void nonAccessibilityCommandRemainsUsableWithoutConsent() {
+        List<String> dispatchedValues = new ArrayList<>();
+        CommandExecutor executor = executorWithGate(
+                "OPEN_APP",
+                false,
+                false,
+                dispatchedValues,
+                new ArrayList<>(),
+                () -> {}
+        );
+
+        executor.executeCommand(responseForIntent("OPEN_APP", "Chrome"));
+
+        assertEquals(Collections.singletonList("Chrome"), dispatchedValues);
+    }
+
     private CommandExecutor executorWithRecordingHandler(
             List<String> dispatchedValues,
             List<String> messages
@@ -105,6 +163,42 @@ public class CommandExecutorTest {
         CommandDispatcher dispatcher = new CommandDispatcher(Collections.singletonList(handler));
         CommandExecutionContext executionContext = new CommandExecutionContext(null, messages::add);
         return new CommandExecutor(dispatcher, executionContext);
+    }
+
+    private CommandExecutor executorWithGate(
+            String handlerIntent,
+            boolean hasConsent,
+            boolean serviceConnected,
+            List<String> dispatchedValues,
+            List<String> messages,
+            Runnable disclosureRoute
+    ) {
+        CommandHandler handler = new CommandHandler() {
+            @Override
+            public String getIntent() {
+                return handlerIntent;
+            }
+
+            @Override
+            public void handle(Map<String, Object> parameters, CommandExecutionContext context) {
+                dispatchedValues.add(String.valueOf(parameters.get("value")));
+            }
+        };
+        AccessibilityConsentState consent = new AccessibilityConsentState() {
+            @Override
+            public boolean hasCurrentConsent() {
+                return hasConsent;
+            }
+
+            @Override
+            public void recordCurrentConsent() {}
+        };
+        return new CommandExecutor(
+                new CommandDispatcher(Collections.singletonList(handler)),
+                new CommandExecutionContext(null, messages::add),
+                new AccessibilityAutomationGate(consent, () -> serviceConnected),
+                disclosureRoute
+        );
     }
 
     private PredictResponse acceptedResponse(String value) {

@@ -47,7 +47,7 @@ public final class BrightnessCommandHandler implements CommandHandler {
         }
 
         if (!systemSettingsAccess.canWrite(androidContext)) {
-            openWriteSettingsPermission(androidContext, context);
+            context.showMessage("System settings access is required for brightness control");
             return;
         }
 
@@ -83,16 +83,6 @@ public final class BrightnessCommandHandler implements CommandHandler {
         } catch (Exception exception) {
             Log.e(TAG, "Failed to adjust brightness", exception);
             context.showMessage("Brightness control failed");
-        }
-    }
-
-    private void openWriteSettingsPermission(Context androidContext, CommandExecutionContext context) {
-        try {
-            systemSettingsAccess.openWriteSettingsPermission(androidContext);
-            context.showMessage("Allow modify system settings to adjust brightness");
-        } catch (Exception exception) {
-            Log.e(TAG, "Failed to open write settings permission", exception);
-            context.showMessage("Allow modify system settings to adjust brightness");
         }
     }
 

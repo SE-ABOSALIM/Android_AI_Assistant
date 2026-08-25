@@ -1,8 +1,6 @@
 package com.example.anroidaiassistant.apps;
 
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 
 import com.example.anroidaiassistant.util.TextNormalizer;
 
@@ -40,16 +38,15 @@ public final class AppMatcher {
             return Collections.emptyList();
         }
 
-        PackageManager packageManager = context.getPackageManager();
-        List<ResolveInfo> installedApps = installedAppReader.getLaunchableApps(context);
+        List<LaunchableApp> installedApps = installedAppReader.getLaunchableApps(context);
 
         Map<String, AppMatch> exactMatches = new LinkedHashMap<>();
         List<AppMatch> fuzzyMatches = new ArrayList<>();
         float threshold = minimumAcceptableScore(candidateCompact, spelledCandidate);
 
-        for (ResolveInfo app : installedApps) {
-            String packageName = app.activityInfo.packageName;
-            String label = app.loadLabel(packageManager).toString();
+        for (LaunchableApp app : installedApps) {
+            String packageName = app.getPackageName();
+            String label = app.getLabel();
             AppMatch match = scoreAppMatch(
                     candidateCompact,
                     candidateAscii,

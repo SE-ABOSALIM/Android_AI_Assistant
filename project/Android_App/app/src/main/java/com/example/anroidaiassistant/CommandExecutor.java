@@ -4,10 +4,18 @@ import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.api.ApiService;
 import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityAutomationGate;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityConsentState;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureConsent;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureFlow;
 import com.example.anroidaiassistant.apps.AppOpenController;
 import com.example.anroidaiassistant.executor.CommandDispatcher;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.executor.CommandHandlerRegistry;
+import com.example.anroidaiassistant.permissions.AndroidFeaturePermissionGate;
+import com.example.anroidaiassistant.permissions.AssistantCapability;
+import com.example.anroidaiassistant.permissions.FeatureCapabilityPolicy;
+import com.example.anroidaiassistant.permissions.FeaturePermissionGate;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.util.DeviceIdentity;
 import com.example.anroidaiassistant.util.ParameterReader;
@@ -41,8 +49,13 @@ public class CommandExecutor {
     private final CommandDispatcher commandDispatcher;
     private final ApiService apiService;
     private final Handler mainHandler;
+    private final AccessibilityAutomationGate accessibilityAutomationGate;
+    private final Runnable disclosureRoute;
+    private final FeatureCapabilityPolicy featureCapabilityPolicy;
+    private final FeaturePermissionGate featurePermissionGate;
     private final Object executionIdsLock = new Object();
     private final LinkedHashSet<String> retainedExecutionIds = new LinkedHashSet<>();
+    private final LinkedHashSet<String> pendingPermissionExecutionIds = new LinkedHashSet<>();
     private boolean isCustomCommandRunning = false;
     private boolean isCustomCommandCancelled = false;
     private Runnable pendingCustomCommandRunnable;
@@ -55,11 +68,60 @@ public class CommandExecutor {
         this.commandDispatcher = CommandHandlerRegistry.createDefaultDispatcher(appOpenController);
         this.apiService = RetrofitClient.getClient().create(ApiService.class);
         this.mainHandler = new Handler(Looper.getMainLooper());
+        this.accessibilityAutomationGate = new AccessibilityAutomationGate(
+                new AccessibilityDisclosureConsent(context),
+                () -> MyAccessibilityService.getInstance() != null
+        );
+        this.disclosureRoute = () -> AccessibilityDisclosureFlow.requestFromAutomation(context);
+        this.featureCapabilityPolicy = new FeatureCapabilityPolicy();
+        this.featurePermissionGate = new AndroidFeaturePermissionGate(context);
     }
 
     CommandExecutor(
             CommandDispatcher commandDispatcher,
             CommandExecutionContext executionContext
+    ) {
+        this(
+                commandDispatcher,
+                executionContext,
+                new AccessibilityAutomationGate(new AccessibilityConsentState() {
+                    @Override
+                    public boolean hasCurrentConsent() {
+                        return true;
+                    }
+
+                    @Override
+                    public void recordCurrentConsent() {}
+                }, () -> true),
+                () -> {},
+                new FeatureCapabilityPolicy(),
+                (capability, onGranted, onCancelled) -> true
+        );
+    }
+
+    CommandExecutor(
+            CommandDispatcher commandDispatcher,
+            CommandExecutionContext executionContext,
+            AccessibilityAutomationGate accessibilityAutomationGate,
+            Runnable disclosureRoute
+    ) {
+        this(
+                commandDispatcher,
+                executionContext,
+                accessibilityAutomationGate,
+                disclosureRoute,
+                new FeatureCapabilityPolicy(),
+                (capability, onGranted, onCancelled) -> true
+        );
+    }
+
+    CommandExecutor(
+            CommandDispatcher commandDispatcher,
+            CommandExecutionContext executionContext,
+            AccessibilityAutomationGate accessibilityAutomationGate,
+            Runnable disclosureRoute,
+            FeatureCapabilityPolicy featureCapabilityPolicy,
+            FeaturePermissionGate featurePermissionGate
     ) {
         this.context = executionContext.getAndroidContext();
         this.executionContext = executionContext;
@@ -67,6 +129,10 @@ public class CommandExecutor {
         this.commandDispatcher = commandDispatcher;
         this.apiService = null;
         this.mainHandler = null;
+        this.accessibilityAutomationGate = accessibilityAutomationGate;
+        this.disclosureRoute = disclosureRoute;
+        this.featureCapabilityPolicy = featureCapabilityPolicy;
+        this.featurePermissionGate = featurePermissionGate;
     }
 
     public void executeCommand(PredictResponse response) {
@@ -107,6 +173,10 @@ public class CommandExecutor {
             return;
         }
 
+        if (!ensureAccessibilityExecutionAllowed(intent)) {
+            return;
+        }
+
         if (isGridBlockingTouchIntent(intent)) {
             showMessage("Grid acikken dokunmak icin grid numarasi soyle.");
             return;
@@ -114,6 +184,16 @@ public class CommandExecutor {
 
         Map<String, Object> parameters = response.getParameters();
         String effectiveExecutionId = hasText(executionId) ? executionId : newExecutionId();
+        AssistantCapability requiredCapability =
+                featureCapabilityPolicy.requiredCapability(intent, parameters);
+        if (requiredCapability != null
+                && !ensureFeatureCapabilityAllowed(
+                        effectiveExecutionId,
+                        requiredCapability,
+                        response
+                )) {
+            return;
+        }
         if ("RUN_CUSTOM_COMMAND".equalsIgnoreCase(intent)) {
             if (!tryClaimExecution(effectiveExecutionId)) {
                 return;
@@ -202,6 +282,11 @@ public class CommandExecutor {
         if ("WAIT".equalsIgnoreCase(intent)) {
             int waitMs = ParameterReader.getIntParam(parameters, "duration_ms");
             scheduleCustomCommandRunnable(() -> executeCustomStep(steps, index + 1), waitMs);
+            return;
+        }
+
+        if (!ensureAccessibilityExecutionAllowed(intent)) {
+            finishCustomCommand();
             return;
         }
 
@@ -338,6 +423,10 @@ public class CommandExecutor {
 
         if ("RUN_CUSTOM_COMMAND".equalsIgnoreCase(resolvedIntent)) {
             showMessage("Nested custom commands are not supported");
+            return false;
+        }
+
+        if (!ensureAccessibilityExecutionAllowed(resolvedIntent)) {
             return false;
         }
 
@@ -545,8 +634,81 @@ public class CommandExecutor {
     }
 
     private boolean hasSearchInputForCustomCommand() {
+        if (!accessibilityAutomationGate.canAccessAccessibilityData()) {
+            return false;
+        }
         MyAccessibilityService service = MyAccessibilityService.getInstance();
         return service != null && service.hasSearchInputAvailable();
+    }
+
+    private boolean ensureFeatureCapabilityAllowed(
+            String executionId,
+            AssistantCapability capability,
+            PredictResponse response
+    ) {
+        synchronized (executionIdsLock) {
+            if (retainedExecutionIds.contains(executionId)
+                    || pendingPermissionExecutionIds.contains(executionId)) {
+                return false;
+            }
+            pendingPermissionExecutionIds.add(executionId);
+        }
+
+        boolean allowed;
+        try {
+            allowed = featurePermissionGate.ensureGranted(
+                    capability,
+                    () -> {
+                        removePendingPermissionExecution(executionId);
+                        executeCommand(executionId, response);
+                    },
+                    () -> {
+                        removePendingPermissionExecution(executionId);
+                        tryClaimExecution(executionId);
+                    }
+            );
+        } catch (RuntimeException exception) {
+            removePendingPermissionExecution(executionId);
+            showMessage("Permission request could not be started");
+            return false;
+        }
+
+        if (allowed) {
+            removePendingPermissionExecution(executionId);
+        }
+        return allowed;
+    }
+
+    private void removePendingPermissionExecution(String executionId) {
+        synchronized (executionIdsLock) {
+            pendingPermissionExecutionIds.remove(executionId);
+        }
+    }
+
+    private boolean ensureAccessibilityExecutionAllowed(String intent) {
+        AccessibilityAutomationGate.Decision decision = accessibilityAutomationGate.evaluate(intent);
+        if (decision == AccessibilityAutomationGate.Decision.ALLOW) {
+            return true;
+        }
+
+        if (decision == AccessibilityAutomationGate.Decision.CONSENT_REQUIRED) {
+            showMessage(resourceText(
+                    R.string.accessibility_disclosure_required_message,
+                    "Review and accept the Accessibility Service disclosure before using this action."
+            ));
+            disclosureRoute.run();
+            return false;
+        }
+
+        showMessage(resourceText(
+                R.string.accessibility_service_disconnected,
+                "Accessibility service is not connected"
+        ));
+        return false;
+    }
+
+    private String resourceText(int resourceId, String fallback) {
+        return context == null ? fallback : context.getString(resourceId);
     }
 
     private List<Map<String, Object>> customCommandSteps(Map<String, Object> parameters) {
