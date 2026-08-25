@@ -999,12 +999,13 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private void sendPredictionRequest(String text, List<String> alternatives) {
+        String executionId = CommandExecutor.newExecutionId();
         if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
-            sendPredictionRequestWithCatalog(text, alternatives);
+            sendPredictionRequestWithCatalog(executionId, text, alternatives);
             return;
         }
 
-        pendingPrediction = new PendingPrediction(text, alternatives);
+        pendingPrediction = new PendingPrediction(executionId, text, alternatives);
         if (appCatalogSyncCall != null) {
             updateOverlayText(localizedOverlayString(R.string.catalog_syncing));
             return;
@@ -1044,11 +1045,19 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         if (prediction != null) {
-            sendPredictionRequestWithCatalog(prediction.text, prediction.alternatives);
+            sendPredictionRequestWithCatalog(
+                    prediction.executionId,
+                    prediction.text,
+                    prediction.alternatives
+            );
         }
     }
 
-    private void sendPredictionRequestWithCatalog(String text, List<String> alternatives) {
+    private void sendPredictionRequestWithCatalog(
+            String executionId,
+            String text,
+            List<String> alternatives
+    ) {
         PredictRequest request = new PredictRequest(
                 text,
                 selectedLanguage,
@@ -1069,7 +1078,7 @@ public class MyAccessibilityService extends AccessibilityService {
                         mainActivity.updateResultUI(body);
                     }
                     
-                    commandExecutor.executeCommand(body);
+                    commandExecutor.executeCommand(executionId, body);
                 } else {
                     Log.e(TAG, "Prediction failed. httpCode=" + response.code());
                     showRequestError(getString(R.string.backend_no_response));
@@ -1540,10 +1549,12 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     private static final class PendingPrediction {
+        private final String executionId;
         private final String text;
         private final List<String> alternatives;
 
-        private PendingPrediction(String text, List<String> alternatives) {
+        private PendingPrediction(String executionId, String text, List<String> alternatives) {
+            this.executionId = executionId;
             this.text = text;
             this.alternatives = alternatives == null ? null : new ArrayList<>(alternatives);
         }

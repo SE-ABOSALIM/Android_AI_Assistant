@@ -237,6 +237,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void sendManualPredictionRequest(String text) {
+        String executionId = CommandExecutor.newExecutionId();
         PredictRequest request = new PredictRequest(
                 text,
                 selectedLanguage,
@@ -251,7 +252,7 @@ public class MainActivity extends AppCompatActivity {
                 if (response.isSuccessful() && response.body() != null) {
                     PredictResponse body = response.body();
                     updateResultUI(body);
-                    commandExecutor.executeCommand(body);
+                    commandExecutor.executeCommand(executionId, body);
                     return;
                 }
 
