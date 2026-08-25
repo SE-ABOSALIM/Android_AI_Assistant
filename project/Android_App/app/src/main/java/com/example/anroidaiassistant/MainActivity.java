@@ -10,6 +10,7 @@ import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosu
 import com.example.anroidaiassistant.permissions.AssistantCapability;
 import com.example.anroidaiassistant.permissions.AssistantCapabilityState;
 import com.example.anroidaiassistant.permissions.AssistantStartupPolicy;
+import com.example.anroidaiassistant.permissions.FeaturePermissionAccess;
 import com.example.anroidaiassistant.permissions.FeaturePermissionFlow;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
@@ -343,7 +344,7 @@ public class MainActivity extends AppCompatActivity {
         if (isAssistantAccessibilityServiceEnabled()) {
             state = state.withGranted(AssistantCapability.ACCESSIBILITY_SERVICE);
         }
-        if (Settings.canDrawOverlays(this)) {
+        if (FeaturePermissionAccess.isGranted(this, AssistantCapability.POPUP)) {
             state = state.withGranted(AssistantCapability.POPUP);
         }
         return state;

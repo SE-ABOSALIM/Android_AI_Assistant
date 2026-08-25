@@ -48,8 +48,8 @@
     <string name="permission_camera_description">Fener kontrolünü etkinleştirir; fotoğraf için sistem kamerası açılır</string>
     <string name="permission_accessibility_title">Erişilebilirlik Servisi</string>
     <string name="permission_accessibility_description">Desteklenen cihaz ve uygulama arayüzü işlemleri için gerekli</string>
-    <string name="permission_popup_title">Üstte Gösterme Erişimi</string>
-    <string name="permission_popup_description">Uygulama dışındaki seçim ve etkileşim arayüzü için gerekli</string>
+    <string name="permission_popup_title">Asistan Açılır Pencereleri</string>
+    <string name="permission_popup_description">Uygulama dışındaki seçim ve etkileşim arayüzü için etkin Erişilebilirlik Servisi tarafından sağlanır</string>
     <string name="permission_sound_title">Ses Modu Erişimi</string>
     <string name="permission_sound_description">Ses ve gerçek sessiz mod kontrolünü etkinleştirir</string>
     <string name="permission_system_settings_title">Sistem Ayarları Erişimi</string>

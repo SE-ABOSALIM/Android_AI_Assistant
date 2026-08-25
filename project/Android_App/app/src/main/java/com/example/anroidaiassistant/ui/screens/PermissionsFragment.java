@@ -31,6 +31,7 @@ import com.example.anroidaiassistant.MainActivity;
 import com.example.anroidaiassistant.R;
 import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureFlow;
 import com.example.anroidaiassistant.permissions.AssistantCapability;
+import com.example.anroidaiassistant.permissions.FeaturePermissionAccess;
 import com.example.anroidaiassistant.permissions.FeaturePermissionFlow;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 
@@ -396,11 +397,11 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                 getString(R.string.permission_popup_title),
                 getString(R.string.permission_popup_description),
                 R.drawable.ic_perm_popup,
-                fragment -> Settings.canDrawOverlays(fragment.requireContext()),
-                () -> openSettings(
-                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                        Uri.parse("package:" + requireContext().getPackageName())
-                )
+                fragment -> FeaturePermissionAccess.isGranted(
+                        fragment.requireContext(),
+                        AssistantCapability.POPUP
+                ),
+                this::requestAccessibilitySetup
         ));
         return items;
     }

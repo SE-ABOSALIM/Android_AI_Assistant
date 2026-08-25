@@ -7,6 +7,8 @@ import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
+import com.example.anroidaiassistant.permissions.AssistantCapability;
+import com.example.anroidaiassistant.permissions.FeaturePermissionAccess;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.selection.GridCommandParser;
@@ -665,6 +667,9 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public void startContinuousListening() {
+        if (!canProvidePopupCapability()) {
+            return;
+        }
         listeningRestartScheduler.cancel();
         isListening = true;
         startCallStateMonitoringIfAllowed();
@@ -1290,7 +1295,10 @@ public class MyAccessibilityService extends AccessibilityService {
             NumberSelectionCallback callback,
             String hint
     ) {
-        if (choices == null || choices.isEmpty() || callback == null) {
+        if (!canProvidePopupCapability()
+                || choices == null
+                || choices.isEmpty()
+                || callback == null) {
             return;
         }
 
@@ -1341,7 +1349,7 @@ public class MyAccessibilityService extends AccessibilityService {
             String hint,
             NumberSelectionCallback callback
     ) {
-        if (callback == null) {
+        if (!canProvidePopupCapability() || callback == null) {
             return;
         }
 
@@ -1385,7 +1393,10 @@ public class MyAccessibilityService extends AccessibilityService {
             boolean confirmationMode,
             String customHint
     ) {
-        if (choices == null || choices.isEmpty() || callback == null) {
+        if (!canProvidePopupCapability()
+                || choices == null
+                || choices.isEmpty()
+                || callback == null) {
             return;
         }
 
@@ -1760,6 +1771,9 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public void handleGridAction(String action) {
+        if (!canProvidePopupCapability()) {
+            return;
+        }
         if (gridController == null) {
             showFeedback(localizedOverlayString(R.string.feedback_grid_unavailable));
             return;
@@ -1808,6 +1822,10 @@ public class MyAccessibilityService extends AccessibilityService {
             return false;
         }
         return searchInputController != null && searchInputController.hasSearchInputAvailable();
+    }
+
+    private boolean canProvidePopupCapability() {
+        return FeaturePermissionAccess.isGranted(this, AssistantCapability.POPUP);
     }
 
     public boolean writeTextToFocusedInput(String text) {

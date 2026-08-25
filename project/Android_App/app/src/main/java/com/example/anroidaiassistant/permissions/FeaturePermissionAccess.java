@@ -7,6 +7,9 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.provider.Settings;
 
+import com.example.anroidaiassistant.MyAccessibilityService;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureConsent;
+
 public final class FeaturePermissionAccess {
     private FeaturePermissionAccess() {}
 
@@ -27,7 +30,10 @@ public final class FeaturePermissionAccess {
 
         switch (capability) {
             case POPUP:
-                return Settings.canDrawOverlays(context);
+                return AccessibilityPopupCapability.isAvailable(
+                        MyAccessibilityService.getInstance() != null,
+                        new AccessibilityDisclosureConsent(context).hasCurrentConsent()
+                );
             case SOUND_MODE:
                 NotificationManager notificationManager = (NotificationManager)
                         context.getSystemService(Context.NOTIFICATION_SERVICE);

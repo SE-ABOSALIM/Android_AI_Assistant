@@ -47,8 +47,8 @@
     <string name="permission_camera_description">Enables flashlight control; taking a photo opens the system camera</string>
     <string name="permission_accessibility_title">Accessibility Service</string>
     <string name="permission_accessibility_description">Required for supported device and app UI actions</string>
-    <string name="permission_popup_title">Popup Access</string>
-    <string name="permission_popup_description">Required for assistant choices and interaction UI outside the app</string>
+    <string name="permission_popup_title">Assistant Popups</string>
+    <string name="permission_popup_description">Provided through the active Accessibility Service for choices and interaction UI outside the app</string>
     <string name="permission_sound_title">Sound Mode Access</string>
     <string name="permission_sound_description">Enables sound and true silent mode control</string>
     <string name="permission_system_settings_title">System Settings Access</string>

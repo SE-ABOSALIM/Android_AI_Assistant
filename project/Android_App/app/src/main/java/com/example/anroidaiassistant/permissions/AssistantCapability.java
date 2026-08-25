@@ -3,7 +3,7 @@ package com.example.anroidaiassistant.permissions;
 public enum AssistantCapability {
     MICROPHONE(true, AccessType.RUNTIME_PERMISSION),
     ACCESSIBILITY_SERVICE(true, AccessType.SERVICE),
-    POPUP(true, AccessType.SPECIAL_ACCESS),
+    POPUP(true, AccessType.SERVICE),
     CONTACTS(false, AccessType.RUNTIME_PERMISSION),
     DIRECT_CALL(false, AccessType.RUNTIME_PERMISSION),
     PHONE_STATE(false, AccessType.RUNTIME_PERMISSION),

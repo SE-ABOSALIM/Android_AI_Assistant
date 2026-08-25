@@ -48,8 +48,8 @@
     <string name="permission_camera_description">يمكّن التحكم بالمصباح، بينما يفتح التصوير كاميرا النظام</string>
     <string name="permission_accessibility_title">خدمة إمكانية الوصول</string>
     <string name="permission_accessibility_description">مطلوب لإجراءات واجهة الجهاز والتطبيقات المدعومة</string>
-    <string name="permission_popup_title">إذن الظهور فوق التطبيقات</string>
-    <string name="permission_popup_description">مطلوب لواجهة الاختيار والتفاعل خارج التطبيق</string>
+    <string name="permission_popup_title">نوافذ المساعد المنبثقة</string>
+    <string name="permission_popup_description">توفرها خدمة إمكانية الوصول النشطة لواجهة الاختيار والتفاعل خارج التطبيق</string>
     <string name="permission_sound_title">وصول وضع الصوت</string>
     <string name="permission_sound_description">يمكّن التحكم بالصوت والوضع الصامت الحقيقي</string>
     <string name="permission_system_settings_title">وصول إعدادات النظام</string>
