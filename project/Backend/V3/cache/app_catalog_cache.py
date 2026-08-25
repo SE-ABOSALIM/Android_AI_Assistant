@@ -28,7 +28,7 @@ async def get_cached_app_catalog_snapshot(session_id: Optional[str]) -> Optional
 
         return _catalog_from_payload(json.loads(raw_payload))
     except Exception as exc:
-        _log_cache_error_once(f"failed to read app catalog cache | session_id={session_id} | error={exc}")
+        _log_cache_error_once(f"failed to read app catalog cache | error={type(exc).__name__}")
         return None
     finally:
         await close_redis_client(client)
@@ -55,7 +55,7 @@ async def set_cached_app_catalog_snapshot(
         )
         return True
     except Exception as exc:
-        _log_cache_error_once(f"failed to write app catalog cache | session_id={session_id} | error={exc}")
+        _log_cache_error_once(f"failed to write app catalog cache | error={type(exc).__name__}")
         return False
     finally:
         await close_redis_client(client)
@@ -74,7 +74,7 @@ async def delete_cached_app_catalog_snapshot(session_id: Optional[str]) -> bool:
         deleted_count = await client.delete(_catalog_key(str(session_id).strip()))
         return bool(deleted_count)
     except Exception as exc:
-        _log_cache_error_once(f"failed to delete app catalog cache | session_id={session_id} | error={exc}")
+        _log_cache_error_once(f"failed to delete app catalog cache | error={type(exc).__name__}")
         return False
     finally:
         await close_redis_client(client)

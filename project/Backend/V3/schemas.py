@@ -1,31 +1,76 @@
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+import json
+from typing import Annotated, Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field, StringConstraints, field_validator
+
+from V3.security.request_limits import (
+    MAX_ALIAS_LENGTH,
+    MAX_APP_ALIASES,
+    MAX_APP_CATALOG_ENTRIES,
+    MAX_APP_LABEL_LENGTH,
+    MAX_APP_VERSION_LENGTH,
+    MAX_CATALOG_VERSION_LENGTH,
+    MAX_CUSTOM_COMMAND_NAME_LENGTH,
+    MAX_CUSTOM_COMMAND_STEPS,
+    MAX_IDENTIFIER_LENGTH,
+    MAX_INTENT_LENGTH,
+    MAX_LANGUAGE_LENGTH,
+    MAX_PACKAGE_NAME_LENGTH,
+    MAX_PARAMETER_KEYS,
+    MAX_PARAMETERS_DEPTH,
+    MAX_PARAMETERS_JSON_BYTES,
+    MAX_PLATFORM_LENGTH,
+    MAX_PREDICT_TEXT_LENGTH,
+    MAX_STEP_WAIT_AFTER_MS,
+    MAX_TEXT_ALTERNATIVES,
+)
+
+
+Identifier = Annotated[str, StringConstraints(max_length=MAX_IDENTIFIER_LENGTH)]
+Language = Annotated[str, StringConstraints(max_length=MAX_LANGUAGE_LENGTH)]
+PredictText = Annotated[str, StringConstraints(max_length=MAX_PREDICT_TEXT_LENGTH)]
+CatalogVersion = Annotated[str, StringConstraints(max_length=MAX_CATALOG_VERSION_LENGTH)]
+AppLabel = Annotated[str, StringConstraints(max_length=MAX_APP_LABEL_LENGTH)]
+PackageName = Annotated[str, StringConstraints(max_length=MAX_PACKAGE_NAME_LENGTH)]
+Alias = Annotated[str, StringConstraints(max_length=MAX_ALIAS_LENGTH)]
 
 
 class PredictRequest(BaseModel):
-    text: str
-    language: str
-    text_alternatives: List[str] = Field(default_factory=list)
-    session_id: Optional[str] = None
-    device_id: Optional[str] = None
-    catalog_version: Optional[str] = None
+    text: PredictText
+    language: Language
+    text_alternatives: List[PredictText] = Field(default_factory=list, max_length=MAX_TEXT_ALTERNATIVES)
+    session_id: Optional[Identifier] = None
+    device_id: Optional[Identifier] = None
+    catalog_version: Optional[CatalogVersion] = None
     has_search_input: bool = False
 
 
 class AppCatalogEntry(BaseModel):
-    label: str
-    package_name: str
-    aliases: List[str] = Field(default_factory=list)
+    label: AppLabel
+    package_name: PackageName
+    aliases: List[Alias] = Field(default_factory=list, max_length=MAX_APP_ALIASES)
 
 
 class AppCatalogRequest(BaseModel):
-    session_id: str
-    device_id: Optional[str] = None
-    platform: Optional[str] = "android"
-    app_version: Optional[str] = None
-    language: Optional[str] = None
-    catalog_version: Optional[str] = None
-    apps: List[AppCatalogEntry] = Field(default_factory=list)
+    session_id: Identifier
+    device_id: Optional[Identifier] = None
+    platform: Optional[Annotated[str, StringConstraints(max_length=MAX_PLATFORM_LENGTH)]] = "android"
+    app_version: Optional[Annotated[str, StringConstraints(max_length=MAX_APP_VERSION_LENGTH)]] = None
+    language: Optional[Language] = None
+    catalog_version: Optional[CatalogVersion] = None
+    apps: List[AppCatalogEntry] = Field(default_factory=list, max_length=MAX_APP_CATALOG_ENTRIES)
+
+
+class InstallationRegistrationRequest(BaseModel):
+    device_id: Annotated[str, StringConstraints(min_length=1, max_length=MAX_IDENTIFIER_LENGTH)]
+    platform: Annotated[str, StringConstraints(min_length=1, max_length=MAX_PLATFORM_LENGTH)] = "android"
+    app_version: Optional[Annotated[str, StringConstraints(max_length=MAX_APP_VERSION_LENGTH)]] = None
+    language: Language = "TR"
+
+
+class InstallationRegistrationResponse(BaseModel):
+    credential: str
+    token_type: str = "Bearer"
 
 
 class AppCatalogResponse(BaseModel):
@@ -80,10 +125,19 @@ class CommandHistoryMutationResponse(BaseModel):
 
 
 class CustomCommandStep(BaseModel):
-    intent: str
-    parameters: Dict[str, Any] = Field(default_factory=dict)
-    wait_after_ms: int = 0
+    intent: Annotated[str, StringConstraints(max_length=MAX_INTENT_LENGTH)]
+    parameters: Dict[str, Any] = Field(default_factory=dict, max_length=MAX_PARAMETER_KEYS)
+    wait_after_ms: int = Field(default=0, ge=0, le=MAX_STEP_WAIT_AFTER_MS)
     stop_on_failure: bool = True
+
+    @field_validator("parameters")
+    @classmethod
+    def validate_parameters(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        _validate_json_depth(value)
+        serialized = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        if len(serialized.encode("utf-8")) > MAX_PARAMETERS_JSON_BYTES:
+            raise ValueError("parameters payload is too large")
+        return value
 
 
 class CustomCommandItem(BaseModel):
@@ -101,10 +155,10 @@ class CustomCommandListResponse(BaseModel):
 
 
 class CustomCommandMutationRequest(BaseModel):
-    device_id: str
-    language: str = "TR"
-    name: str
-    steps: List[CustomCommandStep] = Field(default_factory=list)
+    device_id: Identifier
+    language: Language = "TR"
+    name: Annotated[str, StringConstraints(max_length=MAX_CUSTOM_COMMAND_NAME_LENGTH)]
+    steps: List[CustomCommandStep] = Field(default_factory=list, max_length=MAX_CUSTOM_COMMAND_STEPS)
 
 
 class CustomCommandMutationResponse(BaseModel):
@@ -134,3 +188,16 @@ class FinalResponse(BaseModel):
     raw_label: str
     processing_time_ms: float = 0.0
     top_predictions: List[Dict[str, Any]] = Field(default_factory=list)
+
+
+def _validate_json_depth(value: Any, depth: int = 0) -> None:
+    if depth > MAX_PARAMETERS_DEPTH:
+        raise ValueError("parameters payload is nested too deeply")
+    if isinstance(value, dict):
+        for key, nested_value in value.items():
+            if len(str(key)) > MAX_IDENTIFIER_LENGTH:
+                raise ValueError("parameter key is too long")
+            _validate_json_depth(nested_value, depth + 1)
+    elif isinstance(value, list):
+        for nested_value in value:
+            _validate_json_depth(nested_value, depth + 1)
