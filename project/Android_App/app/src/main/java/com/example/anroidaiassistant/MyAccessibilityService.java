@@ -88,6 +88,8 @@ public class MyAccessibilityService extends AccessibilityService {
     private boolean isPausedForPhoneCall = false;
     private boolean externalRecognizerAudioSourceEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
     private final RecognitionResultGuard recognitionResultGuard = new RecognitionResultGuard();
+    private final RecognitionInteractionTracker recognitionInteractionTracker =
+            new RecognitionInteractionTracker();
     private String latestPartialRecognitionText;
     private final Map<Integer, Boolean> streamMuteStateBeforeRecognizer = new HashMap<>();
     private RecognizerAudioSource activeRecognizerAudioSource;
@@ -222,16 +224,24 @@ public class MyAccessibilityService extends AccessibilityService {
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
         updateLanguage(selectedLanguage);
+    }
 
-        speechRecognizer.setRecognitionListener(new RecognitionListener() {
+    private RecognitionListener createRecognitionListener(long recognitionGeneration) {
+        return new RecognitionListener() {
             @Override
             public void onReadyForSpeech(Bundle params) {
+                if (!recognitionInteractionTracker.isCurrentRecognitionGeneration(recognitionGeneration)) {
+                    return;
+                }
                 isRecognizerReadyForSpeech = true;
                 showRecognizerReadyState();
                 scheduleRecognizerReadyWatchdog();
             }
             @Override
             public void onBeginningOfSpeech() {
+                if (!recognitionInteractionTracker.isCurrentRecognitionGeneration(recognitionGeneration)) {
+                    return;
+                }
                 clearRecognizerReadyWatchdog();
             }
             @Override
@@ -240,12 +250,18 @@ public class MyAccessibilityService extends AccessibilityService {
             public void onBufferReceived(byte[] buffer) {}
             @Override
             public void onEndOfSpeech() {
+                if (!recognitionInteractionTracker.isCurrentRecognitionGeneration(recognitionGeneration)) {
+                    return;
+                }
                 clearRecognizerReadyWatchdog();
                 isRecognizerReadyForSpeech = false;
             }
 
             @Override
             public void onError(int error) {
+                if (!recognitionInteractionTracker.isCurrentRecognitionGeneration(recognitionGeneration)) {
+                    return;
+                }
                 clearRecognizerReadyWatchdog();
                 if (recognitionResultGuard.isHandled()) {
                     return;
@@ -299,6 +315,9 @@ public class MyAccessibilityService extends AccessibilityService {
 
             @Override
             public void onResults(Bundle results) {
+                if (!recognitionInteractionTracker.isCurrentRecognitionGeneration(recognitionGeneration)) {
+                    return;
+                }
                 clearRecognizerReadyWatchdog();
                 if (recognitionResultGuard.isHandled()) {
                     return;
@@ -320,6 +339,9 @@ public class MyAccessibilityService extends AccessibilityService {
 
             @Override
             public void onPartialResults(Bundle partialResults) {
+                if (!recognitionInteractionTracker.isCurrentRecognitionGeneration(recognitionGeneration)) {
+                    return;
+                }
                 ArrayList<String> matches = partialResults.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
                 if (matches != null && !matches.isEmpty()) {
                     clearRecognizerReadyWatchdog();
@@ -335,10 +357,11 @@ public class MyAccessibilityService extends AccessibilityService {
             }
             @Override
             public void onEvent(int eventType, Bundle params) {}
-        });
+        };
     }
 
     private void destroySpeechRecognizer() {
+        recognitionInteractionTracker.invalidateRecognitionCallbacks();
         listeningRestartScheduler.cancel();
         clearRecognizerReadyWatchdog();
         clearPartialResultFallback();
@@ -371,6 +394,10 @@ public class MyAccessibilityService extends AccessibilityService {
 
         try {
             clearRecognizerReadyWatchdog();
+            long recognitionGeneration = recognitionInteractionTracker.beginRecognitionSession();
+            speechRecognizer.setRecognitionListener(
+                    createRecognitionListener(recognitionGeneration)
+            );
             isRecognitionSessionActive = true;
             isRecognizerReadyForSpeech = false;
             recognitionResultGuard.reset();
@@ -653,6 +680,7 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public void stopContinuousListening() {
+        recognitionInteractionTracker.invalidateInteractions();
         isListening = false;
         isPausedForPhoneCall = false;
         isSpellAppMode = false;
@@ -701,6 +729,7 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         isPausedForPhoneCall = true;
+        recognitionInteractionTracker.invalidateRecognitionCallbacks();
         isSpellAppMode = false;
         clearNumberSelection(false);
         hideGrid();
@@ -1000,12 +1029,23 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void sendPredictionRequest(String text, List<String> alternatives) {
         String executionId = CommandExecutor.newExecutionId();
+        long interactionValidity = recognitionInteractionTracker.captureInteractionValidity();
         if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
-            sendPredictionRequestWithCatalog(executionId, text, alternatives);
+            sendPredictionRequestWithCatalog(
+                    executionId,
+                    interactionValidity,
+                    text,
+                    alternatives
+            );
             return;
         }
 
-        pendingPrediction = new PendingPrediction(executionId, text, alternatives);
+        pendingPrediction = new PendingPrediction(
+                executionId,
+                interactionValidity,
+                text,
+                alternatives
+        );
         if (appCatalogSyncCall != null) {
             updateOverlayText(localizedOverlayString(R.string.catalog_syncing));
             return;
@@ -1019,7 +1059,14 @@ public class MyAccessibilityService extends AccessibilityService {
                 apiService,
                 sessionId,
                 selectedLanguage,
-                (success, message) -> mainHandler.post(() -> onAppCatalogSynced(sessionId, success, message))
+                (success, message) -> mainHandler.post(
+                        () -> onAppCatalogSynced(
+                                sessionId,
+                                interactionValidity,
+                                success,
+                                message
+                        )
+                )
         );
 
         if (appCatalogSyncCall == null) {
@@ -1029,7 +1076,15 @@ public class MyAccessibilityService extends AccessibilityService {
         }
     }
 
-    private void onAppCatalogSynced(String sessionId, boolean success, String message) {
+    private void onAppCatalogSynced(
+            String sessionId,
+            long interactionValidity,
+            boolean success,
+            String message
+    ) {
+        if (!recognitionInteractionTracker.isInteractionValid(interactionValidity)) {
+            return;
+        }
         if (!sessionId.equals(AssistantSession.getSessionId())) {
             return;
         }
@@ -1045,8 +1100,14 @@ public class MyAccessibilityService extends AccessibilityService {
         }
 
         if (prediction != null) {
+            if (!recognitionInteractionTracker.isInteractionValid(
+                    prediction.interactionValidity
+            )) {
+                return;
+            }
             sendPredictionRequestWithCatalog(
                     prediction.executionId,
+                    prediction.interactionValidity,
                     prediction.text,
                     prediction.alternatives
             );
@@ -1055,6 +1116,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private void sendPredictionRequestWithCatalog(
             String executionId,
+            long interactionValidity,
             String text,
             List<String> alternatives
     ) {
@@ -1069,6 +1131,9 @@ public class MyAccessibilityService extends AccessibilityService {
         apiService.predict(request).enqueue(new Callback<PredictResponse>() {
             @Override
             public void onResponse(Call<PredictResponse> call, Response<PredictResponse> response) {
+                if (!recognitionInteractionTracker.isInteractionValid(interactionValidity)) {
+                    return;
+                }
                 if (response.isSuccessful() && response.body() != null) {
                     PredictResponse body = response.body();
                     
@@ -1086,6 +1151,9 @@ public class MyAccessibilityService extends AccessibilityService {
             }
             @Override
             public void onFailure(Call<PredictResponse> call, Throwable t) {
+                if (!recognitionInteractionTracker.isInteractionValid(interactionValidity)) {
+                    return;
+                }
                 Log.e(TAG, "Prediction request failed", t);
                 showRequestError(getString(R.string.backend_unavailable));
             }
@@ -1132,6 +1200,7 @@ public class MyAccessibilityService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
+        recognitionInteractionTracker.invalidateInteractions();
         super.onDestroy();
         isListening = false;
         isPausedForPhoneCall = false;
@@ -1343,6 +1412,7 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
+        recognitionInteractionTracker.invalidateRecognitionCallbacks();
         listeningRestartScheduler.cancel();
         if (speechRecognizer != null) {
             try {
@@ -1550,11 +1620,18 @@ public class MyAccessibilityService extends AccessibilityService {
 
     private static final class PendingPrediction {
         private final String executionId;
+        private final long interactionValidity;
         private final String text;
         private final List<String> alternatives;
 
-        private PendingPrediction(String executionId, String text, List<String> alternatives) {
+        private PendingPrediction(
+                String executionId,
+                long interactionValidity,
+                String text,
+                List<String> alternatives
+        ) {
             this.executionId = executionId;
+            this.interactionValidity = interactionValidity;
             this.text = text;
             this.alternatives = alternatives == null ? null : new ArrayList<>(alternatives);
         }
