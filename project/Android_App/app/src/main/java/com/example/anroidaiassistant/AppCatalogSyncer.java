@@ -4,14 +4,13 @@ import com.example.anroidaiassistant.api.ApiService;
 import com.example.anroidaiassistant.api.dto.AppCatalogEntry;
 import com.example.anroidaiassistant.api.dto.AppCatalogRequest;
 import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
+import com.example.anroidaiassistant.apps.InstalledAppReader;
+import com.example.anroidaiassistant.apps.LaunchableApp;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.util.DeviceIdentity;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import android.content.Context;
-import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -87,15 +86,17 @@ public final class AppCatalogSyncer {
     }
 
     private static List<AppCatalogEntry> collectLaunchableApps(Context context) {
-        PackageManager packageManager = context.getPackageManager();
-        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        List<ResolveInfo> installedApps = packageManager.queryIntentActivities(mainIntent, 0);
+        return buildCatalogEntries(new InstalledAppReader().getLaunchableApps(context));
+    }
 
+    static List<AppCatalogEntry> buildCatalogEntries(List<LaunchableApp> installedApps) {
         List<AppCatalogEntry> apps = new ArrayList<>();
-        for (ResolveInfo app : installedApps) {
-            String packageName = app.activityInfo == null ? null : app.activityInfo.packageName;
-            String label = app.loadLabel(packageManager).toString();
+        if (installedApps == null) {
+            return apps;
+        }
+        for (LaunchableApp app : installedApps) {
+            String packageName = app == null ? null : app.getPackageName();
+            String label = app == null ? null : app.getLabel();
             if (!hasText(packageName) || !hasText(label)) {
                 continue;
             }
