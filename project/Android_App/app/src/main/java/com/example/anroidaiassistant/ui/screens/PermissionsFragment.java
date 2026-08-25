@@ -30,6 +30,8 @@ import androidx.fragment.app.Fragment;
 import com.example.anroidaiassistant.MainActivity;
 import com.example.anroidaiassistant.R;
 import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureFlow;
+import com.example.anroidaiassistant.permissions.AssistantCapability;
+import com.example.anroidaiassistant.permissions.FeaturePermissionFlow;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 
 import java.util.ArrayList;
@@ -104,27 +106,27 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
             return;
         }
 
-        PermissionGroup appPermissions = PermissionGroup.appPermissions(
+        PermissionGroup corePermissions = PermissionGroup.corePermissions(
                 getString(R.string.permissions_app_title),
                 getString(R.string.permissions_app_description),
-                runtimePermissions()
+                corePermissions()
         );
-        PermissionGroup advancedAccess = PermissionGroup.advancedAccess(
+        PermissionGroup optionalPermissions = PermissionGroup.optionalPermissions(
                 getString(R.string.permissions_advanced_title),
                 getString(R.string.permissions_advanced_description),
-                advancedPermissions()
+                optionalPermissions()
         );
 
         rowHolders.clear();
         contentContainer.removeAllViews();
 
         if (activeGroup == null) {
-            contentContainer.addView(createCategoryCard(appPermissions));
-            contentContainer.addView(createCategoryCard(advancedAccess));
+            contentContainer.addView(createCategoryCard(corePermissions));
+            contentContainer.addView(createCategoryCard(optionalPermissions));
         } else {
-            PermissionGroup group = activeGroup.kind == GroupKind.APP
-                    ? appPermissions
-                    : advancedAccess;
+            PermissionGroup group = activeGroup.kind == GroupKind.CORE
+                    ? corePermissions
+                    : optionalPermissions;
             activeGroup = group;
             contentContainer.addView(createDetailHeader(group));
             for (PermissionItem item : group.items) {
@@ -132,7 +134,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
             }
         }
 
-        refresh(appPermissions, advancedAccess);
+        refresh(corePermissions);
     }
 
     private View createDetailHeader(PermissionGroup group) {
@@ -181,7 +183,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
         int granted = grantedCount(group.items);
         boolean complete = granted == group.items.size();
         count.setText(getString(R.string.permissions_granted_count, granted, group.items.size()));
-        count.setTextColor(statusColor(complete));
+        count.setTextColor(statusColor(group.kind == GroupKind.OPTIONAL || complete));
         count.setTextSize(12);
         count.setTypeface(count.getTypeface(), android.graphics.Typeface.BOLD);
         header.addView(count);
@@ -215,8 +217,9 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
 
         int granted = grantedCount(group.items);
         boolean complete = granted == group.items.size();
-        int accentColor = statusColor(complete);
-        int softAccentColor = statusSoftColor(complete);
+        boolean statusComplete = group.kind == GroupKind.OPTIONAL || complete;
+        int accentColor = statusColor(statusComplete);
+        int softAccentColor = statusSoftColor(statusComplete);
 
         ImageView icon = new ImageView(context);
         icon.setImageResource(group.iconRes);
@@ -312,9 +315,9 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
         return new RowHolder(item, icon, switchView);
     }
 
-    private void refresh(PermissionGroup appPermissions, PermissionGroup advancedAccess) {
-        int total = appPermissions.items.size() + advancedAccess.items.size();
-        int granted = grantedCount(appPermissions.items) + grantedCount(advancedAccess.items);
+    private void refresh(PermissionGroup corePermissions) {
+        int total = corePermissions.items.size();
+        int granted = grantedCount(corePermissions.items);
         boolean complete = granted == total;
         int accentColor = statusColor(complete);
 
@@ -374,7 +377,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
         }
     }
 
-    private List<PermissionItem> runtimePermissions() {
+    private List<PermissionItem> corePermissions() {
         List<PermissionItem> items = new ArrayList<>();
         items.add(PermissionItem.runtime(
                 getString(R.string.permission_microphone_title),
@@ -382,43 +385,6 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                 R.drawable.ic_perm_mic,
                 Manifest.permission.RECORD_AUDIO
         ));
-        items.add(PermissionItem.runtime(
-                getString(R.string.permission_contacts_title),
-                getString(R.string.permission_contacts_description),
-                R.drawable.ic_perm_contacts,
-                Manifest.permission.READ_CONTACTS
-        ));
-        items.add(PermissionItem.runtime(
-                getString(R.string.permission_call_title),
-                getString(R.string.permission_call_description),
-                R.drawable.ic_perm_call,
-                Manifest.permission.CALL_PHONE
-        ));
-        items.add(PermissionItem.runtime(
-                getString(R.string.permission_phone_state_title),
-                getString(R.string.permission_phone_state_description),
-                R.drawable.ic_perm_phone_state,
-                Manifest.permission.READ_PHONE_STATE
-        ));
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            items.add(PermissionItem.runtime(
-                    getString(R.string.permission_answer_call_title),
-                    getString(R.string.permission_answer_call_description),
-                    R.drawable.ic_perm_answer,
-                    Manifest.permission.ANSWER_PHONE_CALLS
-            ));
-        }
-        items.add(PermissionItem.runtime(
-                getString(R.string.permission_camera_title),
-                getString(R.string.permission_camera_description),
-                R.drawable.ic_perm_camera,
-                Manifest.permission.CAMERA
-        ));
-        return items;
-    }
-
-    private List<PermissionItem> advancedPermissions() {
-        List<PermissionItem> items = new ArrayList<>();
         items.add(PermissionItem.advanced(
                 getString(R.string.permission_accessibility_title),
                 getString(R.string.permission_accessibility_description),
@@ -436,28 +402,81 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                         Uri.parse("package:" + requireContext().getPackageName())
                 )
         ));
-        items.add(PermissionItem.advanced(
+        return items;
+    }
+
+    private List<PermissionItem> optionalPermissions() {
+        List<PermissionItem> items = new ArrayList<>();
+        items.add(PermissionItem.featureRuntime(
+                getString(R.string.permission_contacts_title),
+                getString(R.string.permission_contacts_description),
+                R.drawable.ic_perm_contacts,
+                AssistantCapability.CONTACTS,
+                Manifest.permission.READ_CONTACTS
+        ));
+        items.add(PermissionItem.featureRuntime(
+                getString(R.string.permission_call_title),
+                getString(R.string.permission_call_description),
+                R.drawable.ic_perm_call,
+                AssistantCapability.DIRECT_CALL,
+                Manifest.permission.CALL_PHONE
+        ));
+        items.add(PermissionItem.featureRuntime(
+                getString(R.string.permission_phone_state_title),
+                getString(R.string.permission_phone_state_description),
+                R.drawable.ic_perm_phone_state,
+                AssistantCapability.PHONE_STATE,
+                Manifest.permission.READ_PHONE_STATE
+        ));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            items.add(PermissionItem.featureRuntime(
+                    getString(R.string.permission_answer_call_title),
+                    getString(R.string.permission_answer_call_description),
+                    R.drawable.ic_perm_answer,
+                    AssistantCapability.ANSWER_CALL,
+                    Manifest.permission.ANSWER_PHONE_CALLS
+            ));
+        }
+        items.add(PermissionItem.featureRuntime(
+                getString(R.string.permission_camera_title),
+                getString(R.string.permission_camera_description),
+                R.drawable.ic_perm_camera,
+                AssistantCapability.CAMERA,
+                Manifest.permission.CAMERA
+        ));
+        items.add(PermissionItem.featureAdvanced(
                 getString(R.string.permission_sound_title),
                 getString(R.string.permission_sound_description),
                 R.drawable.ic_perm_sound,
-                fragment -> fragment.isNotificationPolicyAccessGranted(),
-                () -> openSettings(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                AssistantCapability.SOUND_MODE,
+                fragment -> fragment.isNotificationPolicyAccessGranted()
         ));
-        items.add(PermissionItem.advanced(
+        items.add(PermissionItem.featureAdvanced(
                 getString(R.string.permission_system_settings_title),
                 getString(R.string.permission_system_settings_description),
                 R.drawable.ic_perm_brightness,
+                AssistantCapability.SYSTEM_SETTINGS,
                 fragment -> Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-                        || Settings.System.canWrite(fragment.requireContext()),
-                () -> openSettings(
-                        Settings.ACTION_MANAGE_WRITE_SETTINGS,
-                        Uri.parse("package:" + requireContext().getPackageName())
-                )
+                        || Settings.System.canWrite(fragment.requireContext())
         ));
         return items;
     }
 
     private void requestOrOpen(PermissionItem item) {
+        if (item.featureCapability != null) {
+            if (!item.isGranted(requireContext(), this)) {
+                FeaturePermissionFlow.requestFromPermissionsScreen(
+                        requireActivity(),
+                        item.featureCapability,
+                        () -> {
+                            if (isAdded()) {
+                                render();
+                            }
+                        }
+                );
+            }
+            return;
+        }
         if (item.runtimePermission != null) {
             if (!item.isGranted(requireContext(), this)) {
                 requestPermissions(new String[]{item.runtimePermission}, REQUEST_RUNTIME_PERMISSION);
@@ -519,8 +538,8 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
     }
 
     private enum GroupKind {
-        APP,
-        ADVANCED
+        CORE,
+        OPTIONAL
     }
 
     private static final class PermissionGroup {
@@ -544,9 +563,9 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
             this.items = items;
         }
 
-        static PermissionGroup appPermissions(String title, String description, List<PermissionItem> items) {
+        static PermissionGroup corePermissions(String title, String description, List<PermissionItem> items) {
             return new PermissionGroup(
-                    GroupKind.APP,
+                    GroupKind.CORE,
                     title,
                     description,
                     R.drawable.ic_perm_shield,
@@ -554,9 +573,9 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
             );
         }
 
-        static PermissionGroup advancedAccess(String title, String description, List<PermissionItem> items) {
+        static PermissionGroup optionalPermissions(String title, String description, List<PermissionItem> items) {
             return new PermissionGroup(
-                    GroupKind.ADVANCED,
+                    GroupKind.OPTIONAL,
                     title,
                     description,
                     R.drawable.ic_perm_accessibility,
@@ -574,6 +593,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
         final String description;
         @DrawableRes final int iconRes;
         @Nullable final String runtimePermission;
+        @Nullable final AssistantCapability featureCapability;
         @Nullable final GrantedCheck advancedCheck;
         @Nullable final Runnable action;
 
@@ -582,6 +602,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                 String description,
                 @DrawableRes int iconRes,
                 @Nullable String runtimePermission,
+                @Nullable AssistantCapability featureCapability,
                 @Nullable GrantedCheck advancedCheck,
                 @Nullable Runnable action
         ) {
@@ -589,6 +610,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
             this.description = description;
             this.iconRes = iconRes;
             this.runtimePermission = runtimePermission;
+            this.featureCapability = featureCapability;
             this.advancedCheck = advancedCheck;
             this.action = action;
         }
@@ -599,7 +621,25 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                 @DrawableRes int iconRes,
                 String permission
         ) {
-            return new PermissionItem(title, description, iconRes, permission, null, null);
+            return new PermissionItem(title, description, iconRes, permission, null, null, null);
+        }
+
+        static PermissionItem featureRuntime(
+                String title,
+                String description,
+                @DrawableRes int iconRes,
+                AssistantCapability capability,
+                String permission
+        ) {
+            return new PermissionItem(
+                    title,
+                    description,
+                    iconRes,
+                    permission,
+                    capability,
+                    null,
+                    null
+            );
         }
 
         static PermissionItem advanced(
@@ -609,7 +649,25 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                 GrantedCheck check,
                 Runnable action
         ) {
-            return new PermissionItem(title, description, iconRes, null, check, action);
+            return new PermissionItem(title, description, iconRes, null, null, check, action);
+        }
+
+        static PermissionItem featureAdvanced(
+                String title,
+                String description,
+                @DrawableRes int iconRes,
+                AssistantCapability capability,
+                GrantedCheck check
+        ) {
+            return new PermissionItem(
+                    title,
+                    description,
+                    iconRes,
+                    null,
+                    capability,
+                    check,
+                    null
+            );
         }
 
         boolean isGranted(Context context, PermissionsFragment fragment) {
