@@ -197,19 +197,19 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_BLUETOOTH": _contract(
         "SET_BLUETOOTH",
-        threshold=0.95,
+        threshold=0.98,
         required=("state",),
         android_supported=True,
     ),
     "SET_FLASHLIGHT": _contract(
         "SET_FLASHLIGHT",
-        threshold=0.95,
+        threshold=0.98,
         required=("state",),
         android_supported=True,
     ),
     "SET_KEYBOARD": _contract(
         "SET_KEYBOARD",
-        threshold=0.95,
+        threshold=0.98,
         required=("state",),
         android_supported=True,
     ),
@@ -227,7 +227,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_LOCATION": _contract(
         "SET_LOCATION",
-        threshold=0.95,
+        threshold=0.98,
         required=("state",),
         android_supported=True,
     ),
@@ -239,7 +239,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_MOBILE_HOTSPOT": _contract(
         "SET_MOBILE_HOTSPOT",
-        threshold=0.95,
+        threshold=0.98,
         required=("state",),
         android_supported=True,
     ),
@@ -260,7 +260,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     ),
     "SET_WIFI": _contract(
         "SET_WIFI",
-        threshold=0.95,
+        threshold=0.98,
         required=("state",),
         android_supported=True,
     ),
