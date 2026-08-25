@@ -84,9 +84,8 @@ public class BrightnessCommandHandlerTest {
 
         assertEquals(Integer.valueOf(120), settingsAccess.values.get(Settings.System.SCREEN_BRIGHTNESS));
         assertTrue(settingsAccess.writes.isEmpty());
-        assertEquals(1, settingsAccess.permissionScreenOpenCount);
         assertEquals(
-                Collections.singletonList("Allow modify system settings to adjust brightness"),
+                Collections.singletonList("System settings access is required for brightness control"),
                 messages
         );
     }
@@ -99,7 +98,6 @@ public class BrightnessCommandHandlerTest {
         private final Map<String, Integer> values = new HashMap<>();
         private final List<String> writes = new ArrayList<>();
         private boolean canWrite = true;
-        private int permissionScreenOpenCount;
 
         @Override
         public boolean canWrite(Context context) {
@@ -116,11 +114,6 @@ public class BrightnessCommandHandlerTest {
         public void putInt(Context context, String name, int value) {
             values.put(name, value);
             writes.add(name + "=" + value);
-        }
-
-        @Override
-        public void openWriteSettingsPermission(Context context) {
-            permissionScreenOpenCount++;
         }
     }
 }

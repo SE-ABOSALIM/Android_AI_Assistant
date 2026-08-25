@@ -1,7 +1,9 @@
 package com.example.anroidaiassistant.executor.handlers;
 
+import android.Manifest;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
@@ -69,6 +71,11 @@ public final class SystemSettingCommandHandler implements CommandHandler {
             context.showMessage("Flashlight control is unavailable");
             return;
         }
+        if (androidContext.checkSelfPermission(Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            context.showMessage("Camera permission is required for flashlight");
+            return;
+        }
 
         CameraManager cameraManager = (CameraManager) androidContext.getSystemService(Context.CAMERA_SERVICE);
         if (cameraManager == null) {
@@ -102,6 +109,10 @@ public final class SystemSettingCommandHandler implements CommandHandler {
         Context androidContext = context.getAndroidContext();
         if (androidContext == null) {
             context.showMessage("Sound mode control is unavailable");
+            return;
+        }
+        if (!hasNotificationPolicyAccess(androidContext)) {
+            context.showMessage("Do Not Disturb access is required for sound mode control");
             return;
         }
 
@@ -175,10 +186,6 @@ public final class SystemSettingCommandHandler implements CommandHandler {
     }
 
     private boolean setInterruptionFilterIfAllowed(Context androidContext, int interruptionFilter) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return false;
-        }
-
         NotificationManager notificationManager =
                 (NotificationManager) androidContext.getSystemService(Context.NOTIFICATION_SERVICE);
         if (notificationManager == null || !notificationManager.isNotificationPolicyAccessGranted()) {
@@ -192,6 +199,16 @@ public final class SystemSettingCommandHandler implements CommandHandler {
             Log.e(TAG, "Failed to set interruption filter", exception);
             return false;
         }
+    }
+
+    private boolean hasNotificationPolicyAccess(Context androidContext) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return true;
+        }
+        NotificationManager notificationManager =
+                (NotificationManager) androidContext.getSystemService(Context.NOTIFICATION_SERVICE);
+        return notificationManager != null
+                && notificationManager.isNotificationPolicyAccessGranted();
     }
 
     private boolean tryMuteRingStream(AudioManager audioManager) {
