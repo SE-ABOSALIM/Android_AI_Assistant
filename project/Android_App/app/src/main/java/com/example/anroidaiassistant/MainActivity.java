@@ -6,6 +6,7 @@ import com.example.anroidaiassistant.api.dto.AppCatalogResponse;
 import com.example.anroidaiassistant.api.dto.AppCatalogStatusResponse;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureFlow;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.example.anroidaiassistant.session.AssistantSession;
 import com.example.anroidaiassistant.ui.screens.BackPressHandler;
@@ -16,6 +17,7 @@ import com.example.anroidaiassistant.ui.screens.PermissionsFragment;
 import com.example.anroidaiassistant.ui.screens.SettingsFragment;
 import com.example.anroidaiassistant.util.DeviceIdentity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
@@ -79,9 +81,29 @@ public class MainActivity extends AppCompatActivity {
         apiService = RetrofitClient.getClient().create(ApiService.class);
         commandExecutor = new CommandExecutor(this);
         setupBottomNavigation(savedInstanceState);
+        handleAccessibilityDisclosureIntent(getIntent());
 
         refreshListeningUiState();
         warmUpAppCatalog();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleAccessibilityDisclosureIntent(intent);
+    }
+
+    private void handleAccessibilityDisclosureIntent(Intent intent) {
+        if (intent == null
+                || !intent.getBooleanExtra(
+                        AccessibilityDisclosureFlow.EXTRA_REQUEST_DISCLOSURE,
+                        false
+                )) {
+            return;
+        }
+        intent.removeExtra(AccessibilityDisclosureFlow.EXTRA_REQUEST_DISCLOSURE);
+        AccessibilityDisclosureFlow.show(this, isAssistantAccessibilityServiceEnabled());
     }
 
     private void setupBottomNavigation(Bundle savedInstanceState) {

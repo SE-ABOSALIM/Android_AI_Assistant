@@ -1,5 +1,7 @@
 package com.example.anroidaiassistant;
 
+import com.example.anroidaiassistant.accessibility.consent.AccessibilityDisclosureConsent;
+
 import com.example.anroidaiassistant.api.ApiService;
 import com.example.anroidaiassistant.api.RetrofitClient;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
@@ -1802,6 +1804,9 @@ public class MyAccessibilityService extends AccessibilityService {
     }
 
     public boolean hasSearchInputAvailable() {
+        if (!new AccessibilityDisclosureConsent(this).hasCurrentConsent()) {
+            return false;
+        }
         return searchInputController != null && searchInputController.hasSearchInputAvailable();
     }
 
