@@ -17,6 +17,15 @@ import java.util.Locale;
 
 public final class AppLauncher {
     private static final String TAG = "AppLauncher";
+    private final PackageActionGateway packageActionGateway;
+
+    public AppLauncher() {
+        this(new AndroidPackageActionGateway());
+    }
+
+    AppLauncher(PackageActionGateway packageActionGateway) {
+        this.packageActionGateway = packageActionGateway;
+    }
 
     public boolean launchPackage(
             Context context,
@@ -24,17 +33,12 @@ public final class AppLauncher {
             String label,
             CommandExecutionContext executionContext
     ) {
-        PackageManager packageManager = context.getPackageManager();
-        Intent intent = packageManager.getLaunchIntentForPackage(packageName);
-        if (intent == null) {
+        try {
+            if (packageActionGateway.launch(context, packageName)) {
+                return true;
+            }
             executionContext.showMessage("App not found. Please spell the app name.");
             return false;
-        }
-
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        try {
-            context.startActivity(intent);
-            return true;
         } catch (Exception exception) {
             Log.e(TAG, "Failed to launch app: " + packageName, exception);
             executionContext.showMessage("Could not open " + firstNonEmpty(label, "app"));
@@ -53,13 +57,12 @@ public final class AppLauncher {
             return false;
         }
 
-        Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-        intent.setData(Uri.parse("package:" + packageName));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
         try {
-            context.startActivity(intent);
-            return true;
+            if (packageActionGateway.openAppInfo(context, packageName)) {
+                return true;
+            }
+            executionContext.showMessage("Could not open app info for " + firstNonEmpty(label, "app"));
+            return false;
         } catch (Exception exception) {
             Log.e(TAG, "Failed to open app info: " + packageName, exception);
             executionContext.showMessage("Could not open app info for " + firstNonEmpty(label, "app"));
@@ -78,13 +81,11 @@ public final class AppLauncher {
             return false;
         }
 
-        Intent intent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
-        intent.setData(Uri.parse("package:" + packageName));
-        intent.putExtra(Intent.EXTRA_RETURN_RESULT, false);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
         try {
-            context.startActivity(intent);
+            if (!packageActionGateway.requestUninstall(context, packageName)) {
+                executionContext.showMessage("Could not uninstall " + firstNonEmpty(label, "app"));
+                return false;
+            }
             MyAccessibilityService service = MyAccessibilityService.getInstance();
             if (service != null) {
                 service.confirmSystemUninstallDialog(packageName, label);
@@ -169,5 +170,46 @@ public final class AppLauncher {
 
     private boolean hasText(String value) {
         return TextNormalizer.hasText(value);
+    }
+
+    interface PackageActionGateway {
+        boolean launch(Context context, String packageName);
+
+        boolean openAppInfo(Context context, String packageName);
+
+        boolean requestUninstall(Context context, String packageName);
+    }
+
+    private static final class AndroidPackageActionGateway implements PackageActionGateway {
+        @Override
+        public boolean launch(Context context, String packageName) {
+            PackageManager packageManager = context.getPackageManager();
+            Intent intent = packageManager.getLaunchIntentForPackage(packageName);
+            if (intent == null) {
+                return false;
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        }
+
+        @Override
+        public boolean openAppInfo(Context context, String packageName) {
+            Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+            intent.setData(Uri.parse("package:" + packageName));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        }
+
+        @Override
+        public boolean requestUninstall(Context context, String packageName) {
+            Intent intent = new Intent(Intent.ACTION_UNINSTALL_PACKAGE);
+            intent.setData(Uri.parse("package:" + packageName));
+            intent.putExtra(Intent.EXTRA_RETURN_RESULT, false);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(intent);
+            return true;
+        }
     }
 }
