@@ -566,7 +566,6 @@ public final class QuickSettingsTileController {
 
     private void moveToNextQuickSettingsPage(int attempt) {
         if (attempt == 0) {
-            globalActionPerformer.perform(AccessibilityService.GLOBAL_ACTION_QUICK_SETTINGS);
             return;
         }
 
