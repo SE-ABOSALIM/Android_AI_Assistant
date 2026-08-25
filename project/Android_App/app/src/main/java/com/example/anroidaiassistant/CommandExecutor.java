@@ -20,8 +20,10 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -30,6 +32,7 @@ import retrofit2.Response;
 public class CommandExecutor {
 
     private static final Object CUSTOM_COMMAND_LOCK = new Object();
+    private static final int MAX_RETAINED_EXECUTION_IDS = 128;
     private static CommandExecutor activeCustomCommandExecutor;
 
     private final Context context;
@@ -38,6 +41,8 @@ public class CommandExecutor {
     private final CommandDispatcher commandDispatcher;
     private final ApiService apiService;
     private final Handler mainHandler;
+    private final Object executionIdsLock = new Object();
+    private final LinkedHashSet<String> retainedExecutionIds = new LinkedHashSet<>();
     private boolean isCustomCommandRunning = false;
     private boolean isCustomCommandCancelled = false;
     private Runnable pendingCustomCommandRunnable;
@@ -65,6 +70,10 @@ public class CommandExecutor {
     }
 
     public void executeCommand(PredictResponse response) {
+        executeCommand(newExecutionId(), response);
+    }
+
+    public void executeCommand(String executionId, PredictResponse response) {
         if (response == null) {
             showMessage("No response from backend");
             return;
@@ -104,15 +113,49 @@ public class CommandExecutor {
         }
 
         Map<String, Object> parameters = response.getParameters();
+        String effectiveExecutionId = hasText(executionId) ? executionId : newExecutionId();
         if ("RUN_CUSTOM_COMMAND".equalsIgnoreCase(intent)) {
+            if (!tryClaimExecution(effectiveExecutionId)) {
+                return;
+            }
             executeCustomCommand(parameters);
             return;
         }
 
+        if (!tryClaimExecution(effectiveExecutionId)) {
+            return;
+        }
         if (commandDispatcher.dispatch(intent, parameters, executionContext)) {
             return;
         }
+        releaseExecution(effectiveExecutionId);
         showMessage("Unsupported intent: " + intent);
+    }
+
+    static String newExecutionId() {
+        return UUID.randomUUID().toString();
+    }
+
+    private boolean tryClaimExecution(String executionId) {
+        synchronized (executionIdsLock) {
+            if (retainedExecutionIds.contains(executionId)) {
+                return false;
+            }
+            retainedExecutionIds.add(executionId);
+            if (retainedExecutionIds.size() > MAX_RETAINED_EXECUTION_IDS) {
+                retainedExecutionIds.remove(retainedExecutionIds.iterator().next());
+            }
+            return true;
+        }
+    }
+
+    private void releaseExecution(String executionId) {
+        if (!hasText(executionId)) {
+            return;
+        }
+        synchronized (executionIdsLock) {
+            retainedExecutionIds.remove(executionId);
+        }
     }
 
     private void executeCustomCommand(Map<String, Object> parameters) {

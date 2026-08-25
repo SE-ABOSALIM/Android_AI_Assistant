@@ -75,6 +75,29 @@ public class QuickSettingsTileControllerTest {
     }
 
     @Test
+    public void firstSearchMiss_doesNotReopenQuickSettings() {
+        FakeAccessibilityService service = new FakeAccessibilityService();
+        FakeGlobalActionPerformer globalActions = new FakeGlobalActionPerformer();
+        FakeDelayScheduler scheduler = new FakeDelayScheduler();
+        FakePageMover pageMover = new FakePageMover();
+        QuickSettingsTileController controller = controller(
+                service,
+                globalActions,
+                scheduler,
+                pageMover
+        );
+
+        assertTrue(controller.setTileState("SET_WIFI", "on", null));
+        scheduler.runNext();
+
+        assertEquals(1, globalActions.actions.size());
+        assertEquals(1, service.rootReadCount);
+        assertEquals(1, scheduler.pendingCount());
+        assertEquals(Arrays.asList(450L, 450L), scheduler.delays);
+        assertEquals(0, pageMover.leftMoves);
+    }
+
+    @Test
     public void searchExhaustion_isBoundedAndTerminates() {
         FakeAccessibilityService service = new FakeAccessibilityService();
         FakeGlobalActionPerformer globalActions = new FakeGlobalActionPerformer();
@@ -94,6 +117,7 @@ public class QuickSettingsTileControllerTest {
         assertEquals(4, scheduler.executedCount);
         assertEquals(Arrays.asList(450L, 450L, 450L, 450L), scheduler.delays);
         assertEquals(2, pageMover.leftMoves);
+        assertEquals(1, globalActions.actions.size());
         assertEquals(0, scheduler.pendingCount());
     }
 

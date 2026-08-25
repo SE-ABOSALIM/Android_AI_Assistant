@@ -40,6 +40,30 @@ public class CommandExecutorTest {
     }
 
     @Test
+    public void sameExecutionId_deliveredTwice_dispatchesOnce() {
+        List<String> dispatchedValues = new ArrayList<>();
+        CommandExecutor executor = executorWithRecordingHandler(dispatchedValues, new ArrayList<>());
+        PredictResponse response = acceptedResponse("Chrome");
+
+        executor.executeCommand("execution-1", response);
+        executor.executeCommand("execution-1", response);
+
+        assertEquals(Collections.singletonList("Chrome"), dispatchedValues);
+    }
+
+    @Test
+    public void differentExecutionIds_withIdenticalCommand_dispatchTwice() {
+        List<String> dispatchedValues = new ArrayList<>();
+        CommandExecutor executor = executorWithRecordingHandler(dispatchedValues, new ArrayList<>());
+        PredictResponse response = acceptedResponse("Chrome");
+
+        executor.executeCommand("execution-1", response);
+        executor.executeCommand("execution-2", response);
+
+        assertEquals(List.of("Chrome", "Chrome"), dispatchedValues);
+    }
+
+    @Test
     public void nullResponseDoesNotDispatchAndReportsCurrentMessage() {
         List<String> dispatchedValues = new ArrayList<>();
         List<String> messages = new ArrayList<>();
@@ -70,7 +94,7 @@ public class CommandExecutorTest {
         CommandHandler handler = new CommandHandler() {
             @Override
             public String getIntent() {
-                return "TEST_INTENT";
+                return "OPEN_APP";
             }
 
             @Override
@@ -84,7 +108,7 @@ public class CommandExecutorTest {
     }
 
     private PredictResponse acceptedResponse(String value) {
-        return responseForIntent("TEST_INTENT", value);
+        return responseForIntent("OPEN_APP", value);
     }
 
     private PredictResponse responseForIntent(String intent, String value) {
