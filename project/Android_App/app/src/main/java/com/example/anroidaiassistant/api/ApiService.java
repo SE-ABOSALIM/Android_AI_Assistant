@@ -6,6 +6,8 @@ import com.example.anroidaiassistant.api.dto.AppCatalogStatusResponse;
 import com.example.anroidaiassistant.api.dto.CustomCommandListResponse;
 import com.example.anroidaiassistant.api.dto.CustomCommandMutationRequest;
 import com.example.anroidaiassistant.api.dto.CustomCommandMutationResponse;
+import com.example.anroidaiassistant.api.dto.InstallationRegistrationRequest;
+import com.example.anroidaiassistant.api.dto.InstallationRegistrationResponse;
 import com.example.anroidaiassistant.api.dto.PredictRequest;
 import com.example.anroidaiassistant.api.dto.PredictResponse;
 
@@ -19,6 +21,11 @@ import retrofit2.http.PUT;
 import retrofit2.http.Query;
 
 public interface ApiService {
+    @POST("installations/register")
+    Call<InstallationRegistrationResponse> registerInstallation(
+            @Body InstallationRegistrationRequest request
+    );
+
     @POST("app-catalog")
     Call<AppCatalogResponse> syncAppCatalog(@Body AppCatalogRequest request);
 

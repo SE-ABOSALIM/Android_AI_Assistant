@@ -5,6 +5,7 @@ from uuid import uuid4
 
 from V3 import main
 from V3.schemas import AppCatalogRequest
+from V3.security.authentication import AuthenticatedInstallation
 
 
 class _FakeTransaction:
@@ -81,6 +82,13 @@ def _catalog_result():
     }
 
 
+def _authenticated_stale_device():
+    return AuthenticatedInstallation(
+        device_ref_id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+        device_id="stale-device",
+    )
+
+
 class DatabaseRetentionTests(unittest.IsolatedAsyncioTestCase):
     async def test_staleDevice_doesNotDeleteDevice(self):
         records = _PersistentDeviceRecords()
@@ -123,7 +131,7 @@ class DatabaseRetentionTests(unittest.IsolatedAsyncioTestCase):
             patch.object(main, "save_app_catalog", return_value=_catalog_result()),
             patch.object(main, "save_app_catalog_snapshot", new=AsyncMock(return_value=False)),
         ):
-            await main.app_catalog(_catalog_request())
+            await main.app_catalog(_catalog_request(), _authenticated_stale_device())
 
         for table_name, row_ids in expected_rows.items():
             with self.subTest(table_name=table_name):
@@ -165,7 +173,7 @@ class DatabaseRetentionTests(unittest.IsolatedAsyncioTestCase):
             patch.object(main, "save_app_catalog", return_value=_catalog_result()),
             patch.object(main, "save_app_catalog_snapshot", new=AsyncMock(return_value=False)),
         ):
-            await main.app_catalog(_catalog_request())
+            await main.app_catalog(_catalog_request(), _authenticated_stale_device())
 
         open_connection.assert_not_awaited()
 
@@ -186,6 +194,10 @@ class DatabaseRetentionTests(unittest.IsolatedAsyncioTestCase):
             response = await main.remove_custom_command(
                 command_id=command_id,
                 device_id="device-id",
+                identity=AuthenticatedInstallation(
+                    device_ref_id=str(records.device_ref_id),
+                    device_id="device-id",
+                ),
             )
 
         self.assertTrue(response.accepted)

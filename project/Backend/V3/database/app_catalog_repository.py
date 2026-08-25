@@ -73,7 +73,7 @@ async def save_app_catalog_snapshot(
         return True
     except Exception as exc:
         print(
-            f"[database] failed to persist app catalog | session_id={session_id} | error={exc}",
+            f"[database] failed to persist app catalog | error={type(exc).__name__}",
             flush=True,
         )
         return False
@@ -141,7 +141,7 @@ async def load_app_catalog_snapshot(session_id: Optional[str]) -> Optional[Dict[
         }
     except Exception as exc:
         print(
-            f"[database] failed to load app catalog | session_id={session_id} | error={exc}",
+            f"[database] failed to load app catalog | error={type(exc).__name__}",
             flush=True,
         )
         return None
@@ -170,7 +170,7 @@ async def delete_app_catalog_snapshot(session_id: Optional[str]) -> bool:
         return not result.endswith(" 0")
     except Exception as exc:
         print(
-            f"[database] failed to delete app catalog | session_id={session_id} | error={exc}",
+            f"[database] failed to delete app catalog | error={type(exc).__name__}",
             flush=True,
         )
         return False
