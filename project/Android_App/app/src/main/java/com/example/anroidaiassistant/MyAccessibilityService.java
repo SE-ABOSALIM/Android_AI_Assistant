@@ -216,12 +216,7 @@ public class MyAccessibilityService extends AccessibilityService {
             return;
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                && SpeechRecognizer.isOnDeviceRecognitionAvailable(this)) {
-            speechRecognizer = SpeechRecognizer.createOnDeviceSpeechRecognizer(this);
-        } else {
-            speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
-        }
+        speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
 
         speechRecognizerIntent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         speechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);

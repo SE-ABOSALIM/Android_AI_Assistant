@@ -43,7 +43,7 @@ public class PrivacyComplianceTest {
     }
 
     @Test
-    public void speechFallbackDocumentationExplainsCompatibilityWithoutFixedProviderBlocker()
+    public void speechRecognitionDocumentationExplainsConfiguredServiceWithoutFixedProviderBlocker()
             throws Exception {
         String policy = readUtf8(repositoryRoot().resolve("docs/privacy-policy.md"));
         String dataSafety = readUtf8(
@@ -51,15 +51,17 @@ public class PrivacyComplianceTest {
         );
         String combined = policy + "\n" + dataSafety;
 
-        assertTrue(policy.contains("compatibility and availability fallback"));
-        assertTrue(policy.contains("unavailable or unsupported"));
-        assertTrue(policy.contains("may process microphone audio remotely"));
+        assertTrue(policy.contains("speech-recognition service configured by Android"));
+        assertTrue(policy.contains("may process microphone audio on the device or"));
+        assertTrue(policy.contains("remotely under the provider's terms"));
         assertTrue(policy.contains("does not send raw"));
         assertTrue(policy.contains("recognized text"));
         assertTrue(policy.contains("Raw command text is not persisted in command history"));
         assertTrue(policy.contains("Raw prediction parameters are not persisted in command history"));
         assertTrue(dataSafety.contains("Voice or sound recordings | **Yes, conservatively"));
         assertTrue(dataSafety.contains("does not assume one universal provider"));
+        assertFalse(combined.contains("prefers on-device"));
+        assertFalse(combined.contains("compatibility and availability fallback"));
         assertFalse(dataSafety.contains("production speech-recognition provider retention"));
         assertFalse(dataSafety.contains("provider handling must be verified"));
         assertFalse(combined.contains("continuous recognition"));
