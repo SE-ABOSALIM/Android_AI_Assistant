@@ -63,7 +63,7 @@ async def record_command_history(
 
         return True
     except Exception as exc:
-        print(f"[database] failed to record command history | error={exc}", flush=True)
+        print(f"[database] failed to record command history | error={type(exc).__name__}", flush=True)
         return False
     finally:
         if connection is not None:
@@ -144,7 +144,7 @@ async def list_command_history(
             "has_more": offset + len(rows) < total_count,
         }
     except Exception as exc:
-        print(f"[database] failed to list command history | error={exc}", flush=True)
+        print(f"[database] failed to list command history | error={type(exc).__name__}", flush=True)
         return _empty_history(limit, offset)
     finally:
         if connection is not None:
@@ -171,7 +171,7 @@ async def clear_command_history(*, session_id: Optional[str], device_id: Optiona
         )
         return _deleted_count(result)
     except Exception as exc:
-        print(f"[database] failed to clear command history | error={exc}", flush=True)
+        print(f"[database] failed to clear command history | error={type(exc).__name__}", flush=True)
         return 0
     finally:
         if connection is not None:
@@ -204,7 +204,7 @@ async def delete_command_history_item(
         )
         return _deleted_count(result)
     except Exception as exc:
-        print(f"[database] failed to delete command history item | error={exc}", flush=True)
+        print(f"[database] failed to delete command history item | error={type(exc).__name__}", flush=True)
         return 0
     finally:
         if connection is not None:

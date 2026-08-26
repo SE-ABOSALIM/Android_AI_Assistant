@@ -130,14 +130,9 @@ def predict(
         response["processing_time_ms"],
     )
     print(
-        "[predict] "
-        f"{response['processing_time_ms']:.2f} ms | "
-        f"text='{request.text}' | "
-        f"language={request.language.upper()} | "
-        f"intent={response.get('intent')} | "
-        f"parameters={response.get('parameters')} | "
-        f"accepted={response.get('accepted')} | "
-        f"confidence={response.get('confidence')}",
+        "[predict] processed | "
+        f"duration_ms={response['processing_time_ms']:.2f} | "
+        f"accepted={bool(response.get('accepted'))}",
         flush=True,
     )
     return response
@@ -236,7 +231,7 @@ def _record_command_history_background(
     except Exception as exc:
         print(
             "[database] failed to record command history from predict endpoint | "
-            f"error={exc}",
+            f"error={type(exc).__name__}",
             flush=True,
         )
 
@@ -277,7 +272,6 @@ async def app_catalog(
     print(
         "[app-catalog] "
         "authenticated_device=true | "
-        f"catalog_version={result['catalog_version']} | "
         f"app_count={result['app_count']} | "
         f"db_persisted={db_persisted} | "
         f"redis_cached={redis_cached}",
