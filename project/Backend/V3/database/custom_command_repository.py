@@ -63,7 +63,7 @@ async def list_custom_commands(*, device_id: Optional[str], language: Optional[s
         )
         return {"items": [await _command_from_row(connection, row) for row in rows]}
     except Exception as exc:
-        print(f"[database] failed to list custom commands | error={exc}", flush=True)
+        print(f"[database] failed to list custom commands | error={type(exc).__name__}", flush=True)
         return {"items": []}
     finally:
         if connection is not None:
@@ -118,7 +118,7 @@ async def save_custom_command(
 
         return await get_custom_command(command_id=str(command_id), device_id=device_id)
     except Exception as exc:
-        print(f"[database] failed to save custom command | error={exc}", flush=True)
+        print(f"[database] failed to save custom command | error={type(exc).__name__}", flush=True)
         return None
     finally:
         if connection is not None:
@@ -171,7 +171,7 @@ async def update_custom_command(
 
         return await get_custom_command(command_id=command_id, device_id=device_id)
     except Exception as exc:
-        print(f"[database] failed to update custom command | error={exc}", flush=True)
+        print(f"[database] failed to update custom command | error={type(exc).__name__}", flush=True)
         return None
     finally:
         if connection is not None:
@@ -200,7 +200,7 @@ async def delete_custom_command(*, command_id: str, device_id: Optional[str]) ->
         )
         return _deleted_count(result)
     except Exception as exc:
-        print(f"[database] failed to delete custom command | error={exc}", flush=True)
+        print(f"[database] failed to delete custom command | error={type(exc).__name__}", flush=True)
         return 0
     finally:
         if connection is not None:
@@ -238,7 +238,7 @@ async def get_custom_command(*, command_id: str, device_id: Optional[str]) -> Op
             return None
         return await _command_from_row(connection, row)
     except Exception as exc:
-        print(f"[database] failed to get custom command | error={exc}", flush=True)
+        print(f"[database] failed to get custom command | error={type(exc).__name__}", flush=True)
         return None
     finally:
         if connection is not None:
@@ -292,7 +292,7 @@ async def find_custom_command_by_spoken_name(
             return None
         return await _command_from_row(connection, row)
     except Exception as exc:
-        print(f"[database] failed to find custom command | error={exc}", flush=True)
+        print(f"[database] failed to find custom command | error={type(exc).__name__}", flush=True)
         return None
     finally:
         if connection is not None:

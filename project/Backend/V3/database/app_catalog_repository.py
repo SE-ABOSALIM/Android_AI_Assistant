@@ -191,7 +191,7 @@ async def count_app_catalog_snapshots() -> int:
 
         return int(await connection.fetchval("SELECT COUNT(*) FROM devices"))
     except Exception as exc:
-        print(f"[database] failed to count app catalogs | error={exc}", flush=True)
+        print(f"[database] failed to count app catalogs | error={type(exc).__name__}", flush=True)
         return 0
     finally:
         if connection is not None:

@@ -64,8 +64,9 @@ one Accessibility-derived Boolean named `has_search_input`, which reports only
 whether a search field is available; it does not include the field content,
 screen text, or element identity. The backend uses that Boolean transiently for
 command resolution and does not write it to command history or application
-logs. Local Android Logcat matching diagnostics can
-contain candidate/interface labels and bounds. Recognized microphone speech and
+logs. Content-bearing matching diagnostics are disabled in release builds.
+Debug builds can write candidate/interface labels and bounds to local Android
+Logcat. Recognized microphone speech and
 the installed-app catalog are separate, non-Accessibility data paths and are not
 the basis of this declaration answer.
 
@@ -79,8 +80,9 @@ content, personal content, node details, or selected element identity sent off
 device or shared. The only off-device value derived from inspecting the current
 interface is the non-content yes/no `has_search_input` capability signal. It
 does not identify a person, reveal field contents, or transmit the text or
-identity of an interface element. Interface matching diagnostics remain in the
-local Android system log. This answer must be reviewed if either data path
+identity of an interface element. Interface matching diagnostics are disabled
+in release builds and remain local to Android Logcat in debug builds. This
+answer must be reviewed if either data path
 changes.
 
 ## 6. Final prominent disclosure copy
@@ -105,8 +107,8 @@ changes.
 > indicating whether a search field is available with a command request.
 > The backend uses this signal only while resolving the command and does not
 > persist it.
-> Matching diagnostic logs may contain interface labels in the local Android
-> system log.
+> Content-bearing matching diagnostics are disabled in release builds. Debug
+> builds may contain interface labels in the local Android system log.
 >
 > Accessibility access is separate from microphone and installed-app data. You
 > can choose Not now and enable it later.
@@ -116,7 +118,9 @@ changes.
 **Negative action:** Not now
 
 Equivalent Turkish and Arabic translations are shipped in their localized
-Android string resources.
+Android string resources. The disclosure consent version is 2 because the
+release/debug logging statement changed in Production Hardening 5/11; prior
+version-1 consent does not suppress the updated disclosure.
 
 ## 7. Play Store listing note
 

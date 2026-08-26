@@ -40,7 +40,8 @@ public final class AppLauncher {
             executionContext.showMessage("App not found. Please spell the app name.");
             return false;
         } catch (Exception exception) {
-            Log.e(TAG, "Failed to launch app: " + packageName, exception);
+            Log.e(TAG, "Failed to launch app. errorType="
+                    + exception.getClass().getSimpleName());
             executionContext.showMessage("Could not open " + firstNonEmpty(label, "app"));
             return false;
         }
@@ -64,7 +65,8 @@ public final class AppLauncher {
             executionContext.showMessage("Could not open app info for " + firstNonEmpty(label, "app"));
             return false;
         } catch (Exception exception) {
-            Log.e(TAG, "Failed to open app info: " + packageName, exception);
+            Log.e(TAG, "Failed to open app info. errorType="
+                    + exception.getClass().getSimpleName());
             executionContext.showMessage("Could not open app info for " + firstNonEmpty(label, "app"));
             return false;
         }
@@ -92,7 +94,8 @@ public final class AppLauncher {
             }
             return true;
         } catch (Exception exception) {
-            Log.e(TAG, "Failed to request uninstall: " + packageName, exception);
+            Log.e(TAG, "Failed to request uninstall. errorType="
+                    + exception.getClass().getSimpleName());
             executionContext.showMessage("Could not uninstall " + firstNonEmpty(label, "app"));
             return false;
         }
@@ -106,7 +109,8 @@ public final class AppLauncher {
         try {
             return context.getPackageManager().getApplicationIcon(packageName);
         } catch (Exception exception) {
-            Log.w(TAG, "Could not load app icon: " + packageName, exception);
+            Log.w(TAG, "Could not load app icon. errorType="
+                    + exception.getClass().getSimpleName());
             return null;
         }
     }
