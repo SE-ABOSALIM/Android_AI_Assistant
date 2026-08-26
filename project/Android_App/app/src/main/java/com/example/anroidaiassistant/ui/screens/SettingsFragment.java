@@ -10,6 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ImageView;
 
@@ -22,6 +23,12 @@ import com.example.anroidaiassistant.MainActivity;
 import com.example.anroidaiassistant.R;
 import com.example.anroidaiassistant.settings.AssistantSettings;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 public final class SettingsFragment extends Fragment {
     private TextView languageValueView;
@@ -50,10 +57,65 @@ public final class SettingsFragment extends Fragment {
                 .setImageResource(rtl ? R.drawable.ic_chevron_left : R.drawable.ic_chevron_right);
         ((ImageView) view.findViewById(R.id.settingsThemeArrow))
                 .setImageResource(rtl ? R.drawable.ic_chevron_left : R.drawable.ic_chevron_right);
+        ((ImageView) view.findViewById(R.id.settingsPrivacyArrow))
+                .setImageResource(rtl ? R.drawable.ic_chevron_left : R.drawable.ic_chevron_right);
 
         view.findViewById(R.id.settingsLanguageCard).setOnClickListener(v -> showLanguageSheet());
         view.findViewById(R.id.settingsThemeCard).setOnClickListener(v -> showThemeSheet());
+        view.findViewById(R.id.settingsPrivacyPolicyCard)
+                .setOnClickListener(v -> showPrivacyPolicy());
         updateDisplayedValues();
+    }
+
+    private void showPrivacyPolicy() {
+        Context context = requireContext();
+        TextView policyView = new TextView(context);
+        policyView.setText(readBundledPrivacyPolicy());
+        policyView.setTextColor(ContextCompat.getColor(context, R.color.app_text_primary));
+        policyView.setTextSize(15);
+        policyView.setTextIsSelectable(true);
+        policyView.setLineSpacing(0, 1.15f);
+        policyView.setPadding(dp(8), dp(4), dp(8), dp(12));
+
+        ScrollView scrollView = new ScrollView(context);
+        scrollView.setFillViewport(true);
+        scrollView.addView(policyView, new ScrollView.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+
+        new MaterialAlertDialogBuilder(context)
+                .setTitle(R.string.settings_privacy_policy_title)
+                .setView(scrollView)
+                .setPositiveButton(R.string.settings_privacy_policy_close, null)
+                .show();
+    }
+
+    private String readBundledPrivacyPolicy() {
+        StringBuilder policy = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                getResources().openRawResource(R.raw.privacy_policy),
+                StandardCharsets.UTF_8
+        ))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                policy.append(line).append('\n');
+            }
+            return readableMarkdown(policy.toString());
+        } catch (IOException exception) {
+            return getString(R.string.settings_privacy_policy_unavailable);
+        }
+    }
+
+    static String readableMarkdown(String source) {
+        if (source == null) {
+            return "";
+        }
+        return source
+                .replaceAll("(?m)^#{1,6}\\s+", "")
+                .replace("**", "")
+                .replace("`", "")
+                .trim();
     }
 
     private void showLanguageSheet() {

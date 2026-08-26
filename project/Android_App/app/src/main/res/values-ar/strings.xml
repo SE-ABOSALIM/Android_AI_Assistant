@@ -121,6 +121,10 @@
     <string name="settings_theme_description">اختر مظهر التطبيق</string>
     <string name="settings_version_title">الإصدار</string>
     <string name="settings_version_description">إصدار التطبيق</string>
+    <string name="settings_privacy_policy_title">سياسة الخصوصية</string>
+    <string name="settings_privacy_policy_description">كيفية وصول التطبيق إلى البيانات وإرسالها وتخزينها</string>
+    <string name="settings_privacy_policy_close">إغلاق</string>
+    <string name="settings_privacy_policy_unavailable">تعذر فتح سياسة الخصوصية المضمّنة.</string>
     <string name="settings_theme_system">النظام الافتراضي</string>
     <string name="settings_theme_light">فاتح</string>
     <string name="settings_theme_dark">داكن</string>

@@ -124,6 +124,10 @@
     <string name="settings_theme_description">Choose the app appearance</string>
     <string name="settings_version_title">Version</string>
     <string name="settings_version_description">Application build</string>
+    <string name="settings_privacy_policy_title">Privacy Policy</string>
+    <string name="settings_privacy_policy_description">How the app accesses, sends, and stores data</string>
+    <string name="settings_privacy_policy_close">Close</string>
+    <string name="settings_privacy_policy_unavailable">The bundled Privacy Policy could not be opened.</string>
     <string name="settings_theme_system">System default</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>

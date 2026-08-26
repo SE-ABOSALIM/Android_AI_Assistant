@@ -121,6 +121,10 @@
     <string name="settings_theme_description">Uygulama görünümünü seç</string>
     <string name="settings_version_title">Sürüm</string>
     <string name="settings_version_description">Uygulama derlemesi</string>
+    <string name="settings_privacy_policy_title">Gizlilik Politikası</string>
+    <string name="settings_privacy_policy_description">Uygulamanın verilere nasıl eriştiği, gönderdiği ve sakladığı</string>
+    <string name="settings_privacy_policy_close">Kapat</string>
+    <string name="settings_privacy_policy_unavailable">Uygulamaya eklenmiş Gizlilik Politikası açılamadı.</string>
     <string name="settings_theme_system">Sistem varsayılanı</string>
     <string name="settings_theme_light">Açık</string>
     <string name="settings_theme_dark">Koyu</string>
