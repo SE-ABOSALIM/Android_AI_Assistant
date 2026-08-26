@@ -131,9 +131,11 @@ def predict(
         response["processing_time_ms"],
     )
     print(
-        "[predict] processed | "
-        f"duration_ms={response['processing_time_ms']:.2f} | "
-        f"accepted={bool(response.get('accepted'))}",
+        "\n[predict] "
+        f"input: {response['input']} || ",
+        f"duration_ms={response['processing_time_ms']:.2f} ||",
+        f"confidence={response.get('confidence')} ||",
+        f"accepted={bool(response.get('accepted'))}\n",
         flush=True,
     )
     return response
