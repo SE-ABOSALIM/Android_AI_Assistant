@@ -36,6 +36,10 @@ public class PrivacyComplianceTest {
         assertTrue(source.contains("Device or other IDs | **Yes**"));
         assertTrue(source.contains("rate_limit:registration:<client_host>"));
         assertTrue(source.contains("rate_limit:predict:<device_ref_id>"));
+        assertTrue(source.contains("raw text is not persisted in command history"));
+        assertTrue(source.contains("raw prediction parameters are not persisted"));
+        assertFalse(source.contains("`command_history.text`"));
+        assertFalse(source.contains("`command_history.session_id`"));
     }
 
     @Test
@@ -52,6 +56,8 @@ public class PrivacyComplianceTest {
         assertTrue(policy.contains("may process microphone audio remotely"));
         assertTrue(policy.contains("does not send raw"));
         assertTrue(policy.contains("recognized text"));
+        assertTrue(policy.contains("Raw command text is not persisted in command history"));
+        assertTrue(policy.contains("Raw prediction parameters are not persisted in command history"));
         assertTrue(dataSafety.contains("Voice or sound recordings | **Yes, conservatively"));
         assertTrue(dataSafety.contains("does not assume one universal provider"));
         assertFalse(dataSafety.contains("production speech-recognition provider retention"));

@@ -41,13 +41,16 @@ the command:
 - a yes-or-no signal indicating whether a search input is available on the
   current screen.
 
-The primary command text is stored in backend command history with the resolved
-intent, extracted parameters, acceptance or failure status, error code when
-present, confidence, language, processing time, session identifier, and device
-association. Command text may contain information the user chooses to speak or
-type, such as a contact name, phone number, search query, app name, or text to
-enter. Recognition alternatives and the search-input yes-or-no signal are used
-while resolving the current request and are not written to command history.
+The backend processes command text, recognition alternatives, and derived
+prediction parameters in memory to resolve the current request.
+Raw command text is not persisted in command history.
+Raw prediction parameters are not persisted in command history. Command history
+contains only minimal operational metadata:
+an internal device-record reference, intent identifier, language, acceptance or
+failure state, confidence, bounded error code when present, processing time, and
+timestamp. This rule applies regardless of intent, success, failure, UNKNOWN
+classification, or future classifier changes. The search-input yes-or-no signal
+is also used only while resolving the current request.
 
 ### Contacts and phone features
 
@@ -55,9 +58,9 @@ If the user chooses a contact-calling feature and grants Contacts permission,
 the App queries contact names and phone numbers on the device to match the name
 already present in the command. Contact records and the locally resolved phone
 number are not sent to the Android AI Assistant backend. The recognized or typed
-command itself is sent and stored as described above, so a contact name or
+command itself is sent and processed as described above, so a contact name or
 number spoken or typed as part of that command is included in the transmitted
-command content.
+command content but is not retained in command history.
 
 The App can open the system dialer or, with Phone permission, request a direct
 call. Phone State access is used only to pause listening while a call is active;
@@ -72,7 +75,7 @@ Camera permission is used locally to control the device flashlight. For a photo
 command, the App launches and can automate the system camera interface. The App
 does not receive, upload, or store the resulting photo or video. Camera-facing
 words included in a command are part of the command text and derived parameters
-described above.
+processed for the request but not retained in command history.
 
 ### AccessibilityService information
 
@@ -106,8 +109,10 @@ to match a requested app to a launchable package.
 
 The App sends Android's app-scoped `ANDROID_ID` as a stable device identifier.
 The backend stores it in `devices` with platform, app version, preferred
-language, creation time, and last-seen time. It is used to associate app
-catalogs, command history, custom commands, and installation credentials with
+language, creation time, and last-seen time. The backend uses the internal
+immutable database identifier of that device row, rather than duplicating the
+raw Android identifier, to associate command-history metadata. The device record
+also associates app catalogs, custom commands, and installation credentials with
 the same installation. It is not represented as anonymous data.
 
 The backend also reads the network address presented by a registration request
@@ -143,8 +148,9 @@ cascade removes its `custom_command_steps` rows.
 The App stores language and theme preferences, whether optional permissions
 were requested, and the accepted Accessibility disclosure version in private
 SharedPreferences. The selected language is also sent with backend requests and
-stored in the device and command records. Session and catalog state are held in
-memory. The encrypted bearer credential is stored locally as described above.
+stored in the device and command-history metadata records. Session and catalog
+state are held in memory. The encrypted bearer credential is stored locally as
+described above.
 Permission grant status is checked through Android and is not sent to the
 backend.
 
@@ -165,12 +171,15 @@ profiling integration.
 
 ## Storage, retention, and deletion
 
-PostgreSQL stores device records, launcher-visible app catalogs, command
-history, custom commands and their steps, and credential hashes. These records
-do not expire automatically because of inactivity. They remain until an
-explicit product, administrator, or database operation removes them. The App
-does not currently expose a self-service control for deleting the device row,
-installed-app catalog, command history, or credential history.
+PostgreSQL stores device records, launcher-visible app catalogs, minimal
+command-history operational metadata, custom commands and their steps, and
+credential hashes. Command history does not store raw command text, raw
+prediction parameters, session identifiers, or the raw Android device
+identifier. These records do not expire automatically because of inactivity.
+They remain until an explicit product, administrator, or database operation
+removes them. The App does not currently expose a self-service control for
+deleting the device row, installed-app catalog, command-history metadata, or
+credential history.
 
 Redis stores a temporary copy of the installed-app catalog under a key derived
 from the device identifier. That cache has a two-hour time-to-live and may also
