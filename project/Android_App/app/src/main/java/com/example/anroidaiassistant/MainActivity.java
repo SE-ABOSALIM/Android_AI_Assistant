@@ -624,7 +624,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            spellingSuggestionDialog = new AlertDialog.Builder(this)
+            spellingSuggestionDialog = new MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.spell_suggestion_title)
                     .setMessage(R.string.spell_suggestion_message)
                     .setPositiveButton(R.string.spell_suggestion_action, (dialog, which) -> {

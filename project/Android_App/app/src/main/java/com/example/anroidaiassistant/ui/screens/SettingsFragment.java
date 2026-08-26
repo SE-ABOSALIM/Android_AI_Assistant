@@ -4,13 +4,13 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.method.LinkMovementMethod;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.ImageView;
 
@@ -69,29 +69,23 @@ public final class SettingsFragment extends Fragment {
 
     private void showPrivacyPolicy() {
         Context context = requireContext();
-        TextView policyView = new TextView(context);
-        policyView.setText(readBundledPrivacyPolicy());
-        policyView.setTextColor(ContextCompat.getColor(context, R.color.app_text_primary));
-        policyView.setTextSize(15);
-        policyView.setTextIsSelectable(true);
-        policyView.setLineSpacing(0, 1.15f);
-        policyView.setPadding(dp(8), dp(4), dp(8), dp(12));
-
-        ScrollView scrollView = new ScrollView(context);
-        scrollView.setFillViewport(true);
-        scrollView.addView(policyView, new ScrollView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+        View content = LayoutInflater.from(context)
+                .inflate(R.layout.dialog_privacy_policy, null, false);
+        TextView policyView = content.findViewById(R.id.privacyPolicyBody);
+        policyView.setText(PrivacyPolicyFormatter.format(
+                context,
+                readBundledPrivacyPolicyMarkdown()
         ));
+        policyView.setMovementMethod(LinkMovementMethod.getInstance());
 
         new MaterialAlertDialogBuilder(context)
                 .setTitle(R.string.settings_privacy_policy_title)
-                .setView(scrollView)
+                .setView(content)
                 .setPositiveButton(R.string.settings_privacy_policy_close, null)
                 .show();
     }
 
-    private String readBundledPrivacyPolicy() {
+    private String readBundledPrivacyPolicyMarkdown() {
         StringBuilder policy = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                 getResources().openRawResource(R.raw.privacy_policy),
@@ -101,21 +95,14 @@ public final class SettingsFragment extends Fragment {
             while ((line = reader.readLine()) != null) {
                 policy.append(line).append('\n');
             }
-            return readableMarkdown(policy.toString());
+            return policy.toString();
         } catch (IOException exception) {
             return getString(R.string.settings_privacy_policy_unavailable);
         }
     }
 
     static String readableMarkdown(String source) {
-        if (source == null) {
-            return "";
-        }
-        return source
-                .replaceAll("(?m)^#{1,6}\\s+", "")
-                .replace("**", "")
-                .replace("`", "")
-                .trim();
+        return PrivacyPolicyFormatter.plainText(source, false);
     }
 
     private void showLanguageSheet() {

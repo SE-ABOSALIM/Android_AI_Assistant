@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ThemeOverlay.AnroidAIAssistant.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="alertDialogStyle">@style/MaterialAlertDialog.AnroidAIAssistant</item>
+        <item name="colorPrimary">@color/app_primary_dark</item>
+        <item name="colorSurface">@color/app_surface</item>
+        <item name="colorOnSurface">@color/app_text_primary</item>
+        <item name="colorOutline">@color/app_card_border</item>
+        <item name="materialAlertDialogTitlePanelStyle">@style/MaterialAlertDialog.AnroidAIAssistant.Title.Panel</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/MaterialAlertDialog.AnroidAIAssistant.Title.Text</item>
+        <item name="materialAlertDialogBodyTextStyle">@style/MaterialAlertDialog.AnroidAIAssistant.Body.Text</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.AnroidAIAssistant.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.AnroidAIAssistant.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/Widget.AnroidAIAssistant.DialogButton</item>
+        <item name="android:backgroundDimAmount">0.36</item>
+    </style>
+
+    <style name="MaterialAlertDialog.AnroidAIAssistant" parent="MaterialAlertDialog.Material3">
+        <item name="backgroundTint">@color/app_surface</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.AnroidAIAssistant.Dialog</item>
+        <item name="backgroundInsetStart">20dp</item>
+        <item name="backgroundInsetTop">24dp</item>
+        <item name="backgroundInsetEnd">20dp</item>
+        <item name="backgroundInsetBottom">24dp</item>
+    </style>
+
+    <style name="ShapeAppearance.AnroidAIAssistant.Dialog" parent="ShapeAppearance.Material3.MediumComponent">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="MaterialAlertDialog.AnroidAIAssistant.Title.Panel" parent="MaterialAlertDialog.Material3.Title.Panel">
+        <item name="android:paddingStart">24dp</item>
+        <item name="android:paddingTop">24dp</item>
+        <item name="android:paddingEnd">24dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="MaterialAlertDialog.AnroidAIAssistant.Title.Text" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textColor">@color/app_text_primary</item>
+        <item name="android:textSize">21sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="MaterialAlertDialog.AnroidAIAssistant.Body.Text" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textColor">@color/app_text_secondary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="Widget.AnroidAIAssistant.DialogButton" parent="Widget.Material3.Button.TextButton.Dialog">
+        <item name="android:minHeight">48dp</item>
+        <item name="android:textColor">@color/app_primary_dark</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="TextAppearance.AnroidAIAssistant.PrivacyPolicy.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:textColor">@color/app_text_primary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:lineSpacingExtra">3dp</item>
+    </style>
+</resources>

@@ -4,16 +4,18 @@
     android:layout_height="wrap_content"
     android:fillViewport="true"
     android:paddingStart="24dp"
-    android:paddingTop="8dp"
+    android:paddingTop="4dp"
     android:paddingEnd="24dp"
-    android:paddingBottom="8dp"
+    android:paddingBottom="12dp"
     android:scrollbars="vertical">
 
     <TextView
         android:id="@+id/accessibility_disclosure_body"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        style="@style/MaterialAlertDialog.AnroidAIAssistant.Body.Text"
         android:lineSpacingExtra="3dp"
+        android:paddingBottom="8dp"
         android:text="@string/accessibility_disclosure_body"
-        android:textAppearance="?attr/textAppearanceBodyMedium" />
+        android:textDirection="locale" />
 </ScrollView>
