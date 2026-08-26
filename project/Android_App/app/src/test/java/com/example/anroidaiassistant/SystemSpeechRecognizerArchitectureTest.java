@@ -13,11 +13,26 @@ import java.nio.file.Path;
 
 public class SystemSpeechRecognizerArchitectureTest {
     @Test
-    public void productionRecognizer_usesSystemSpeechRecognizer() throws Exception {
+    public void productionRecognizer_doesNotSetExtraAudioSource() throws Exception {
+        assertFalse(serviceSource().contains("RecognizerIntent.EXTRA_AUDIO_SOURCE"));
+    }
+
+    @Test
+    public void productionRecognizer_doesNotCreateRecognizerAudioSource() throws Exception {
+        String service = serviceSource();
+
+        assertFalse(service.contains("RecognizerAudioSource.start("));
+        assertFalse(service.contains("new RecognizerAudioSource"));
+    }
+
+    @Test
+    public void productionRecognizer_usesSystemManagedMicrophone() throws Exception {
         String service = serviceSource();
 
         assertTrue(service.contains("SpeechRecognizer.isRecognitionAvailable(this)"));
         assertTrue(service.contains("SpeechRecognizer.createSpeechRecognizer(this)"));
+        assertTrue(service.contains("speechRecognizer.startListening(recognizerIntent)"));
+        assertFalse(service.contains("RecognizerIntent.EXTRA_AUDIO_SOURCE"));
     }
 
     @Test
@@ -31,7 +46,7 @@ public class SystemSpeechRecognizerArchitectureTest {
     }
 
     @Test
-    public void recognitionLanguageConfiguration_isPreserved() throws Exception {
+    public void recognizerIntent_preservesLanguageConfiguration() throws Exception {
         String service = serviceSource();
 
         assertTrue(service.contains("updateLanguage(selectedLanguage)"));
@@ -41,16 +56,29 @@ public class SystemSpeechRecognizerArchitectureTest {
     }
 
     @Test
-    public void recognitionRestartScheduler_isPreserved() throws Exception {
+    public void recognizerIntent_preservesPartialResultsConfiguration() throws Exception {
         String service = serviceSource();
 
+        assertTrue(service.contains(
+                "RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM"
+        ));
+        assertTrue(service.contains("RecognizerIntent.EXTRA_PARTIAL_RESULTS, true"));
+        assertTrue(service.contains("RecognizerIntent.EXTRA_MAX_RESULTS, 1"));
+    }
+
+    @Test
+    public void recognitionRestartScheduler_isUnchanged() throws Exception {
+        String service = serviceSource();
+
+        assertTrue(service.contains("RESTART_DELAY_FAST_MS = 200"));
+        assertTrue(service.contains("RESTART_DELAY_SLOW_MS = 800"));
         assertTrue(service.contains("private void scheduleListeningRestart(int delayMillis)"));
         assertTrue(service.contains("listeningRestartScheduler.schedule(delayMillis)"));
         assertTrue(service.contains("listeningRestartScheduler.cancel()"));
     }
 
     @Test
-    public void staleRecognitionCallbackProtection_isPreserved() throws Exception {
+    public void recognitionGenerationProtection_isUnchanged() throws Exception {
         String service = serviceSource();
 
         assertTrue(service.contains("createRecognitionListener(long recognitionGeneration)"));
@@ -58,6 +86,115 @@ public class SystemSpeechRecognizerArchitectureTest {
                 service,
                 "isCurrentRecognitionGeneration(recognitionGeneration)"
         ) >= 6);
+    }
+
+    @Test
+    public void normalSuccessfulResult_restartTimingIsPreserved() throws Exception {
+        String resultsCallback = sourceSection(
+                serviceSource(),
+                "public void onResults(Bundle results)",
+                "public void onPartialResults(Bundle partialResults)"
+        );
+
+        assertTrue(resultsCallback.contains("scheduleListeningRestart(RESTART_DELAY_FAST_MS)"));
+    }
+
+    @Test
+    public void normalError_restartBehaviorIsPreserved() throws Exception {
+        String errorCallback = sourceSection(
+                serviceSource(),
+                "public void onError(int error)",
+                "public void onResults(Bundle results)"
+        );
+
+        assertTrue(errorCallback.contains("case SpeechRecognizer.ERROR_NO_MATCH"));
+        assertTrue(errorCallback.contains("scheduleListeningRestart(RESTART_DELAY_FAST_MS)"));
+        assertTrue(errorCallback.contains("case SpeechRecognizer.ERROR_AUDIO"));
+        assertTrue(errorCallback.contains("scheduleListeningRestart(RESTART_DELAY_SLOW_MS)"));
+    }
+
+    @Test
+    public void systemManagedMicrophoneArchitecture_isStillPreserved() throws Exception {
+        productionRecognizer_usesSystemManagedMicrophone();
+        normalRecognitionLifecycle_doesNotRequireApplicationAudioRecord();
+    }
+
+    @Test
+    public void terminalCallbackRecovery_isGenerationScopedAndUsesExistingRestartScheduler()
+            throws Exception {
+        String service = serviceSource();
+        String endOfSpeech = sourceSection(
+                service,
+                "public void onEndOfSpeech()",
+                "public void onError(int error)"
+        );
+        String timeoutHandler = sourceSection(
+                service,
+                "private void handleTerminalCallbackTimeout(long recognitionGeneration)",
+                "private void handleRecognizerReadyWatchdogTimeout()"
+        );
+
+        assertTrue(service.contains("TERMINAL_CALLBACK_TIMEOUT_MS = 12000"));
+        assertTrue(endOfSpeech.contains("scheduleTerminalCallbackWatchdog(recognitionGeneration)"));
+        assertTrue(timeoutHandler.contains(
+                "isCurrentRecognitionGeneration(recognitionGeneration)"
+        ));
+        assertTrue(timeoutHandler.contains("invalidateRecognitionCallbacks()"));
+        assertTrue(timeoutHandler.contains("speechRecognizer.cancel()"));
+        assertTrue(timeoutHandler.contains("scheduleListeningRestart(RESTART_DELAY_FAST_MS)"));
+    }
+
+    @Test
+    public void intentionalStopDestroyAndPause_clearTerminalCallbackWatchdog() throws Exception {
+        String service = serviceSource();
+
+        assertTrue(sourceSection(
+                service,
+                "private void destroySpeechRecognizer()",
+                "private void startListeningSession()"
+        ).contains("clearTerminalCallbackWatchdog()"));
+        assertTrue(sourceSection(
+                service,
+                "public void stopContinuousListening()",
+                "private void startCallStateMonitoringIfAllowed()"
+        ).contains("clearTerminalCallbackWatchdog()"));
+        assertTrue(sourceSection(
+                service,
+                "private void pauseListeningForPhoneCall()",
+                "private void resumeListeningAfterPhoneCall()"
+        ).contains("clearTerminalCallbackWatchdog()"));
+    }
+
+    @Test
+    public void legitimateTerminalPaths_completeOrClearTerminalCallbackWatchdog() throws Exception {
+        String service = serviceSource();
+
+        assertTrue(sourceSection(
+                service,
+                "public void onError(int error)",
+                "public void onResults(Bundle results)"
+        ).contains("terminalCallbackWatchdog.complete(recognitionGeneration)"));
+        assertTrue(sourceSection(
+                service,
+                "public void onResults(Bundle results)",
+                "public void onPartialResults(Bundle partialResults)"
+        ).contains("terminalCallbackWatchdog.complete(recognitionGeneration)"));
+        assertTrue(sourceSection(
+                service,
+                "private void finalizeLatestPartialResult()",
+                "private Intent buildRecognizerIntentForSession()"
+        ).contains("clearTerminalCallbackWatchdog()"));
+    }
+
+    @Test
+    public void normalRecognitionLifecycle_doesNotRequireApplicationAudioRecord() throws Exception {
+        String service = serviceSource();
+
+        assertFalse(service.contains("AudioRecord"));
+        assertFalse(service.contains("ParcelFileDescriptor"));
+        assertFalse(Files.exists(appRoot().resolve(
+                "src/main/java/com/example/anroidaiassistant/speech/RecognizerAudioSource.java"
+        )));
     }
 
     @Test
@@ -118,6 +255,14 @@ public class SystemSpeechRecognizerArchitectureTest {
             fromIndex += target.length();
         }
         return count;
+    }
+
+    private String sourceSection(String source, String startMarker, String endMarker) {
+        int start = source.indexOf(startMarker);
+        int end = source.indexOf(endMarker, start + startMarker.length());
+        assertTrue(start >= 0);
+        assertTrue(end > start);
+        return source.substring(start, end);
     }
 
     private String normalized(String source) {
