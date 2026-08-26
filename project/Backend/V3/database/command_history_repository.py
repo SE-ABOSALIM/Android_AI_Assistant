@@ -1,20 +1,56 @@
-import json
 from decimal import Decimal
 from typing import Any, Dict, Optional
+from uuid import UUID
 
 from V3.database.connection import is_database_configured, open_database_connection
+from V3.intents.registry import is_known_intent
+
+
+_SAFE_LANGUAGES = {"AR", "EN", "TR"}
+_SAFE_ERROR_CODES = {
+    "APP_CATALOG_MISSING",
+    "APP_CATALOG_STALE",
+    "APP_MATCH_AMBIGUOUS",
+    "APP_NOT_IN_CATALOG",
+    "BARE_ALARM_TIME",
+    "CUSTOM_COMMAND_NOT_FOUND",
+    "LOW_CONFIDENCE",
+    "MISSING_ALARM_SIGNAL",
+    "MISSING_REQUIRED_SLOT",
+    "MODEL_STOP_LISTENING_DISABLED",
+    "STOP_LISTENING_TOO_SHORT",
+    "UNKNOWN_COMMAND",
+    "UNSUPPORTED_INTENT",
+    "UNSUPPORTED_STOPWATCH",
+    "WEAK_STOP_LISTENING_COMMAND",
+}
 
 
 async def record_command_history(
     *,
-    text: str,
+    device_ref_id: str,
+    intent: str,
     language: str,
-    response: Dict[str, Any],
-    session_id: Optional[str],
-    device_id: Optional[str],
+    accepted: bool,
+    confidence: Optional[float],
+    error_code: Optional[str],
     processing_time_ms: Optional[float],
 ) -> bool:
-    if not is_database_configured() or not _has_text(text):
+    safe_device_ref_id = _optional_uuid(device_ref_id)
+    safe_intent = _safe_intent(intent)
+    safe_language = _safe_language(language)
+    safe_confidence = _bounded_float(confidence, minimum=0.0, maximum=1.0)
+    safe_error_code = _safe_error_code(error_code)
+    safe_processing_time_ms = _bounded_float(processing_time_ms, minimum=0.0)
+    if (
+        not is_database_configured()
+        or safe_device_ref_id is None
+        or safe_intent is None
+        or safe_language is None
+        or (confidence is not None and safe_confidence is None)
+        or (error_code is not None and safe_error_code is None)
+        or (processing_time_ms is not None and safe_processing_time_ms is None)
+    ):
         return False
 
     connection = None
@@ -24,41 +60,27 @@ async def record_command_history(
             return False
 
         async with connection.transaction():
-            database_device_id = await _ensure_device(
-                connection,
-                device_id=device_id,
-                language=language,
-            )
-            accepted = bool(response.get("accepted"))
             await connection.fetchval(
                 """
                 INSERT INTO command_history (
                     device_ref_id,
-                    session_id,
-                    text,
-                    language,
                     intent,
-                    parameters_json,
+                    language,
                     accepted,
                     confidence,
-                    result_status,
                     error_code,
                     processing_time_ms
                 )
-                VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, $9, $10, $11)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING id
                 """,
-                database_device_id,
-                _clean_text(session_id),
-                str(text).strip(),
-                _clean_text(language, uppercase=True) or "TR",
-                _clean_text(response.get("intent"), uppercase=True),
-                json.dumps(response.get("parameters") or {}, ensure_ascii=False),
-                accepted,
-                _optional_float(response.get("confidence")),
-                "successful" if accepted else "failed",
-                _clean_text(response.get("error_code"), uppercase=True),
-                _optional_float(processing_time_ms),
+                safe_device_ref_id,
+                safe_intent,
+                safe_language,
+                bool(accepted),
+                safe_confidence,
+                safe_error_code,
+                safe_processing_time_ms,
             )
 
         return True
@@ -72,8 +94,7 @@ async def record_command_history(
 
 async def list_command_history(
     *,
-    session_id: Optional[str],
-    device_id: Optional[str],
+    device_ref_id: str,
     limit: int,
     offset: int,
     query: Optional[str] = None,
@@ -90,7 +111,7 @@ async def list_command_history(
         if connection is None:
             return _empty_history(limit, offset)
 
-        scope = await _history_scope(connection, device_id=device_id, session_id=session_id)
+        scope = _history_scope(device_ref_id)
         if scope is None:
             return _empty_history(limit, offset)
 
@@ -115,13 +136,10 @@ async def list_command_history(
             f"""
             SELECT
                 id::text,
-                text,
-                language,
                 intent,
-                parameters_json,
+                language,
                 accepted,
                 confidence,
-                result_status,
                 error_code,
                 processing_time_ms,
                 created_at
@@ -151,7 +169,7 @@ async def list_command_history(
             await connection.close()
 
 
-async def clear_command_history(*, session_id: Optional[str], device_id: Optional[str]) -> int:
+async def clear_command_history(*, device_ref_id: str) -> int:
     if not is_database_configured():
         return 0
 
@@ -161,7 +179,7 @@ async def clear_command_history(*, session_id: Optional[str], device_id: Optiona
         if connection is None:
             return 0
 
-        scope = await _history_scope(connection, device_id=device_id, session_id=session_id)
+        scope = _history_scope(device_ref_id)
         if scope is None:
             return 0
 
@@ -181,8 +199,7 @@ async def clear_command_history(*, session_id: Optional[str], device_id: Optiona
 async def delete_command_history_item(
     *,
     history_id: str,
-    session_id: Optional[str],
-    device_id: Optional[str],
+    device_ref_id: str,
 ) -> int:
     if not is_database_configured() or not _has_text(history_id):
         return 0
@@ -193,7 +210,7 @@ async def delete_command_history_item(
         if connection is None:
             return 0
 
-        scope = await _history_scope(connection, device_id=device_id, session_id=session_id)
+        scope = _history_scope(device_ref_id)
         if scope is None:
             return 0
 
@@ -211,56 +228,11 @@ async def delete_command_history_item(
             await connection.close()
 
 
-async def _ensure_device(connection, *, device_id: Optional[str], language: Optional[str]):
-    if not _has_text(device_id):
+def _history_scope(device_ref_id: str):
+    safe_device_ref_id = _optional_uuid(device_ref_id)
+    if safe_device_ref_id is None:
         return None
-
-    preferred_language = _clean_text(language, uppercase=True)
-    if preferred_language is None:
-        return await connection.fetchval(
-            """
-            INSERT INTO devices (
-                device_id,
-                platform,
-                last_seen_at
-            )
-            VALUES ($1, 'android', now())
-            ON CONFLICT (device_id)
-            DO UPDATE SET last_seen_at = now()
-            RETURNING id
-            """,
-            str(device_id).strip(),
-        )
-
-    return await connection.fetchval(
-        """
-        INSERT INTO devices (
-            device_id,
-            platform,
-            preferred_language,
-            last_seen_at
-        )
-        VALUES ($1, 'android', $2, now())
-        ON CONFLICT (device_id)
-        DO UPDATE SET
-            preferred_language = EXCLUDED.preferred_language,
-            last_seen_at = now()
-        RETURNING id
-        """,
-        str(device_id).strip(),
-        preferred_language,
-    )
-
-
-async def _history_scope(connection, *, device_id: Optional[str], session_id: Optional[str]):
-    if _has_text(device_id):
-        database_device_id = await _ensure_device(connection, device_id=device_id, language=None)
-        return _Scope("device_ref_id = $1", [database_device_id])
-
-    if _has_text(session_id):
-        return _Scope("session_id = $1", [str(session_id).strip()])
-
-    return None
+    return _Scope("device_ref_id = $1", [safe_device_ref_id])
 
 
 def _where_clause(scope, query: Optional[str]):
@@ -270,8 +242,7 @@ def _where_clause(scope, query: Optional[str]):
     search = f"%{str(query).strip()}%"
     query_position = len(scope.params) + 1
     return (
-        f"{scope.sql} AND (text ILIKE ${query_position} "
-        f"OR COALESCE(intent, '') ILIKE ${query_position} "
+        f"{scope.sql} AND (COALESCE(intent, '') ILIKE ${query_position} "
         f"OR COALESCE(error_code, '') ILIKE ${query_position})",
         [*scope.params, search],
     )
@@ -280,29 +251,14 @@ def _where_clause(scope, query: Optional[str]):
 def _row_to_history_item(row) -> Dict[str, Any]:
     return {
         "id": row["id"],
-        "text": row["text"],
-        "language": row["language"],
         "intent": row["intent"],
-        "parameters": _json_dict(row["parameters_json"]),
+        "language": row["language"],
         "accepted": bool(row["accepted"]),
-        "result_status": row["result_status"],
         "error_code": row["error_code"],
         "confidence": _optional_float(row["confidence"]),
         "processing_time_ms": _optional_float(row["processing_time_ms"]),
         "created_at": row["created_at"].isoformat(),
     }
-
-
-def _json_dict(value) -> Dict[str, Any]:
-    if isinstance(value, dict):
-        return value
-    if isinstance(value, str) and value.strip():
-        try:
-            parsed = json.loads(value)
-            return parsed if isinstance(parsed, dict) else {}
-        except json.JSONDecodeError:
-            return {}
-    return {}
 
 
 def _empty_history(limit: int, offset: int) -> Dict[str, Any]:
@@ -324,23 +280,56 @@ def _deleted_count(result: str) -> int:
         return 0
 
 
-def _clean_text(value: Optional[str], *, uppercase: bool = False) -> Optional[str]:
-    if not _has_text(value):
-        return None
-
-    text = str(value).strip()
-    return text.upper() if uppercase else text
-
-
-def _optional_float(value) -> Optional[float]:
+def _bounded_float(value, *, minimum: float, maximum: Optional[float] = None) -> Optional[float]:
     if value is None:
         return None
     if isinstance(value, Decimal):
-        return float(value)
+        parsed = float(value)
+    else:
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return None
+    if parsed < minimum or (maximum is not None and parsed > maximum):
+        return None
+    return parsed
+
+
+def _optional_float(value) -> Optional[float]:
     try:
         return float(value)
     except (TypeError, ValueError):
         return None
+
+
+def _optional_uuid(value) -> Optional[UUID]:
+    try:
+        return UUID(str(value))
+    except (TypeError, ValueError, AttributeError):
+        return None
+
+
+def _safe_intent(value) -> Optional[str]:
+    normalized = str(value or "").strip().upper()
+    if not is_known_intent(normalized):
+        return None
+    return normalized
+
+
+def _safe_error_code(value) -> Optional[str]:
+    if value is None:
+        return None
+    normalized = str(value or "").strip().upper()
+    if normalized not in _SAFE_ERROR_CODES:
+        return None
+    return normalized
+
+
+def _safe_language(value) -> Optional[str]:
+    normalized = str(value or "").strip().upper()
+    if normalized not in _SAFE_LANGUAGES:
+        return None
+    return normalized
 
 
 def _has_text(value) -> bool:

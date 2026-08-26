@@ -97,12 +97,9 @@ class AppCatalogCloseResponse(BaseModel):
 
 class CommandHistoryItem(BaseModel):
     id: str
-    text: str
-    language: str
     intent: Optional[str] = None
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    language: str
     accepted: bool
-    result_status: Optional[str] = None
     error_code: Optional[str] = None
     confidence: Optional[float] = None
     processing_time_ms: Optional[float] = None

@@ -122,11 +122,12 @@ def predict(
     response["processing_time_ms"] = round((time.perf_counter() - started_at) * 1000, 2)
     background_tasks.add_task(
         _record_command_history_background,
-        request.text,
+        identity.device_ref_id,
+        response.get("intent"),
         request.language,
-        response.copy(),
-        request.session_id,
-        device_id,
+        bool(response.get("accepted")),
+        response.get("confidence"),
+        response.get("error_code"),
         response["processing_time_ms"],
     )
     print(
@@ -210,21 +211,23 @@ async def remove_custom_command(
 
 
 def _record_command_history_background(
-    text: str,
+    device_ref_id: str,
+    intent: str,
     language: str,
-    response: dict,
-    session_id: str | None,
-    device_id: str | None,
+    accepted: bool,
+    confidence: float | None,
+    error_code: str | None,
     processing_time_ms: float,
 ) -> None:
     try:
         asyncio.run(
             record_command_history(
-                text=text,
+                device_ref_id=device_ref_id,
+                intent=intent,
                 language=language,
-                response=response,
-                session_id=session_id,
-                device_id=device_id,
+                accepted=accepted,
+                confidence=confidence,
+                error_code=error_code,
                 processing_time_ms=processing_time_ms,
             )
         )
