@@ -27,11 +27,16 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
+import androidx.activity.EdgeToEdge;
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -77,9 +82,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         AssistantSettings.applySavedTheme(this);
         AssistantSettings.applySavedLanguage(this);
+        EdgeToEdge.enable(this);
         super.onCreate(savedInstanceState);
         selectedLanguage = AssistantSettings.getLanguage(this);
         setContentView(R.layout.activity_main);
+        applyMainContentWindowInsets();
         instance = this;
 
         apiService = RetrofitClient.getClient().create(ApiService.class);
@@ -90,6 +97,29 @@ public class MainActivity extends AppCompatActivity {
 
         refreshListeningUiState();
         warmUpAppCatalog();
+    }
+
+    private void applyMainContentWindowInsets() {
+        View mainContent = findViewById(R.id.main_content_container);
+        int initialPaddingLeft = mainContent.getPaddingLeft();
+        int initialPaddingTop = mainContent.getPaddingTop();
+        int initialPaddingRight = mainContent.getPaddingRight();
+        int initialPaddingBottom = mainContent.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(mainContent, (view, windowInsets) -> {
+            Insets safeInsets = windowInsets.getInsets(
+                    WindowInsetsCompat.Type.systemBars()
+                            | WindowInsetsCompat.Type.displayCutout()
+            );
+            view.setPadding(
+                    initialPaddingLeft + safeInsets.left,
+                    initialPaddingTop + safeInsets.top,
+                    initialPaddingRight + safeInsets.right,
+                    initialPaddingBottom
+            );
+            return windowInsets;
+        });
+        ViewCompat.requestApplyInsets(mainContent);
     }
 
     @Override

@@ -16,16 +16,12 @@ and public policy URL must be completed and reviewed before publication.
 
 ### Voice commands and speech recognition
 
-The App uses Android's `SpeechRecognizer` API and microphone permission to turn
-speech into text. It prefers on-device speech recognition when Android reports
-that it is available and supported. On-device recognition may not be available
-or usable on every supported device, Android version, language or model
-configuration, or recognition implementation. When it is unavailable or
-unsupported, the App uses the speech-recognition service configured by Android
-as a compatibility and availability fallback so that voice-command
-functionality remains available. Depending on the configured recognition
-service and device settings, that service may process microphone audio remotely
-under its provider's terms and privacy practices.
+The App uses the speech-recognition service configured by Android through the
+`SpeechRecognizer` API and microphone permission to turn speech into text. The
+App does not explicitly select an on-device recognizer or a specific recognition
+provider. Depending on the device, configured recognition provider, and its
+settings, the recognition service may process microphone audio on the device or
+remotely under the provider's terms and privacy practices.
 
 The App does not read the recognizer's audio buffer and does not send raw
 microphone audio or audio files to the Android AI Assistant backend. It receives
@@ -225,12 +221,12 @@ Assistant backend is first-party processing, not a transfer to an advertising
 or data-broker integration.
 
 Android speech recognition, the system camera, and the dialer are platform or
-user-selected services. In particular, when on-device recognition is
-unavailable or unsupported, the compatibility and availability fallback uses
-Android's configured recognition service. The configured service can vary by
-device and may process speech data remotely. Those services are governed by
-their providers' terms and privacy practices; the App does not assume or select
-one universal speech-recognition provider.
+user-selected services. The App uses the speech-recognition service configured
+by Android and does not explicitly select a specific provider. The configured
+service can vary by device and settings, and may process speech data on the
+device or remotely. Those services are governed by their providers' terms and
+privacy practices; the App does not assume one universal speech-recognition
+provider.
 
 Production hosting and infrastructure providers are not selected in this
 repository. Before publication, the publisher must identify any service
