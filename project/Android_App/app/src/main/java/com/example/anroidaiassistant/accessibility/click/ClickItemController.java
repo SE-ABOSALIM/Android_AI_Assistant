@@ -2,11 +2,11 @@ package com.example.anroidaiassistant.accessibility.click;
 
 import android.graphics.Rect;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.accessibility.GestureController;
+import com.example.anroidaiassistant.util.SensitiveDebugLog;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.ArrayList;
@@ -87,7 +87,11 @@ public final class ClickItemController {
 
         boolean fallbackClicked = clickTopBarIconFallback(rootNode, command, displayMetrics);
         if (!fallbackClicked) {
-            Log.i(TAG, "no_match | target=\"" + command.targetText + "\" | position=\"" + command.position + "\"");
+            SensitiveDebugLog.info(
+                    TAG,
+                    "no_match | target=\"" + command.targetText
+                            + "\" | position=\"" + command.position + "\""
+            );
         }
         return fallbackClicked;
     }
@@ -122,7 +126,10 @@ public final class ClickItemController {
 
         if (fallbackCandidates.size() == 1) {
             ClickCandidate singleCandidate = fallbackCandidates.get(0);
-            Log.i(TAG, "single_fallback_direct | " + formatCandidate(singleCandidate));
+            SensitiveDebugLog.info(
+                    TAG,
+                    "single_fallback_direct | " + formatCandidate(singleCandidate)
+            );
             if (!clickCandidate(singleCandidate)) {
                 service.showFeedback("Item could not be clicked");
             }
@@ -313,7 +320,10 @@ public final class ClickItemController {
 
     private void logCandidates(String stage, ClickCommand command, List<ClickCandidate> candidates) {
         if (candidates.isEmpty()) {
-            Log.i(TAG, stage + " | target=\"" + command.targetText + "\" | candidates=0");
+            SensitiveDebugLog.info(
+                    TAG,
+                    stage + " | target=\"" + command.targetText + "\" | candidates=0"
+            );
             return;
         }
 
@@ -325,7 +335,7 @@ public final class ClickItemController {
             }
             builder.append(formatCandidate(candidates.get(i)));
         }
-        Log.i(TAG, stage
+        SensitiveDebugLog.info(TAG, stage
                 + " | target=\"" + command.targetText + "\""
                 + " | position=\"" + command.position + "\""
                 + " | candidates=" + candidates.size()
@@ -333,7 +343,7 @@ public final class ClickItemController {
     }
 
     private void logCandidate(String stage, ClickCommand command, ClickCandidate candidate) {
-        Log.i(TAG, stage
+        SensitiveDebugLog.info(TAG, stage
                 + " | target=\"" + command.targetText + "\""
                 + " | position=\"" + command.position + "\""
                 + " | " + formatCandidate(candidate));

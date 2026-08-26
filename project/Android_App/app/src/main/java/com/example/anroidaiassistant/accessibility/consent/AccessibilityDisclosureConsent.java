@@ -4,7 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 public final class AccessibilityDisclosureConsent implements AccessibilityConsentState {
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
 
     private static final String PREFERENCES_NAME = "accessibility_disclosure_consent";
     private static final String ACCEPTED_VERSION_KEY = "accepted_version";
