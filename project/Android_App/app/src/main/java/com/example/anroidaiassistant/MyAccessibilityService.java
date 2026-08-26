@@ -1410,7 +1410,7 @@ public class MyAccessibilityService extends AccessibilityService {
         } else if (confirmationMode) {
             numberSelectionHint = confirmationSelectionHint();
         } else {
-            numberSelectionHint = "Birden cok secenek bulundu. Hangisini isterseniz numarasini soyleyin.";
+            numberSelectionHint = localizedOverlayString(R.string.number_selection_hint_example);
         }
         numberSelectionCallback = callback;
         numberSelectionChoices.clear();

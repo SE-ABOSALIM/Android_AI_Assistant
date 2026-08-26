@@ -153,6 +153,7 @@
     <string name="accessibility_service_connected">Accessibility service connected</string>
     <string name="speech_recognizer_unavailable">Speech recognizer is not available.</string>
     <string name="selection_number_only">Say only the number in the list.</string>
+    <string name="number_selection_hint_example">For example, say "Number One".</string>
     <string name="grid_number_required">Say the grid number.</string>
     <string name="grid_cell_tap_failed">Grid cell could not be tapped.</string>
     <string name="overlay_hearing_format">Heard: %1$s</string>

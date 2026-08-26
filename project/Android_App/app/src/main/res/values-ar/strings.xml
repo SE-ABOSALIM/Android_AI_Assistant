@@ -150,6 +150,7 @@
     <string name="accessibility_service_connected">تم توصيل خدمة إمكانية الوصول</string>
     <string name="speech_recognizer_unavailable">التعرف على الكلام غير متاح.</string>
     <string name="selection_number_only">قل رقم القائمة فقط.</string>
+    <string name="number_selection_hint_example">على سبيل المثال، قل "الرقم واحد".</string>
     <string name="grid_number_required">قل رقم الشبكة.</string>
     <string name="grid_cell_tap_failed">تعذر الضغط على خلية الشبكة.</string>
     <string name="overlay_hearing_format">تم السماع: %1$s</string>

@@ -150,6 +150,7 @@
     <string name="accessibility_service_connected">Erişilebilirlik servisi bağlandı</string>
     <string name="speech_recognizer_unavailable">Konuşma tanıyıcı mevcut değil.</string>
     <string name="selection_number_only">Sadece listedeki numarayı söyle.</string>
+    <string name="number_selection_hint_example">Örneğin, "Numara Bir" deyin.</string>
     <string name="grid_number_required">Grid numarasını söyle.</string>
     <string name="grid_cell_tap_failed">Grid hücresine basılamadı.</string>
     <string name="overlay_hearing_format">Duyuldu: %1$s</string>
