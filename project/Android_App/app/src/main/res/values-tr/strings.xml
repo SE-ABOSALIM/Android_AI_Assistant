@@ -47,9 +47,7 @@
     <string name="permission_camera_title">Kamera Erişimi</string>
     <string name="permission_camera_description">Fener kontrolünü etkinleştirir; fotoğraf için sistem kamerası açılır</string>
     <string name="permission_accessibility_title">Erişilebilirlik Servisi</string>
-    <string name="permission_accessibility_description">Desteklenen cihaz ve uygulama arayüzü işlemleri için gerekli</string>
-    <string name="permission_popup_title">Asistan Açılır Pencereleri</string>
-    <string name="permission_popup_description">Uygulama dışındaki seçim ve etkileşim arayüzü için etkin Erişilebilirlik Servisi tarafından sağlanır</string>
+    <string name="permission_accessibility_description">Desteklenen cihaz ve uygulama arayüzü işlemleri ile asistan açılır pencereleri ve seçim katmanları için gerekli</string>
     <string name="permission_sound_title">Ses Modu Erişimi</string>
     <string name="permission_sound_description">Ses ve gerçek sessiz mod kontrolünü etkinleştirir</string>
     <string name="permission_system_settings_title">Sistem Ayarları Erişimi</string>
@@ -184,7 +182,7 @@
     <string name="quick_setting_location">Konum</string>
     <string name="quick_setting_mobile_data">Mobil veri</string>
     <string name="quick_setting_mobile_hotspot">Erişim noktası</string>
-    <string name="accessibility_service_description">Dokunma, yazma, kaydırma ve cihazda gezinme gibi açıkça istediğiniz arayüz işlemlerini gerçekleştirir.</string>
+    <string name="accessibility_service_description">Dokunma, yazma, kaydırma ve cihazda gezinme gibi açıkça istediğiniz arayüz işlemlerini gerçekleştirir; asistan açılır pencereleri ve seçim katmanları sağlar.</string>
     <string name="accessibility_disclosure_title">Erişilebilirlik Hizmeti açıklaması</string>
     <string name="accessibility_disclosure_body">Android AI Assistant, diğer uygulamalarda veya cihazda açıkça istediğiniz işlemleri ve oluşturduğunuz özel komutlardaki belirli adımları gerçekleştirmek için Android Erişilebilirlik Hizmeti\'ni kullanır.\n\nİstenen bir işlem için gerektiğinde hizmet; görünür metin, içerik açıklamaları, görünüm kimlikleri, alan ipuçları, denetim durumu ve konumu ile uygulama veya pencere bilgileri dahil olmak üzere mevcut ekranın arayüz hiyerarşisini inceleyebilir. Denetimleri bulup etkinleştirebilir, metin girebilir veya temizleyebilir, alanlara odaklanabilir, kaydırabilir, hareketler ve gezinme veya sistem işlemleri gerçekleştirebilir ve desteklenen sistem panelleriyle etkileşebilir.\n\nBu bilgiler yalnızca istediğiniz işlem için gereken arayüzü bulmak ve kullanmak amacıyla işlenir. Görünür ekran metni ve öğe ayrıntıları bu cihazda işlenir; backend sunucumuza gönderilmez, uygulamanın veritabanında saklanmaz veya üçüncü taraflarla paylaşılmaz. Uygulama, komut isteğiyle birlikte yalnızca bir arama alanının mevcut olup olmadığını belirten evet-hayır sinyali gönderir. Backend bu sinyali yalnızca komutu çözümlerken kullanır ve kalıcı olarak saklamaz. İçerik barındıran eşleştirme tanılama kayıtları sürüm derlemelerinde devre dışıdır. Hata ayıklama derlemelerinde yerel Android sistem günlüğünde arayüz etiketleri bulunabilir.\n\nErişilebilirlik erişimi, mikrofon ve yüklü uygulama verilerinden ayrıdır. Şimdi değil seçeneğini kullanabilir ve daha sonra etkinleştirebilirsiniz.</string>
     <string name="accessibility_disclosure_agree">Kabul et ve devam et</string>

@@ -390,17 +390,7 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
                 getString(R.string.permission_accessibility_title),
                 getString(R.string.permission_accessibility_description),
                 R.drawable.ic_perm_accessibility,
-                fragment -> fragment.isAccessibilityEnabled(),
-                this::requestAccessibilitySetup
-        ));
-        items.add(PermissionItem.advanced(
-                getString(R.string.permission_popup_title),
-                getString(R.string.permission_popup_description),
-                R.drawable.ic_perm_popup,
-                fragment -> FeaturePermissionAccess.isGranted(
-                        fragment.requireContext(),
-                        AssistantCapability.POPUP
-                ),
+                fragment -> fragment.isAccessibilityReadyForAssistant(),
                 this::requestAccessibilitySetup
         ));
         return items;
@@ -492,6 +482,14 @@ public final class PermissionsFragment extends Fragment implements BackPressHand
     private boolean isAccessibilityEnabled() {
         MainActivity activity = mainActivity();
         return activity != null && activity.isAssistantAccessibilityServiceEnabled();
+    }
+
+    private boolean isAccessibilityReadyForAssistant() {
+        return isAccessibilityEnabled()
+                && FeaturePermissionAccess.isGranted(
+                        requireContext(),
+                        AssistantCapability.POPUP
+                );
     }
 
     private boolean isNotificationPolicyAccessGranted() {

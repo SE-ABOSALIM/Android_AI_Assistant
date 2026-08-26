@@ -72,10 +72,22 @@ public class AssistantStartupPolicyTest {
         assertEquals(
                 Arrays.asList(
                         AssistantCapability.MICROPHONE,
-                        AssistantCapability.ACCESSIBILITY_SERVICE,
-                        AssistantCapability.POPUP
+                        AssistantCapability.ACCESSIBILITY_SERVICE
                 ),
                 policy.missingCoreCapabilities(AssistantCapabilityState.noneGranted())
+        );
+    }
+
+    @Test
+    public void assistantStartup_doesNotRequireSeparatePopupUserAction() {
+        AssistantCapabilityState popupNotReady = AssistantCapabilityState.noneGranted()
+                .withGranted(AssistantCapability.MICROPHONE)
+                .withGranted(AssistantCapability.ACCESSIBILITY_SERVICE);
+
+        assertFalse(policy.canActivate(popupNotReady));
+        assertEquals(
+                Arrays.asList(AssistantCapability.ACCESSIBILITY_SERVICE),
+                policy.missingCoreCapabilities(popupNotReady)
         );
     }
 

@@ -373,8 +373,6 @@ public class MainActivity extends AppCompatActivity {
                 return R.string.permission_microphone_title;
             case ACCESSIBILITY_SERVICE:
                 return R.string.permission_accessibility_title;
-            case POPUP:
-                return R.string.permission_popup_title;
             default:
                 throw new IllegalArgumentException("Not a core capability: " + capability);
         }

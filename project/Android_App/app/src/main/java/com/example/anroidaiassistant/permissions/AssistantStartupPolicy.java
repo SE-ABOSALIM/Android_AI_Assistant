@@ -6,11 +6,10 @@ import java.util.Collections;
 import java.util.List;
 
 public final class AssistantStartupPolicy {
-    private static final List<AssistantCapability> CORE_CAPABILITIES =
+    private static final List<AssistantCapability> ACTIONABLE_CORE_CAPABILITIES =
             Collections.unmodifiableList(Arrays.asList(
                     AssistantCapability.MICROPHONE,
-                    AssistantCapability.ACCESSIBILITY_SERVICE,
-                    AssistantCapability.POPUP
+                    AssistantCapability.ACCESSIBILITY_SERVICE
             ));
 
     public boolean canActivate(AssistantCapabilityState state) {
@@ -19,8 +18,12 @@ public final class AssistantStartupPolicy {
 
     public List<AssistantCapability> missingCoreCapabilities(AssistantCapabilityState state) {
         List<AssistantCapability> missing = new ArrayList<>();
-        for (AssistantCapability capability : CORE_CAPABILITIES) {
-            if (!state.isGranted(capability)) {
+        for (AssistantCapability capability : ACTIONABLE_CORE_CAPABILITIES) {
+            boolean granted = state.isGranted(capability);
+            if (capability == AssistantCapability.ACCESSIBILITY_SERVICE) {
+                granted = granted && state.isGranted(AssistantCapability.POPUP);
+            }
+            if (!granted) {
                 missing.add(capability);
             }
         }

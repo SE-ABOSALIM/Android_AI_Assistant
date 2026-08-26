@@ -47,9 +47,7 @@
     <string name="permission_camera_title">الوصول إلى الكاميرا</string>
     <string name="permission_camera_description">يمكّن التحكم بالمصباح، بينما يفتح التصوير كاميرا النظام</string>
     <string name="permission_accessibility_title">خدمة إمكانية الوصول</string>
-    <string name="permission_accessibility_description">مطلوب لإجراءات واجهة الجهاز والتطبيقات المدعومة</string>
-    <string name="permission_popup_title">نوافذ المساعد المنبثقة</string>
-    <string name="permission_popup_description">توفرها خدمة إمكانية الوصول النشطة لواجهة الاختيار والتفاعل خارج التطبيق</string>
+    <string name="permission_accessibility_description">مطلوبة لإجراءات واجهة الجهاز والتطبيقات المدعومة، بما في ذلك نوافذ المساعد المنبثقة وطبقات التحديد</string>
     <string name="permission_sound_title">وصول وضع الصوت</string>
     <string name="permission_sound_description">يمكّن التحكم بالصوت والوضع الصامت الحقيقي</string>
     <string name="permission_system_settings_title">وصول إعدادات النظام</string>
@@ -184,7 +182,7 @@
     <string name="quick_setting_location">الموقع</string>
     <string name="quick_setting_mobile_data">بيانات الهاتف</string>
     <string name="quick_setting_mobile_hotspot">نقطة الاتصال</string>
-    <string name="accessibility_service_description">ينفذ إجراءات الواجهة التي تطلبها بوضوح، مثل الضغط والكتابة والتمرير والتنقل في الجهاز.</string>
+    <string name="accessibility_service_description">ينفذ إجراءات الواجهة التي تطلبها بوضوح، مثل الضغط والكتابة والتمرير والتنقل في الجهاز، ويوفر نوافذ المساعد المنبثقة وطبقات التحديد.</string>
     <string name="accessibility_disclosure_title">إفصاح خدمة تسهيل الاستخدام</string>
     <string name="accessibility_disclosure_body">يستخدم Android AI Assistant خدمة تسهيل الاستخدام في Android لتنفيذ الإجراءات التي تطلبها بوضوح في التطبيقات الأخرى أو على الجهاز، بما في ذلك الخطوات المحددة في الأوامر المخصصة التي تنشئها.\n\nعند الحاجة لتنفيذ إجراء مطلوب، يمكن للخدمة فحص بنية واجهة الشاشة الحالية، بما في ذلك النص الظاهر وأوصاف المحتوى ومعرّفات العناصر وتلميحات الحقول وحالة عناصر التحكم وموقعها ومعلومات التطبيق أو النافذة. ويمكنها العثور على عناصر التحكم وتنشيطها، وإدخال النص أو مسحه، وتركيز الحقول، والتمرير، وتنفيذ الإيماءات وإجراءات التنقل أو النظام، والتفاعل مع لوحات النظام المدعومة.\n\nتُستخدم هذه المعلومات فقط لتحديد الواجهة اللازمة لتنفيذ الإجراء الذي طلبته والتفاعل معها. تتم معالجة نص الشاشة الظاهر وتفاصيل العناصر على هذا الجهاز، ولا تُرسل إلى خادمنا الخلفي ولا تُخزن في قاعدة بيانات التطبيق ولا تُشارك مع جهات خارجية. يرسل التطبيق فقط إشارة نعم أو لا توضح ما إذا كان حقل بحث متاحًا مع طلب الأمر. يستخدم الخادم الخلفي هذه الإشارة فقط أثناء تحديد الأمر ولا يحتفظ بها. تُعطّل سجلات المطابقة التي تحتوي على محتوى في إصدارات النشر، وقد تتضمن إصدارات تصحيح الأخطاء تسميات الواجهة في سجل نظام Android المحلي.\n\nيختلف وصول تسهيل الاستخدام عن بيانات الميكروفون والتطبيقات المثبتة. يمكنك اختيار ليس الآن وتفعيله لاحقًا.</string>
     <string name="accessibility_disclosure_agree">موافق ومتابعة</string>
