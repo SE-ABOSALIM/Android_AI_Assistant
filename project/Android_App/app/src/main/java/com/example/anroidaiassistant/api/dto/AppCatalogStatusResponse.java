@@ -5,13 +5,12 @@ import com.google.gson.annotations.SerializedName;
 public class AppCatalogStatusResponse {
     private boolean accepted;
 
-    @SerializedName("session_id")
-    private String sessionId;
-
     private boolean available;
 
     @SerializedName("catalog_version")
     private String catalogVersion;
+
+    private String language;
 
     @SerializedName("app_count")
     private int appCount;
@@ -20,16 +19,16 @@ public class AppCatalogStatusResponse {
         return accepted;
     }
 
-    public String getSessionId() {
-        return sessionId;
-    }
-
     public boolean isAvailable() {
         return available;
     }
 
     public String getCatalogVersion() {
         return catalogVersion;
+    }
+
+    public String getLanguage() {
+        return language;
     }
 
     public int getAppCount() {

@@ -443,35 +443,22 @@ public class MainActivity extends AppCompatActivity {
             pendingCatalogReadyActions.add(onCatalogReady);
         }
 
-        if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
-            verifyExistingAppCatalogThen();
-            return;
-        }
-
-        startAppCatalogSyncIfNeeded(true);
+        verifyExistingAppCatalogThen(true);
     }
 
     private void warmUpAppCatalog() {
-        if (AssistantSession.isCatalogReadyForLanguage(selectedLanguage)) {
-            return;
-        }
-        startAppCatalogSyncIfNeeded(false);
+        verifyExistingAppCatalogThen(false);
     }
 
-    private void verifyExistingAppCatalogThen() {
+    private void verifyExistingAppCatalogThen(boolean reportFailure) {
         if (isCatalogStatusCheckInProgress) {
             return;
         }
 
-        String sessionId = AssistantSession.getSessionId();
-        if (sessionId == null) {
-            startAppCatalogSyncIfNeeded(true);
-            return;
-        }
-
+        AssistantSession.getOrCreateSessionId();
         isCatalogStatusCheckInProgress = true;
         refreshListeningUiState();
-        appCatalogStatusCall = apiService.getAppCatalogStatus(sessionId);
+        appCatalogStatusCall = apiService.getAppCatalogStatus();
         appCatalogStatusCall.enqueue(new Callback<AppCatalogStatusResponse>() {
             @Override
             public void onResponse(Call<AppCatalogStatusResponse> call, Response<AppCatalogStatusResponse> response) {
@@ -483,14 +470,22 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     AppCatalogStatusResponse body = response.body();
-                    boolean catalogAvailable = response.isSuccessful()
-                            && body != null
-                            && body.isAccepted()
-                            && body.isAvailable();
-                    if (catalogAvailable) {
+                    String installedCatalogVersion = AppCatalogSyncer.getInstalledCatalogVersion(MainActivity.this);
+                    boolean syncRequired = !response.isSuccessful()
+                            || body == null
+                            || AppCatalogSyncer.requiresCatalogSync(
+                                    body.isAccepted(),
+                                    body.isAvailable(),
+                                    body.getCatalogVersion(),
+                                    body.getLanguage(),
+                                    installedCatalogVersion,
+                                    selectedLanguage
+                            );
+                    if (!syncRequired) {
+                        AssistantSession.setCatalogVersion(body.getCatalogVersion(), selectedLanguage);
                         runPendingCatalogReadyActions();
                     } else {
-                        startAppCatalogSyncIfNeeded(true);
+                        startAppCatalogSyncIfNeeded(reportFailure);
                     }
                     refreshListeningUiState();
                 });
@@ -504,7 +499,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     isCatalogStatusCheckInProgress = false;
                     appCatalogStatusCall = null;
-                    startAppCatalogSyncIfNeeded(true);
+                    startAppCatalogSyncIfNeeded(reportFailure);
                     refreshListeningUiState();
                 });
             }

@@ -82,9 +82,10 @@ class AppCatalogResponse(BaseModel):
 
 class AppCatalogStatusResponse(BaseModel):
     accepted: bool
-    session_id: str
+    session_id: Optional[str] = None
     available: bool
     catalog_version: Optional[str] = None
+    language: Optional[str] = None
     app_count: int = 0
 
 

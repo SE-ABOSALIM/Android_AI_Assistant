@@ -29,8 +29,8 @@ public interface ApiService {
     @POST("app-catalog")
     Call<AppCatalogResponse> syncAppCatalog(@Body AppCatalogRequest request);
 
-    @GET("app-catalog/{session_id}")
-    Call<AppCatalogStatusResponse> getAppCatalogStatus(@Path("session_id") String sessionId);
+    @GET("app-catalog/status")
+    Call<AppCatalogStatusResponse> getAppCatalogStatus();
 
     @DELETE("app-catalog/{session_id}")
     Call<Void> closeAppCatalog(@Path("session_id") String sessionId);
