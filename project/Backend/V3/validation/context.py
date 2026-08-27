@@ -10,7 +10,6 @@ class ValidationContext:
     parameters: Dict[str, Any]
     confidence: float
     raw_label: str
-    top_predictions: List[Dict[str, Any]]
     text_alternatives: Optional[List[str]]
     session_id: Optional[str]
     device_id: Optional[str]

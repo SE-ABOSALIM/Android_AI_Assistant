@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from V3.config import MAX_LENGTH
 from V3.services.model_service.labels import label_to_json
@@ -8,7 +8,7 @@ from V3.utils.text import normalize_text
 
 def predict_model(text: str, language: str) -> Dict[str, Any]:
     """
-    Runs model inference and returns the best prediction plus top-5 debug data.
+    Runs model inference and returns the best prediction.
     """
 
     torch, tokenizer, model, device = get_model_bundle()
@@ -27,15 +27,6 @@ def predict_model(text: str, language: str) -> Dict[str, Any]:
 
     topk = torch.topk(probs, k=min(5, probs.shape[0]))
 
-    top_predictions: List[Dict[str, Any]] = []
-
-    for score, idx in zip(topk.values, topk.indices):
-        label = model.config.id2label[int(idx.item())]
-        top_predictions.append({
-            "label": label,
-            "confidence": float(score.item()),
-        })
-
     pred_id = int(topk.indices[0].item())
     confidence = float(topk.values[0].item())
     raw_label = model.config.id2label[pred_id]
@@ -47,5 +38,4 @@ def predict_model(text: str, language: str) -> Dict[str, Any]:
         "parameters": model_json.get("parameters", {}),
         "confidence": confidence,
         "raw_label": raw_label,
-        "top_predictions": top_predictions,
     }

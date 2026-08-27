@@ -119,11 +119,7 @@ def enrich_stop_listening(context: ValidationContext) -> None:
         )
         return
 
-    if should_accept_stop_listening(
-        context.confidence,
-        context.raw_label,
-        context.top_predictions,
-    ):
+    if should_accept_stop_listening(context.raw_label):
         return
 
     context.reject(

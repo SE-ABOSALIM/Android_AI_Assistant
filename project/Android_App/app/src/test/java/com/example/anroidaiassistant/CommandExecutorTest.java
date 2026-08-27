@@ -91,6 +91,61 @@ public class CommandExecutorTest {
     }
 
     @Test
+    public void rejectedResponseDoesNotDispatchAndShowsBackendMessage() {
+        List<String> dispatchedValues = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
+        CommandExecutor executor = executorWithRecordingHandler(dispatchedValues, messages);
+        PredictResponse response = gson.fromJson(
+                "{\"accepted\":false,\"intent\":\"OPEN_APP\",\"parameters\":{},"
+                        + "\"missing_slots\":[],\"error_code\":\"UNSUPPORTED_INTENT\","
+                        + "\"error_message\":\"Backend rejected command\"}",
+                PredictResponse.class
+        );
+
+        executor.executeCommand(response);
+
+        assertEquals(Collections.emptyList(), dispatchedValues);
+        assertEquals(Collections.singletonList("Backend rejected command"), messages);
+    }
+
+    @Test
+    public void missingSlotResponseDoesNotDispatchAndShowsTargetedPrompt() {
+        List<String> dispatchedValues = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
+        CommandExecutor executor = executorWithRecordingHandler(dispatchedValues, messages);
+        PredictResponse response = gson.fromJson(
+                "{\"accepted\":false,\"intent\":\"SCROLL_SCREEN\",\"parameters\":{},"
+                        + "\"missing_slots\":[\"direction\"],"
+                        + "\"error_code\":\"MISSING_REQUIRED_SLOT\","
+                        + "\"error_message\":\"Required parameter is missing.\"}",
+                PredictResponse.class
+        );
+
+        executor.executeCommand(response);
+
+        assertEquals(Collections.emptyList(), dispatchedValues);
+        assertEquals(Collections.singletonList("Which direction?"), messages);
+    }
+
+    @Test
+    public void lowConfidenceResponseDoesNotDispatchAndPreservesBackendMessage() {
+        List<String> dispatchedValues = new ArrayList<>();
+        List<String> messages = new ArrayList<>();
+        CommandExecutor executor = executorWithRecordingHandler(dispatchedValues, messages);
+        PredictResponse response = gson.fromJson(
+                "{\"accepted\":false,\"intent\":\"UNKNOWN_COMMAND\",\"parameters\":{},"
+                        + "\"missing_slots\":[],\"error_code\":\"LOW_CONFIDENCE\","
+                        + "\"error_message\":\"Please repeat the command.\"}",
+                PredictResponse.class
+        );
+
+        executor.executeCommand(response);
+
+        assertEquals(Collections.emptyList(), dispatchedValues);
+        assertEquals(Collections.singletonList("Please repeat the command."), messages);
+    }
+
+    @Test
     public void accessibilityExecutionBlockedWithoutConsent_routesToDisclosure() {
         List<String> dispatchedValues = new ArrayList<>();
         List<String> messages = new ArrayList<>();

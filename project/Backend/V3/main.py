@@ -44,6 +44,7 @@ from V3.services.app_catalog_service import (
     save_app_catalog,
 )
 from V3.services.custom_command_service import try_build_custom_command_response
+from V3.validation.response import pop_internal_confidence
 
 app = FastAPI(title="Android Assistant Intent API")
 app.add_middleware(
@@ -119,24 +120,24 @@ def predict(
             catalog_version=request.catalog_version,
             has_search_input=request.has_search_input,
         )
-    response["processing_time_ms"] = round((time.perf_counter() - started_at) * 1000, 2)
+    prediction_confidence = pop_internal_confidence(response)
+    processing_time_ms = round((time.perf_counter() - started_at) * 1000, 2)
     background_tasks.add_task(
         _record_command_history_background,
         identity.device_ref_id,
         response.get("intent"),
         request.language,
         bool(response.get("accepted")),
-        response.get("confidence"),
+        prediction_confidence,
         response.get("error_code"),
-        response["processing_time_ms"],
+        processing_time_ms,
     )
     print(
-        "\n[predict] "
-        f"input: {response['input']} ||",
+        "[predict] processed | "
         f"intent={response['intent']} ||",
-        f"duration_ms={response['processing_time_ms']:.2f} ||",
-        f"confidence={response.get('confidence')} ||",
-        f"accepted={bool(response.get('accepted'))}\n",
+        f"duration_ms={processing_time_ms:.2f} ||",
+        f"confidence={prediction_confidence} ||",
+        f"accepted={bool(response.get('accepted'))}",
         flush=True,
     )
     return response

@@ -150,11 +150,6 @@ public class CommandExecutor {
             return;
         }
 
-        if (response.isNeedsConfirmation()) {
-            handleRejectedCommand(response);
-            return;
-        }
-
         if (errorEquals(response, "LOW_CONFIDENCE")
                 || errorEquals(response, "MISSING_REQUIRED_SLOT")
                 || errorEquals(response, "UNKNOWN_COMMAND")) {
@@ -394,11 +389,6 @@ public class CommandExecutor {
         }
 
         if (!response.isAccepted()) {
-            handleRejectedCommand(response);
-            return false;
-        }
-
-        if (response.isNeedsConfirmation()) {
             handleRejectedCommand(response);
             return false;
         }
@@ -784,11 +774,6 @@ public class CommandExecutor {
 
         if (response.getMissingSlots() != null && !response.getMissingSlots().isEmpty()) {
             showMessage(buildMissingSlotsMessage(response.getMissingSlots()));
-            return;
-        }
-
-        if (response.isNeedsConfirmation()) {
-            showMessage(firstNonEmpty(response.getErrorMessage(), "Please clarify the command."));
             return;
         }
 

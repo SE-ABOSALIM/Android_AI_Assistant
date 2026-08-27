@@ -22,7 +22,6 @@ def _validate(intent, parameters=None, text="test command", confidence=1.0, **kw
         model_parameters=parameters or {},
         confidence=confidence,
         raw_label=kwargs.pop("raw_label", f"{intent}__test"),
-        top_predictions=kwargs.pop("top_predictions", []),
         text_alternatives=kwargs.pop("text_alternatives", []),
         session_id=kwargs.pop("session_id", None),
         catalog_version=kwargs.pop("catalog_version", None),
@@ -144,17 +143,20 @@ class IntentContractTests(unittest.TestCase):
         self.assertEqual(missing["missing_slots"], ["brightness"])
         self.assertEqual(missing["error_code"], "MISSING_REQUIRED_SLOT")
         self.assertTrue(accepted["accepted"])
-        self.assertTrue(accepted["backend_supported"])
-        self.assertTrue(accepted["android_supported"])
+        self.assertTrue(is_android_supported(
+            get_intent_contract("ADJUST_BRIGHTNESS"),
+            accepted["parameters"],
+        ))
 
     def test_android_supported_requires_android_parameters(self):
         missing = _validate("SCROLL_SCREEN", {}, text="scroll")
         accepted = _validate("SCROLL_SCREEN", {"direction": "down"}, text="scroll down")
+        contract = get_intent_contract("SCROLL_SCREEN")
 
         self.assertFalse(missing["accepted"])
-        self.assertFalse(missing["android_supported"])
+        self.assertFalse(is_android_supported(contract, missing["parameters"]))
         self.assertTrue(accepted["accepted"])
-        self.assertTrue(accepted["android_supported"])
+        self.assertTrue(is_android_supported(contract, accepted["parameters"]))
 
     def test_navigation_intents_are_android_supported(self):
         examples = {
@@ -175,8 +177,10 @@ class IntentContractTests(unittest.TestCase):
                 response = _validate(intent, text=text)
 
                 self.assertTrue(response["accepted"])
-                self.assertTrue(response["backend_supported"])
-                self.assertTrue(response["android_supported"])
+                self.assertTrue(is_android_supported(
+                    get_intent_contract(intent),
+                    response["parameters"],
+                ))
 
     def test_media_playback_intent_is_android_supported(self):
         response = _validate(
@@ -186,8 +190,10 @@ class IntentContractTests(unittest.TestCase):
         )
 
         self.assertTrue(response["accepted"])
-        self.assertTrue(response["backend_supported"])
-        self.assertTrue(response["android_supported"])
+        self.assertTrue(is_android_supported(
+            get_intent_contract("SET_MEDIA_PLAYBACK"),
+            response["parameters"],
+        ))
 
     def test_stop_listening_rejects_model_prediction(self):
         model_prediction = _validate(
@@ -196,10 +202,6 @@ class IntentContractTests(unittest.TestCase):
             text="stop listening",
             language="EN",
             confidence=0.99,
-            top_predictions=[
-                {"label": "STOP_LISTENING__none", "confidence": 0.99},
-                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.01},
-            ],
         )
 
         self.assertFalse(model_prediction["accepted"])
@@ -217,7 +219,10 @@ class IntentContractTests(unittest.TestCase):
         )
 
         self.assertTrue(rule_prediction["accepted"])
-        self.assertTrue(rule_prediction["android_supported"])
+        self.assertTrue(is_android_supported(
+            get_intent_contract("STOP_LISTENING"),
+            rule_prediction["parameters"],
+        ))
 
     def test_stop_listening_rejects_single_word_commands(self):
         examples = ["bas", "git", "kapat"]
@@ -231,10 +236,6 @@ class IntentContractTests(unittest.TestCase):
                     language="TR",
                     confidence=0.99,
                     raw_label="RULE::stop_listening",
-                    top_predictions=[
-                        {"label": "STOP_LISTENING__none", "confidence": 0.99},
-                        {"label": "UNKNOWN_COMMAND__none", "confidence": 0.01},
-                    ],
                 )
 
                 self.assertFalse(response["accepted"])
@@ -247,10 +248,6 @@ class IntentContractTests(unittest.TestCase):
             text="stop something",
             language="EN",
             confidence=0.91,
-            top_predictions=[
-                {"label": "STOP_LISTENING__none", "confidence": 0.91},
-                {"label": "UNKNOWN_COMMAND__none", "confidence": 0.79},
-            ],
         )
 
         self.assertFalse(model_prediction["accepted"])
@@ -269,8 +266,10 @@ class IntentContractTests(unittest.TestCase):
                 response = _validate(intent, text=text)
 
                 self.assertTrue(response["accepted"])
-                self.assertTrue(response["backend_supported"])
-                self.assertTrue(response["android_supported"])
+                self.assertTrue(is_android_supported(
+                    get_intent_contract(intent),
+                    response["parameters"],
+                ))
 
         focus = _validate(
             "SET_INPUT_FOCUS",
@@ -280,8 +279,10 @@ class IntentContractTests(unittest.TestCase):
         )
 
         self.assertTrue(focus["accepted"])
-        self.assertTrue(focus["backend_supported"])
-        self.assertTrue(focus["android_supported"])
+        self.assertTrue(is_android_supported(
+            get_intent_contract("SET_INPUT_FOCUS"),
+            focus["parameters"],
+        ))
 
     def test_click_item_extracts_target_and_position(self):
         bottom_plus = _validate("CLICK_ITEM", {}, text="a\u015fa\u011f\u0131daki art\u0131ya bas", language="TR")
@@ -301,7 +302,6 @@ class IntentContractTests(unittest.TestCase):
         )
 
         self.assertTrue(bottom_plus["accepted"])
-        self.assertTrue(bottom_plus["android_supported"])
         self.assertEqual(bottom_plus["parameters"]["target_text"], "arti")
         self.assertEqual(bottom_plus["parameters"]["position"], "bottom")
 
@@ -359,8 +359,10 @@ class IntentContractTests(unittest.TestCase):
                 response = _validate(intent, parameters, text=f"turn on {intent.lower()}")
 
                 self.assertTrue(response["accepted"])
-                self.assertTrue(response["backend_supported"])
-                self.assertTrue(response["android_supported"])
+                self.assertTrue(is_android_supported(
+                    get_intent_contract(intent),
+                    response["parameters"],
+                ))
 
     def test_app_management_intents_are_android_supported(self):
         session_id = "unit-test-app-management"
@@ -395,8 +397,10 @@ class IntentContractTests(unittest.TestCase):
                     )
 
                     self.assertTrue(response["accepted"])
-                    self.assertTrue(response["backend_supported"])
-                    self.assertTrue(response["android_supported"])
+                    self.assertTrue(is_android_supported(
+                        get_intent_contract(intent),
+                        response["parameters"],
+                    ))
 
     def test_parameter_group_allows_volume_level_and_marks_android_supported(self):
         backend_supported = _validate(
@@ -411,10 +415,15 @@ class IntentContractTests(unittest.TestCase):
         )
 
         self.assertTrue(backend_supported["accepted"])
-        self.assertTrue(backend_supported["backend_supported"])
-        self.assertTrue(backend_supported["android_supported"])
+        self.assertTrue(is_android_supported(
+            get_intent_contract("ADJUST_VOLUME"),
+            backend_supported["parameters"],
+        ))
         self.assertTrue(android_supported["accepted"])
-        self.assertTrue(android_supported["android_supported"])
+        self.assertTrue(is_android_supported(
+            get_intent_contract("ADJUST_VOLUME"),
+            android_supported["parameters"],
+        ))
 
     def test_model_guard_allows_turkish_volume_phrasing(self):
         examples = [
@@ -431,10 +440,6 @@ class IntentContractTests(unittest.TestCase):
                     text=text,
                     language="TR",
                     confidence=0.92,
-                    top_predictions=[
-                        {"label": "ADJUST_VOLUME__volume_level=max", "confidence": 0.92},
-                        {"label": "UNKNOWN_COMMAND__none", "confidence": 0.04},
-                    ],
                 )
 
                 self.assertTrue(response["accepted"])
@@ -481,7 +486,6 @@ class IntentContractTests(unittest.TestCase):
         write = _validate("WRITE_TEXT", {}, text='write "Meeting starts at 5"')
 
         self.assertTrue(search["accepted"])
-        self.assertTrue(search["android_supported"])
         self.assertEqual(search["parameters"]["query"], "weather")
         self.assertTrue(arabic_search["accepted"])
         self.assertEqual(arabic_search["parameters"]["query"], "\u0627\u0644\u0637\u0642\u0633")
@@ -496,7 +500,6 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(turkish_search_this["accepted"])
         self.assertEqual(turkish_search_this["parameters"]["query"], "istanbul hava durumu")
         self.assertTrue(write["accepted"])
-        self.assertTrue(write["android_supported"])
         self.assertEqual(write["parameters"]["text"], "Meeting starts at 5")
 
     def test_resolves_turkish_single_word_ara_as_contact(self):
@@ -586,7 +589,6 @@ class IntentContractTests(unittest.TestCase):
         )
 
         self.assertTrue(morning["accepted"])
-        self.assertTrue(morning["android_supported"])
         self.assertEqual(morning["parameters"]["alarm_hour"], 5)
         self.assertEqual(morning["parameters"]["alarm_minute"], 0)
 
@@ -681,7 +683,6 @@ class IntentContractTests(unittest.TestCase):
             )
 
         self.assertTrue(response["accepted"])
-        self.assertTrue(response["android_supported"])
         self.assertEqual(response["parameters"]["app_package_name"], "com.whatsapp")
 
     def test_predict_open_app_rule_bypasses_model_for_spelled_app_name(self):
@@ -705,7 +706,6 @@ class IntentContractTests(unittest.TestCase):
 
             self.assertTrue(response["accepted"])
             self.assertEqual(response["intent"], "OPEN_APP")
-            self.assertEqual(response["raw_label"], "RULE::open_app")
             self.assertEqual(response["parameters"]["app_package_name"], "com.ceptevar")
 
     def test_predict_arabic_open_app_uses_catalog_phonetic_aliases(self):
@@ -774,12 +774,8 @@ class IntentContractTests(unittest.TestCase):
                     contract = get_intent_contract(intent)
 
                     self.assertTrue(response["accepted"])
-                    self.assertTrue(response["backend_supported"])
                     self.assertEqual(response["missing_slots"], [])
-                    self.assertEqual(
-                        response["android_supported"],
-                        is_android_supported(contract, response["parameters"]),
-                    )
+                    self.assertTrue(is_android_supported(contract, response["parameters"]))
 
 
 if __name__ == "__main__":

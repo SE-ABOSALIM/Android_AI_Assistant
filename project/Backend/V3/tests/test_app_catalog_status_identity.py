@@ -31,19 +31,13 @@ def _catalog_status(version: str):
 
 def _prediction_response():
     return {
-        "input": "open maps",
-        "normalized_input": "open maps",
-        "language": "TR",
         "intent": "OPEN_APP",
         "parameters": {"app_name": "maps"},
         "accepted": True,
         "missing_slots": [],
         "error_code": None,
         "error_message": None,
-        "needs_confirmation": False,
-        "confidence": 1.0,
-        "threshold": 0.5,
-        "raw_label": "RULE::open_app",
+        "_internal_confidence": 1.0,
     }
 
 

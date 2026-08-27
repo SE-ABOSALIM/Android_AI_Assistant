@@ -2,7 +2,6 @@ import asyncio
 from typing import Any, Dict, Optional
 
 from V3.database.custom_command_repository import find_custom_command_by_spoken_name
-from V3.intents.registry import get_intent_contract, get_threshold
 from V3.validation.response import build_response
 
 
@@ -43,25 +42,16 @@ def try_build_custom_command_response(
     command = _run_lookup(device_id=device_id, language=language, command_name=command_name)
     if command is None:
         return build_response(
-            original_text=text,
-            language=language,
             intent="UNKNOWN_COMMAND",
             parameters={"custom_command_name": command_name},
             accepted=False,
             missing_slots=[],
             error_code="CUSTOM_COMMAND_NOT_FOUND",
             error_message="Custom command was not found.",
-            needs_confirmation=False,
             confidence=1.0,
-            threshold=get_threshold("UNKNOWN_COMMAND"),
-            raw_label="RULE::CUSTOM_COMMAND_PREFIX",
-            top_predictions=[],
-            contract=get_intent_contract("UNKNOWN_COMMAND"),
         )
 
     return build_response(
-        original_text=text,
-        language=language,
         intent="RUN_CUSTOM_COMMAND",
         parameters={
             "custom_command_id": command["id"],
@@ -72,12 +62,7 @@ def try_build_custom_command_response(
         missing_slots=[],
         error_code=None,
         error_message=None,
-        needs_confirmation=False,
         confidence=1.0,
-        threshold=get_threshold("RUN_CUSTOM_COMMAND"),
-        raw_label="RULE::CUSTOM_COMMAND_PREFIX",
-        top_predictions=[],
-        contract=get_intent_contract("RUN_CUSTOM_COMMAND"),
     )
 
 

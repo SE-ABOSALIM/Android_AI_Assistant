@@ -29,6 +29,7 @@ class PrivacyLoggingTests(unittest.IsolatedAsyncioTestCase):
             "accepted": True,
             "intent": "CALL_CONTACT",
             "parameters": {"contact_name": private_parameter},
+            "_internal_confidence": 0.99,
         }
 
         output = io.StringIO()

@@ -168,24 +168,12 @@ class CustomCommandMutationResponse(BaseModel):
 
 
 class FinalResponse(BaseModel):
-    input: str
-    normalized_input: str
-    language: str
     intent: str
     parameters: Dict[str, Any]
-    backend_supported: bool = False
-    android_supported: bool = False
-    parameter_contract: Dict[str, Any] = Field(default_factory=dict)
     accepted: bool
-    missing_slots: List[str]
-    error_code: Optional[str]
-    error_message: Optional[str]
-    needs_confirmation: bool
-    confidence: float
-    threshold: float
-    raw_label: str
-    processing_time_ms: float = 0.0
-    top_predictions: List[Dict[str, Any]] = Field(default_factory=list)
+    missing_slots: List[str] = Field(default_factory=list)
+    error_code: Optional[str] = None
+    error_message: Optional[str] = None
 
 
 def _validate_json_depth(value: Any, depth: int = 0) -> None:
