@@ -120,9 +120,14 @@ class AuthenticationRegressionTests(unittest.TestCase):
 
         self.assertEqual(403, response.status_code)
 
-    def test_appCatalogPath_forAnotherIdentifierDoesNotAccessData(self):
+    def test_sessionIdCannotSelectAnotherDeviceCatalog(self):
         get_status = unittest.mock.Mock(
-            return_value={"available": False, "catalog_version": None, "app_count": 0}
+            return_value={
+                "available": True,
+                "catalog_version": "device-a-v1",
+                "language": "TR",
+                "app_count": 2,
+            }
         )
         with self._authenticated_device_a(), patch.object(
             main,
@@ -135,8 +140,25 @@ class AuthenticationRegressionTests(unittest.TestCase):
             )
 
         self.assertEqual(200, response.status_code)
-        self.assertFalse(response.json()["available"])
-        get_status.assert_not_called()
+        self.assertTrue(response.json()["available"])
+        self.assertEqual("device-a-v1", response.json()["catalog_version"])
+        get_status.assert_called_once_with("device-a")
+
+    def test_deviceIdCannotOverrideAuthenticatedCatalogOwner(self):
+        with self._authenticated_device_a():
+            response = self.client.post(
+                "/app-catalog",
+                json={
+                    "session_id": "assistant-session-2",
+                    "device_id": "device-b",
+                    "language": "TR",
+                    "catalog_version": "catalog-v1",
+                    "apps": [],
+                },
+                headers={"Authorization": "Bearer valid-credential"},
+            )
+
+        self.assertEqual(403, response.status_code)
 
     def test_explicitCustomCommandCrud_remainsFunctionalForOwner(self):
         item = {

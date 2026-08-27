@@ -73,6 +73,7 @@ def get_app_catalog_status(session_id: Optional[str]) -> Dict[str, object]:
         return {
             "available": False,
             "catalog_version": None,
+            "language": None,
             "app_count": 0,
         }
 
@@ -80,6 +81,7 @@ def get_app_catalog_status(session_id: Optional[str]) -> Dict[str, object]:
     return {
         "available": True,
         "catalog_version": catalog.get("catalog_version"),
+        "language": catalog.get("language"),
         "app_count": len(apps),
     }
 

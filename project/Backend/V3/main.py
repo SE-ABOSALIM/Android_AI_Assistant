@@ -291,21 +291,37 @@ async def app_catalog(
     )
 
 
+@app.get(
+    "/app-catalog/status",
+    response_model=AppCatalogStatusResponse,
+    response_model_exclude_none=True,
+)
+def authenticated_app_catalog_status(
+    identity: AuthenticatedInstallation = Depends(app_catalog_access),
+):
+    return _app_catalog_status_response(identity)
+
+
 @app.get("/app-catalog/{session_id}", response_model=AppCatalogStatusResponse)
 def app_catalog_status(
     session_id: str,
     identity: AuthenticatedInstallation = Depends(app_catalog_access),
 ):
-    status = (
-        get_app_catalog_status(identity.device_id)
-        if session_id == identity.device_id
-        else {"available": False, "catalog_version": None, "app_count": 0}
-    )
+    return _app_catalog_status_response(identity, session_id=session_id)
+
+
+def _app_catalog_status_response(
+    identity: AuthenticatedInstallation,
+    *,
+    session_id: str | None = None,
+):
+    status = get_app_catalog_status(identity.device_id)
     return AppCatalogStatusResponse(
         accepted=True,
         session_id=session_id,
         available=bool(status["available"]),
         catalog_version=status.get("catalog_version"),
+        language=status.get("language"),
         app_count=int(status.get("app_count") or 0),
     )
 
