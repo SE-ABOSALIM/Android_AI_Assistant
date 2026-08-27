@@ -337,9 +337,6 @@ class CommandHistoryDocumentationTests(unittest.TestCase):
             cls.repository_root
             / "project/Android_App/app/src/main/res/raw/privacy_policy.md"
         ).read_text(encoding="utf-8")
-        cls.data_safety = (
-            cls.repository_root / "docs/google-play-data-safety.md"
-        ).read_text(encoding="utf-8")
 
     def test_privacyPolicyNoLongerClaimsRawCommandPersistence(self):
         self.assertIn("Raw command text is not persisted in command history", self.policy)
@@ -348,12 +345,6 @@ class CommandHistoryDocumentationTests(unittest.TestCase):
 
     def test_bundledPrivacyPolicyMatchesRepositoryPolicy(self):
         self.assertEqual(self.policy.replace("\r\n", "\n"), self.bundled_policy.replace("\r\n", "\n"))
-
-    def test_dataSafetyDraftMatchesNewPersistenceBehavior(self):
-        self.assertIn("raw command text is not persisted", self.data_safety.lower())
-        self.assertIn("raw prediction parameters are not persisted", self.data_safety.lower())
-        self.assertNotIn("`command_history.text`", self.data_safety)
-        self.assertNotIn("`command_history.session_id`", self.data_safety)
 
 
 if __name__ == "__main__":

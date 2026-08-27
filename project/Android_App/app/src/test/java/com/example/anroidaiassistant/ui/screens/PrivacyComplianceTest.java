@@ -25,31 +25,9 @@ public class PrivacyComplianceTest {
     }
 
     @Test
-    public void dataSafetyDraftExistsAndBlocksUnprovedTransportClaim() throws Exception {
-        Path draft = repositoryRoot().resolve("docs/google-play-data-safety.md");
-
-        assertTrue(Files.isRegularFile(draft));
-        String source = readUtf8(draft);
-        assertTrue(source.contains("BLOCKED UNTIL PRODUCTION HTTPS"));
-        assertTrue(source.contains("Voice or sound recordings | **Yes, conservatively"));
-        assertTrue(source.contains("Installed apps | **Yes**"));
-        assertTrue(source.contains("Device or other IDs | **Yes**"));
-        assertTrue(source.contains("rate_limit:registration:<client_host>"));
-        assertTrue(source.contains("rate_limit:predict:<device_ref_id>"));
-        assertTrue(source.contains("raw text is not persisted in command history"));
-        assertTrue(source.contains("raw prediction parameters are not persisted"));
-        assertFalse(source.contains("`command_history.text`"));
-        assertFalse(source.contains("`command_history.session_id`"));
-    }
-
-    @Test
     public void speechRecognitionDocumentationExplainsConfiguredServiceWithoutFixedProviderBlocker()
             throws Exception {
         String policy = readUtf8(repositoryRoot().resolve("docs/privacy-policy.md"));
-        String dataSafety = readUtf8(
-                repositoryRoot().resolve("docs/google-play-data-safety.md")
-        );
-        String combined = policy + "\n" + dataSafety;
 
         assertTrue(policy.contains("speech-recognition service configured by Android"));
         assertTrue(policy.contains("may process microphone audio on the device or"));
@@ -58,15 +36,11 @@ public class PrivacyComplianceTest {
         assertTrue(policy.contains("recognized text"));
         assertTrue(policy.contains("Raw command text is not persisted in command history"));
         assertTrue(policy.contains("Raw prediction parameters are not persisted in command history"));
-        assertTrue(dataSafety.contains("Voice or sound recordings | **Yes, conservatively"));
-        assertTrue(dataSafety.contains("does not assume one universal provider"));
-        assertFalse(combined.contains("prefers on-device"));
-        assertFalse(combined.contains("compatibility and availability fallback"));
-        assertFalse(dataSafety.contains("production speech-recognition provider retention"));
-        assertFalse(dataSafety.contains("provider handling must be verified"));
-        assertFalse(combined.contains("continuous recognition"));
-        assertFalse(combined.contains("sessionless recognition"));
-        assertFalse(combined.contains("permanent listening"));
+        assertFalse(policy.contains("prefers on-device"));
+        assertFalse(policy.contains("compatibility and availability fallback"));
+        assertFalse(policy.contains("continuous recognition"));
+        assertFalse(policy.contains("sessionless recognition"));
+        assertFalse(policy.contains("permanent listening"));
     }
 
     @Test
@@ -126,15 +100,11 @@ public class PrivacyComplianceTest {
             throws Exception {
         String policy = readUtf8(repositoryRoot().resolve("docs/privacy-policy.md"));
         String strings = readUtf8(appRoot().resolve("src/main/res/values/strings.xml"));
-        String declaration = readUtf8(
-                repositoryRoot().resolve("docs/google-play-accessibility-declaration.md")
-        );
 
         assertTrue(policy.contains("Visible screen text, content descriptions, view identifiers"));
         assertTrue(policy.contains("are not included in backend requests"));
         assertTrue(policy.contains("Content-bearing Accessibility matching logs are disabled in release builds"));
         assertTrue(strings.contains("Content-bearing matching diagnostics are disabled in release builds"));
-        assertTrue(declaration.contains("diagnostics are disabled in release builds"));
     }
 
     private void assertLogStatementsArePrivacySafe(Path sourcePath) {

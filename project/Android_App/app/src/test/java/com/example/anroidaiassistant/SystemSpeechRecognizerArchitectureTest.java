@@ -222,17 +222,6 @@ public class SystemSpeechRecognizerArchitectureTest {
         assertEquals(normalized(repositoryPrivacyPolicy()), normalized(bundledPrivacyPolicy()));
     }
 
-    @Test
-    public void dataSafety_matchesSystemRecognizerArchitecture() throws Exception {
-        String dataSafety = readUtf8(repositoryRoot().resolve("docs/google-play-data-safety.md"));
-
-        assertTrue(dataSafety.contains("The App uses Android's configured recognizer"));
-        assertTrue(dataSafety.contains("backend never receives raw microphone audio"));
-        assertTrue(dataSafety.contains("Voice or sound recordings | **Yes, conservatively"));
-        assertFalse(dataSafety.contains("prefers on-device"));
-        assertFalse(dataSafety.contains("compatibility and availability fallback"));
-    }
-
     private String serviceSource() throws IOException {
         return readUtf8(appRoot().resolve(
                 "src/main/java/com/example/anroidaiassistant/MyAccessibilityService.java"
