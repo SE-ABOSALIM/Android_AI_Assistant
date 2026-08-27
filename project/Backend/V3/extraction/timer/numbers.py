@@ -8,7 +8,7 @@ def normalize_number_token(token: str) -> str:
     token = token.lower().strip()
     known = token in NUMBER_WORDS or token in TENS_WORDS or token in SCALE_WORDS or token in HALF_WORDS
 
-    if not known and token.startswith("Ã™Ë†") and len(token) > 1:
+    if not known and token.startswith("و") and len(token) > 1:
         without_conjunction = token[1:]
         if (
             without_conjunction in NUMBER_WORDS
@@ -30,7 +30,7 @@ def words_to_number(tokens: Iterable[str], allow_article_number: bool = True) ->
     normalized_tokens = [normalize_number_token(token) for token in tokens]
     if not normalized_tokens:
         return None
-    meaningful_tokens = [token for token in normalized_tokens if token not in {"and", "ve", "Ã™Ë†"}]
+    meaningful_tokens = [token for token in normalized_tokens if token not in {"and", "ve", "و"}]
 
     for token in normalized_tokens:
         if token in {"a", "an"}:
