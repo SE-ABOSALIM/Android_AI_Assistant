@@ -12,8 +12,6 @@ public final class AssistantSession {
 
     public static synchronized String startNewSession() {
         currentSessionId = UUID.randomUUID().toString();
-        catalogVersion = null;
-        catalogLanguage = null;
         return currentSessionId;
     }
 
@@ -60,8 +58,6 @@ public final class AssistantSession {
     public static synchronized String endSession() {
         String endedSessionId = currentSessionId;
         currentSessionId = null;
-        catalogVersion = null;
-        catalogLanguage = null;
         return endedSessionId;
     }
 

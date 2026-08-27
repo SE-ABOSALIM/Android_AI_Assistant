@@ -18,12 +18,24 @@ public class AssistantSessionTest {
     }
 
     @Test
-    public void startingNewSessionClearsCatalogReadiness() {
+    public void startingNewSessionPreservesDeviceCatalogReadiness() {
         AssistantSession.startNewSession();
         AssistantSession.setCatalogVersion("v1", "AR");
         AssistantSession.startNewSession();
 
-        assertFalse(AssistantSession.isCatalogReadyForLanguage("AR"));
+        assertTrue(AssistantSession.isCatalogReadyForLanguage("AR"));
+
+        AssistantSession.endSession();
+    }
+
+    @Test
+    public void endingThenCreatingNewSessionPreservesDeviceCatalogReadiness() {
+        AssistantSession.startNewSession();
+        AssistantSession.setCatalogVersion("v1", "TR");
+        AssistantSession.endSession();
+        AssistantSession.getOrCreateSessionId();
+
+        assertTrue(AssistantSession.isCatalogReadyForLanguage("TR"));
 
         AssistantSession.endSession();
     }

@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -89,6 +90,31 @@ public final class AppCatalogSyncer {
         return buildCatalogEntries(new InstalledAppReader().getLaunchableApps(context));
     }
 
+    static String getInstalledCatalogVersion(Context context) {
+        if (context == null) {
+            return null;
+        }
+        return buildCatalogVersion(collectLaunchableApps(context));
+    }
+
+    static boolean requiresCatalogSync(
+            boolean accepted,
+            boolean available,
+            String backendCatalogVersion,
+            String backendLanguage,
+            String installedCatalogVersion,
+            String selectedLanguage
+    ) {
+        if (!accepted || !available) {
+            return true;
+        }
+        if (!hasText(backendCatalogVersion)
+                || !backendCatalogVersion.equals(installedCatalogVersion)) {
+            return true;
+        }
+        return !normalizeLanguage(backendLanguage).equals(normalizeLanguage(selectedLanguage));
+    }
+
     static List<AppCatalogEntry> buildCatalogEntries(List<LaunchableApp> installedApps) {
         List<AppCatalogEntry> apps = new ArrayList<>();
         if (installedApps == null) {
@@ -124,5 +150,9 @@ public final class AppCatalogSyncer {
 
     private static boolean hasText(String value) {
         return TextNormalizer.hasText(value);
+    }
+
+    private static String normalizeLanguage(String language) {
+        return hasText(language) ? language.trim().toUpperCase(Locale.ROOT) : "";
     }
 }
