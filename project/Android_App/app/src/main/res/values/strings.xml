@@ -141,7 +141,7 @@
     <string name="spell_suggestion_action">Try spelling</string>
     <string name="spell_mode_enabled">Spell mode active. Spell the app name letter by letter.</string>
     <string name="overlay_preparing">Getting ready</string>
-    <string name="overlay_listening">Ready for command</string>
+    <string name="overlay_listening">Ready</string>
     <string name="selection_title_default">Choose</string>
     <string name="selection_instruction">Say the number in the list to choose.</string>
     <string name="selection_hint_default">Multiple options found. Say the number of the option you want.</string>
