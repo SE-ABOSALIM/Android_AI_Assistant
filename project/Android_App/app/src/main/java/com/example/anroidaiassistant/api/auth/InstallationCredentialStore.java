@@ -7,10 +7,16 @@ import android.security.keystore.KeyProperties;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
@@ -31,6 +37,8 @@ public final class InstallationCredentialStore implements CredentialStore {
 
     interface SecretKeyProvider {
         SecretKey getOrCreateKey() throws GeneralSecurityException, IOException;
+
+        default void resetKey() throws GeneralSecurityException, IOException {}
     }
 
     private final KeyValueStorage storage;
@@ -59,20 +67,53 @@ public final class InstallationCredentialStore implements CredentialStore {
             return null;
         }
 
+        String[] parts = payload.split(":", 3);
+        if (parts.length != 3 || !PAYLOAD_VERSION.equals(parts[0])) {
+            return discardUnusableCredential(false);
+        }
+
+        byte[] iv;
+        byte[] ciphertext;
         try {
-            String[] parts = payload.split(":", 3);
-            if (parts.length != 3 || !PAYLOAD_VERSION.equals(parts[0])) {
-                throw new GeneralSecurityException("Unsupported credential payload");
-            }
-            Cipher cipher = Cipher.getInstance(TRANSFORMATION);
+            iv = fromHex(parts[1]);
+            ciphertext = fromHex(parts[2]);
+        } catch (IllegalArgumentException exception) {
+            return discardUnusableCredential(false);
+        }
+
+        SecretKey key;
+        try {
+            key = keyProvider.getOrCreateKey();
+        } catch (GeneralSecurityException exception) {
+            throw new IOException("Installation credential key is unavailable", exception);
+        }
+
+        Cipher cipher;
+        try {
+            cipher = Cipher.getInstance(TRANSFORMATION);
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException exception) {
+            throw new IOException("Installation credential encryption is unavailable", exception);
+        }
+
+        try {
             cipher.init(
                     Cipher.DECRYPT_MODE,
-                    keyProvider.getOrCreateKey(),
-                    new GCMParameterSpec(128, fromHex(parts[1]))
+                    key,
+                    new GCMParameterSpec(128, iv)
             );
-            return new String(cipher.doFinal(fromHex(parts[2])), java.nio.charset.StandardCharsets.UTF_8);
-        } catch (GeneralSecurityException | IllegalArgumentException exception) {
-            throw new IOException("Installation credential could not be decrypted", exception);
+        } catch (InvalidKeyException exception) {
+            return discardUnusableCredential(true);
+        } catch (InvalidAlgorithmParameterException | IllegalArgumentException exception) {
+            return discardUnusableCredential(false);
+        }
+
+        try {
+            return new String(
+                    cipher.doFinal(ciphertext),
+                    java.nio.charset.StandardCharsets.UTF_8
+            );
+        } catch (BadPaddingException | IllegalBlockSizeException exception) {
+            return discardUnusableCredential(false);
         }
     }
 
@@ -100,6 +141,18 @@ public final class InstallationCredentialStore implements CredentialStore {
     @Override
     public synchronized void clearCredential() {
         storage.remove(ENCRYPTED_CREDENTIAL_KEY);
+    }
+
+    private String discardUnusableCredential(boolean resetKey) throws IOException {
+        storage.remove(ENCRYPTED_CREDENTIAL_KEY);
+        if (resetKey) {
+            try {
+                keyProvider.resetKey();
+            } catch (GeneralSecurityException exception) {
+                throw new IOException("Unusable installation credential key could not be reset", exception);
+            }
+        }
+        return null;
     }
 
     private static String toHex(byte[] value) {
@@ -155,11 +208,13 @@ public final class InstallationCredentialStore implements CredentialStore {
     private static final class AndroidKeystoreKeyProvider implements SecretKeyProvider {
         @Override
         public SecretKey getOrCreateKey() throws GeneralSecurityException, IOException {
-            KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
-            keyStore.load(null);
+            KeyStore keyStore = loadKeyStore();
             java.security.Key existingKey = keyStore.getKey(KEY_ALIAS, null);
             if (existingKey instanceof SecretKey) {
                 return (SecretKey) existingKey;
+            }
+            if (existingKey != null) {
+                keyStore.deleteEntry(KEY_ALIAS);
             }
 
             KeyGenerator keyGenerator = KeyGenerator.getInstance(
@@ -177,6 +232,20 @@ public final class InstallationCredentialStore implements CredentialStore {
                             .build()
             );
             return keyGenerator.generateKey();
+        }
+
+        @Override
+        public void resetKey() throws GeneralSecurityException, IOException {
+            KeyStore keyStore = loadKeyStore();
+            if (keyStore.containsAlias(KEY_ALIAS)) {
+                keyStore.deleteEntry(KEY_ALIAS);
+            }
+        }
+
+        private static KeyStore loadKeyStore() throws GeneralSecurityException, IOException {
+            KeyStore keyStore = KeyStore.getInstance("AndroidKeyStore");
+            keyStore.load(null);
+            return keyStore;
         }
     }
 }
