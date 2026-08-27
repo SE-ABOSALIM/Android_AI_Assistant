@@ -132,7 +132,8 @@ def predict(
     )
     print(
         "\n[predict] "
-        f"input: {response['input']} || ",
+        f"input: {response['input']} ||",
+        f"intent={response['intent']} ||",
         f"duration_ms={response['processing_time_ms']:.2f} ||",
         f"confidence={response.get('confidence')} ||",
         f"accepted={bool(response.get('accepted'))}\n",
