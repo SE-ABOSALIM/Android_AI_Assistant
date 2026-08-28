@@ -685,6 +685,46 @@ class IntentContractTests(unittest.TestCase):
         self.assertTrue(response["accepted"])
         self.assertEqual(response["parameters"]["app_package_name"], "com.whatsapp")
 
+    def test_app_catalog_enrichment_uses_text_alternative_candidate(self):
+        session_id = "unit-test-alternative-app"
+        result = _catalog([
+            {
+                "label": "WhatsApp",
+                "package_name": "com.whatsapp",
+                "aliases": ["whatsapp"],
+            }
+        ])
+
+        patches = _mock_validation_catalog(result)
+        with patches[0], patches[1], patches[2]:
+            response = _validate(
+                "OPEN_APP",
+                {},
+                text="open unknown app",
+                text_alternatives=["open WhatsApp"],
+                session_id=session_id,
+                catalog_version=result["catalog_version"],
+            )
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["parameters"]["app_package_name"], "com.whatsapp")
+
+    def test_app_catalog_enrichment_rejects_stale_catalog_version(self):
+        with (
+            patch("V3.validation.app_matching.has_app_catalog", return_value=True),
+            patch("V3.validation.app_matching.is_catalog_version_current", return_value=False),
+        ):
+            response = _validate(
+                "OPEN_APP",
+                {},
+                text="open WhatsApp",
+                session_id="unit-test-stale-catalog",
+                catalog_version="stale-v1",
+            )
+
+        self.assertFalse(response["accepted"])
+        self.assertEqual(response["error_code"], "APP_CATALOG_STALE")
+
     def test_predict_open_app_rule_bypasses_model_for_spelled_app_name(self):
         session_id = "unit-test-spelled-app"
         result = _catalog([
