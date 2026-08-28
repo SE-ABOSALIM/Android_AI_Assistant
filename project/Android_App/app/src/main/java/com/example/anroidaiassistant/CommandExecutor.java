@@ -326,7 +326,6 @@ public class CommandExecutor {
         PredictRequest request = new PredictRequest(
                 commandText,
                 language,
-                AssistantSession.getSessionId(),
                 DeviceIdentity.getDeviceId(context),
                 null,
                 hasSearchInputForCustomCommand()

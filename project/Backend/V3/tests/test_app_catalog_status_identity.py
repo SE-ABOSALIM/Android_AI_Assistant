@@ -135,7 +135,6 @@ class AppCatalogStatusIdentityTests(unittest.TestCase):
         request = PredictRequest(
             text="open maps",
             language="TR",
-            session_id="assistant-session-2",
             device_id="device-a",
             catalog_version="catalog-v1",
         )

@@ -39,7 +39,6 @@ class PredictRequest(BaseModel):
     text: PredictText
     language: Language
     text_alternatives: List[PredictText] = Field(default_factory=list, max_length=MAX_TEXT_ALTERNATIVES)
-    session_id: Optional[Identifier] = None
     device_id: Optional[Identifier] = None
     catalog_version: Optional[CatalogVersion] = None
     has_search_input: bool = False

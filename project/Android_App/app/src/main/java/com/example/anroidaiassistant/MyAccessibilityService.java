@@ -1140,7 +1140,6 @@ public class MyAccessibilityService extends AccessibilityService {
         PredictRequest request = new PredictRequest(
                 text,
                 selectedLanguage,
-                AssistantSession.getSessionId(),
                 DeviceIdentity.getDeviceId(this),
                 alternatives,
                 hasSearchInputAvailable()

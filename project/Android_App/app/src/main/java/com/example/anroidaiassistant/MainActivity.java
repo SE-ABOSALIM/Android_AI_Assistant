@@ -295,7 +295,6 @@ public class MainActivity extends AppCompatActivity {
         PredictRequest request = new PredictRequest(
                 text,
                 selectedLanguage,
-                AssistantSession.getSessionId(),
                 DeviceIdentity.getDeviceId(this),
                 null,
                 false

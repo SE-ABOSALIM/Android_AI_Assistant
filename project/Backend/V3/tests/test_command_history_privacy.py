@@ -48,7 +48,6 @@ def _history_task_args(*, raw_text, response):
             PredictRequest(
                 text=raw_text,
                 language="EN",
-                session_id="session-with-no-history-purpose",
                 device_id=ANDROID_ID,
             ),
             tasks,
