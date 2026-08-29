@@ -23,8 +23,8 @@ from transformers import (
 def parse_args():
     p = argparse.ArgumentParser()
 
-    p.add_argument("--data", default="../final_ready_simplified_categorical_target.xlsx")
-    p.add_argument("--sheet", default="Joint_NLU_Ready")
+    p.add_argument("--data", default="./intent_dataset.xlsx")
+    p.add_argument("--sheet", default="Main Sheet")
     p.add_argument("--output", default="./result_model")
     p.add_argument("--base_model", default="FacebookAI/xlm-roberta-base")
 
@@ -41,7 +41,8 @@ def parse_args():
     # Güvenli default: fp16 kapalı
     p.add_argument("--fp16", action="store_true")
 
-    return p.parse_args()
+    return p.parse_known_args()[0]
+
 
 
 def set_seed(seed: int):
@@ -367,15 +368,16 @@ def train(args):
 
     training_args = TrainingArguments(
         output_dir=args.output,
-        overwrite_output_dir=True,
 
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=args.batch_size,
 
         learning_rate=args.lr,
-        warmup_ratio=args.warmup_ratio,
+        warmup_steps=args.warmup_ratio,
         weight_decay=args.weight_decay,
+
+        optim="adamw_torch",
 
         eval_strategy="epoch",
         save_strategy="epoch",
@@ -398,7 +400,7 @@ def train(args):
         args=training_args,
         train_dataset=tokenized["train"],
         eval_dataset=tokenized["val"],
-        tokenizer=tokenizer,
+        processing_class=tokenizer,
         data_collator=data_collator,
         compute_metrics=build_compute_metrics(id2label),
         callbacks=[EarlyStoppingCallback(early_stopping_patience=4)],
@@ -463,9 +465,43 @@ def train(args):
         ("[EN] Open whatsapp", "OPEN_APP__none"),
         ("[EN] set a timer for 11 minutes", "SET_TIMER__none"),
         ("[EN] turn on Wi-Fi", "SET_WIFI__state=on"),
-        ("[TR] sessiz modu aç", "SET_SOUND_MODE__sound_mode=silent"),
-        ("[EN] set an alarm for monday 7 am", "SET_ALARM__period=am"),
-        ("[TR] ön kamerayla fotoğraf çek", "TAKE_PHOTO__camera=front"),
+
+        ("[EN] answer this call", "ANSWER_CALL__none"),
+        ("[EN] reject the incoming call", "REJECT_CALL__none"),
+        ("[EN] do not answer this call", "REJECT_CALL__none"),
+
+        ("[TR] gelen aramayı cevapla", "ANSWER_CALL__none"),
+        ("[TR] aramayı reddet", "REJECT_CALL__none"),
+        ("[TR] bu aramayı cevaplama", "REJECT_CALL__none"),
+
+        ("[AR] أجب على المكالمة", "ANSWER_CALL__none"),
+        ("[AR] ارفض المكالمة", "REJECT_CALL__none"),
+        ("[AR] لا تجب على المكالمة", "REJECT_CALL__none"),
+
+        ("[EN] power off the device", "POWER_OFF__none"),
+        ("[EN] restart the device", "RESTART_DEVICE__none"),
+
+        ("[TR] telefonu tamamen kapat", "POWER_OFF__none"),
+        ("[TR] telefonu yeniden başlat", "RESTART_DEVICE__none"),
+
+        ("[EN] focus the input field", "SET_INPUT_FOCUS__focus_action=focus"),
+        ("[EN] remove focus from the input field", "SET_INPUT_FOCUS__focus_action=unfocus"),
+
+        ("[EN] play the media", "SET_MEDIA_PLAYBACK__media_action=play"),
+
+        ("[EN] show the grid", "SHOW_GRID__grid_action=show"),
+        ("[EN] make the grid smaller", "SHOW_GRID__grid_action=smaller"),
+        ("[EN] make the grid larger", "SHOW_GRID__grid_action=larger"),
+        ("[EN] hide the grid", "SHOW_GRID__grid_action=hide"),
+
+        ("[TR] matrisi göster", "SHOW_GRID__grid_action=show"),
+        ("[TR] matrisi küçült", "SHOW_GRID__grid_action=smaller"),
+        ("[TR] matrisi büyüt", "SHOW_GRID__grid_action=larger"),
+        ("[TR] matrisi gizle", "SHOW_GRID__grid_action=hide"),
+
+        ("[EN] show the numbers", "SHOW_LABELS__labels_action=show"),
+        ("[TR] numaraları göster", "SHOW_LABELS__labels_action=show"),
+        ("[AR] أظهر الأرقام", "SHOW_LABELS__labels_action=show"),
     ]
 
     print("\nSanity checks:")
