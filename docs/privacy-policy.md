@@ -8,9 +8,8 @@
 
 This Privacy Policy explains how Android AI Assistant (the “App”) accesses,
 uses, transmits, stores, and protects information when it provides voice-driven
-Android automation, installed-app matching, and custom-command features. The
-publisher name, contact address, effective date, production hosting provider,
-and public policy URL must be completed and reviewed before publication.
+Android automation, installed-app matching, and custom-command features. The effective date,
+production hosting provider, and public policy URL must be completed and reviewed before publication.
 
 ## Information the App accesses or collects
 
@@ -188,8 +187,8 @@ requests.
 The App provides explicit deletion for an individual custom command, including
 its steps. It does not create user accounts, and no “delete account” operation
 exists. A global data-deletion request workflow has not been implemented; do not
-represent the privacy contact placeholder as such a workflow until the
-publisher establishes and documents one.
+represent the privacy contact address as a self-service data-deletion
+workflow unless the publisher establishes and documents such a process.
 
 The schema defines `failed_app_open_attempts` and `error_messages` tables, but
 the current backend has no application write path to either table. If records
