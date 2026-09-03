@@ -14,6 +14,8 @@ public final class ClickCandidate {
     public final String matchedTarget;
     public final String matchedText;
     public final boolean preferBoundsTap;
+    final ClickMatchClass matchClass;
+    final String matchFamily;
 
     public ClickCandidate(
             AccessibilityNodeInfo clickNode,
@@ -33,7 +35,20 @@ public final class ClickCandidate {
             String reason,
             boolean preferBoundsTap
     ) {
-        this(clickNode, bounds, bounds, label, score, reason, "", "", "", preferBoundsTap);
+        this(
+                clickNode,
+                bounds,
+                bounds,
+                label,
+                score,
+                ClickMatchClass.fromReason(reason),
+                reason,
+                "",
+                "",
+                "",
+                "",
+                preferBoundsTap
+        );
     }
 
     public ClickCandidate(
@@ -42,10 +57,12 @@ public final class ClickCandidate {
             Rect actionBounds,
             String label,
             int score,
+            ClickMatchClass matchClass,
             String reason,
             String matchSource,
             String matchedTarget,
             String matchedText,
+            String matchFamily,
             boolean preferBoundsTap
     ) {
         this.clickNode = clickNode;
@@ -53,10 +70,12 @@ public final class ClickCandidate {
         this.actionBounds = actionBounds == null ? new Rect(bounds) : new Rect(actionBounds);
         this.label = label == null ? "" : label;
         this.score = score;
+        this.matchClass = matchClass == null ? ClickMatchClass.NONE : matchClass;
         this.reason = reason == null ? "" : reason;
         this.matchSource = matchSource == null ? "" : matchSource;
         this.matchedTarget = matchedTarget == null ? "" : matchedTarget;
         this.matchedText = matchedText == null ? "" : matchedText;
+        this.matchFamily = matchFamily == null ? "" : matchFamily;
         this.preferBoundsTap = preferBoundsTap;
     }
 }

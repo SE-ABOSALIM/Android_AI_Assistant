@@ -132,7 +132,14 @@ public final class ClickItemController {
         }
 
         ClickCandidate second = candidates.get(1);
-        if (top.score - second.score >= DIRECT_MARGIN) {
+        if (ClickCandidateRankingPolicy.shouldSelectDirect(
+                top.matchClass,
+                top.score,
+                second.matchClass,
+                second.score,
+                DIRECT_MIN_SCORE,
+                DIRECT_MARGIN
+        )) {
             return top;
         }
 
@@ -193,9 +200,18 @@ public final class ClickItemController {
     private List<ClickCandidate> topFallbackCandidates(List<ClickCandidate> candidates) {
         List<ClickCandidate> filtered = new ArrayList<>();
         int topScore = candidates.isEmpty() ? 0 : candidates.get(0).score;
+        ClickMatchClass topMatchClass = candidates.isEmpty()
+                ? ClickMatchClass.NONE
+                : candidates.get(0).matchClass;
         for (ClickCandidate candidate : candidates) {
-            if (candidate.score >= FALLBACK_MIN_SCORE
-                    && (topScore <= 0 || topScore - candidate.score <= FALLBACK_MAX_SCORE_GAP)) {
+            if (ClickCandidateRankingPolicy.isFallbackPeer(
+                    topMatchClass,
+                    topScore,
+                    candidate.matchClass,
+                    candidate.score,
+                    FALLBACK_MIN_SCORE,
+                    FALLBACK_MAX_SCORE_GAP
+            )) {
                 filtered.add(candidate);
             }
         }
@@ -327,11 +343,21 @@ public final class ClickItemController {
     }
 
     private Comparator<ClickCandidate> bestMatchComparator() {
-        return Comparator
-                .comparingInt((ClickCandidate candidate) -> candidate.score)
-                .reversed()
-                .thenComparingInt(candidate -> candidate.bounds.top)
-                .thenComparingInt(candidate -> candidate.bounds.left);
+        return (first, second) -> {
+            int ranking = ClickCandidateRankingPolicy.compareBestFirst(
+                    first.matchClass,
+                    first.score,
+                    second.matchClass,
+                    second.score
+            );
+            if (ranking != 0) {
+                return ranking;
+            }
+            int topComparison = Integer.compare(first.bounds.top, second.bounds.top);
+            return topComparison != 0
+                    ? topComparison
+                    : Integer.compare(first.bounds.left, second.bounds.left);
+        };
     }
 
     private String displayTitle(ClickCandidate candidate) {
@@ -384,9 +410,11 @@ public final class ClickItemController {
 
     private String formatCandidate(ClickCandidate candidate) {
         return "score=" + candidate.score
+                + ", matchClass=" + candidate.matchClass
                 + ", source=" + candidate.matchSource
                 + ", reason=" + candidate.reason
                 + ", matchedTarget=\"" + candidate.matchedTarget + "\""
+                + ", matchFamily=\"" + candidate.matchFamily + "\""
                 + ", matchedText=\"" + candidate.matchedText + "\""
                 + ", label=\"" + candidate.label + "\""
                 + ", bounds=" + candidate.bounds.toShortString()

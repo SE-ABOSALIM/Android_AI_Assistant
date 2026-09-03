@@ -130,10 +130,12 @@ public final class ClickCandidateCollector {
                 clickBounds,
                 displayLabel(fields, bounds),
                 score,
+                bestFieldMatch.matchClass,
                 bestFieldMatch.reason,
                 bestFieldMatch.source,
                 bestFieldMatch.matchedTarget,
                 bestFieldMatch.matchedText,
+                primaryTargetVariant(targetVariants),
                 preferBoundsTap
         );
     }
@@ -227,13 +229,19 @@ public final class ClickCandidateCollector {
             int score = textMatch.score + field.sourceBonus;
             FieldMatch candidate = new FieldMatch(
                     score,
+                    textMatch.matchClass,
                     field.source + ":" + textMatch.reason,
                     field.source,
                     textMatch.matchedTarget,
                     field.normalizedValue,
                     field.fromClickableParent
             );
-            if (best == null || candidate.score > best.score) {
+            if (best == null || ClickCandidateRankingPolicy.compareBestFirst(
+                    candidate.matchClass,
+                    candidate.score,
+                    best.matchClass,
+                    best.score
+            ) < 0) {
                 best = candidate;
             }
         }
@@ -268,28 +276,99 @@ public final class ClickCandidateCollector {
     }
 
     private void addOrReplaceEquivalentCandidate(List<ClickCandidate> candidates, ClickCandidate candidate) {
-        for (int i = 0; i < candidates.size(); i++) {
-            ClickCandidate existing = candidates.get(i);
-            if (sameBounds(existing.actionBounds, candidate.actionBounds)) {
-                if (isBetterEquivalentCandidate(candidate, existing)) {
-                    candidates.set(i, candidate);
-                }
-                return;
-            }
-        }
-        candidates.add(candidate);
+        CanonicalTargetDeduplicator.addOrReplace(
+                candidates,
+                candidate,
+                this::canonicalIdentity,
+                this::isBetterEquivalentCandidate
+        );
     }
 
     private boolean isBetterEquivalentCandidate(ClickCandidate candidate, ClickCandidate existing) {
-        if (candidate.score != existing.score) {
-            return candidate.score > existing.score;
+        int ranking = ClickCandidateRankingPolicy.compareBestFirst(
+                candidate.matchClass,
+                candidate.score,
+                existing.matchClass,
+                existing.score
+        );
+        if (ranking != 0) {
+            return ranking < 0;
         }
-        if (candidate.bounds.width() * candidate.bounds.height()
-                != existing.bounds.width() * existing.bounds.height()) {
-            return candidate.bounds.width() * candidate.bounds.height()
-                    > existing.bounds.width() * existing.bounds.height();
+        if (candidate.preferBoundsTap != existing.preferBoundsTap) {
+            return !candidate.preferBoundsTap;
         }
         return TextNormalizer.hasText(candidate.label) && !TextNormalizer.hasText(existing.label);
+    }
+
+    private CanonicalTargetDeduplicator.Identity<AccessibilityNodeInfo> canonicalIdentity(
+            ClickCandidate candidate
+    ) {
+        List<AccessibilityNodeInfo> ancestors = new ArrayList<>();
+        AccessibilityNodeInfo parent = candidate.clickNode == null ? null : candidate.clickNode.getParent();
+        int depth = 0;
+        while (parent != null && depth++ < 64) {
+            ancestors.add(parent);
+            parent = parent.getParent();
+        }
+
+        List<String> semanticValues = new ArrayList<>();
+        if (candidate.clickNode != null) {
+            for (String value : nodeAdapter.semanticValues(candidate.clickNode)) {
+                addSemanticIdentityValue(semanticValues, value);
+            }
+        }
+        addSemanticIdentityValue(semanticValues, candidate.matchedText);
+        if (candidate.matchClass == ClickMatchClass.EXACT
+                && TextNormalizer.hasText(candidate.matchFamily)) {
+            addSemanticIdentityValue(
+                    semanticValues,
+                    "exact target family " + candidate.matchFamily
+            );
+        }
+
+        return new CanonicalTargetDeduplicator.Identity<>(
+                candidate.clickNode,
+                ancestors,
+                semanticValues,
+                actionKinds(candidate.clickNode),
+                candidate.actionBounds.left,
+                candidate.actionBounds.top,
+                candidate.actionBounds.right,
+                candidate.actionBounds.bottom
+        );
+    }
+
+    private void addSemanticIdentityValue(List<String> values, String rawValue) {
+        String normalized = ClickTextUtils.normalize(rawValue);
+        if (TextNormalizer.hasText(normalized) && !values.contains(normalized)) {
+            values.add(normalized);
+        }
+    }
+
+    private String primaryTargetVariant(List<String> targetVariants) {
+        if (targetVariants == null || targetVariants.isEmpty()) {
+            return "";
+        }
+        return ClickTextUtils.normalize(targetVariants.get(0));
+    }
+
+    private int actionKinds(AccessibilityNodeInfo node) {
+        if (node == null) {
+            return 0;
+        }
+        int actions = node.getActions();
+        int kinds = 0;
+        if (node.isClickable()
+                || node.isCheckable()
+                || node.isFocusable()
+                || (actions & AccessibilityNodeInfo.ACTION_CLICK) != 0) {
+            kinds |= CanonicalTargetDeduplicator.ACTION_ACTIVATE;
+        }
+        if (node.isEditable() || (actions & AccessibilityNodeInfo.ACTION_SET_TEXT) != 0) {
+            kinds |= CanonicalTargetDeduplicator.ACTION_ACTIVATE;
+            kinds |= CanonicalTargetDeduplicator.ACTION_EDIT;
+        }
+        return kinds;
     }
 
     private boolean sameBounds(Rect first, Rect second) {
@@ -356,6 +435,7 @@ public final class ClickCandidateCollector {
 
     private static final class FieldMatch {
         final int score;
+        final ClickMatchClass matchClass;
         final String reason;
         final String source;
         final String matchedTarget;
@@ -364,6 +444,7 @@ public final class ClickCandidateCollector {
 
         FieldMatch(
                 int score,
+                ClickMatchClass matchClass,
                 String reason,
                 String source,
                 String matchedTarget,
@@ -371,6 +452,7 @@ public final class ClickCandidateCollector {
                 boolean fromClickableParent
         ) {
             this.score = score;
+            this.matchClass = matchClass;
             this.reason = reason;
             this.source = source;
             this.matchedTarget = matchedTarget;

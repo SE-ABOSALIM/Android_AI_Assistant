@@ -17,6 +17,17 @@ public class ClickTextMatcherTest {
         ClickTextMatch match = matcher.score("home", Arrays.asList("home"));
 
         assertTrue(match.score >= 100);
+        assertEquals(ClickMatchClass.EXACT, match.matchClass);
+    }
+
+    @Test
+    public void classifiesIncidentalSentenceAsContainsRatherThanExact() {
+        ClickTextMatch match = matcher.score(
+                "why we ask for your birthday and gender",
+                Arrays.asList("gender")
+        );
+
+        assertEquals(ClickMatchClass.CONTAINS, match.matchClass);
     }
 
     @Test
