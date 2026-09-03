@@ -8,6 +8,7 @@ from V3.extraction.alarm import (
 from V3.extraction.click import (
     extract_click_position,
     extract_click_target,
+    extract_gesture_target,
 )
 from V3.extraction.contact import extract_contact_name
 from V3.extraction.photo import extract_photo_camera
@@ -65,6 +66,22 @@ def enrich_click_item(context: ValidationContext) -> None:
             context.parameters["target_text"] = target_text
 
     if not context.parameters.get("position"):
+        position = extract_click_position(context.original_text, context.language)
+        if position:
+            context.parameters["position"] = position
+
+
+def enrich_target_gesture(context: ValidationContext) -> None:
+    if not context.parameters.get("target_text"):
+        target_text = extract_gesture_target(
+            context.original_text,
+            context.language,
+            context.intent,
+        )
+        if target_text:
+            context.parameters["target_text"] = target_text
+
+    if context.parameters.get("target_text") and not context.parameters.get("position"):
         position = extract_click_position(context.original_text, context.language)
         if position:
             context.parameters["position"] = position
@@ -136,6 +153,8 @@ def _looks_like_stopwatch_command(text: str) -> bool:
 INTENT_ENRICHERS: Dict[str, Callable[[ValidationContext], None]] = {
     "CALL_CONTACT": enrich_contact,
     "CLICK_ITEM": enrich_click_item,
+    "DOUBLE_TAP": enrich_target_gesture,
+    "HOLD_SCREEN": enrich_target_gesture,
     "OPEN_APP": enrich_app_command,
     "OPEN_APP_INFO": enrich_app_command,
     "SEARCH_QUERY": enrich_search_query,

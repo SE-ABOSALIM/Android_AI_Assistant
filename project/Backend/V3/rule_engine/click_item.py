@@ -1,7 +1,9 @@
 from typing import Any, Dict, Optional
 
 from V3.extraction.click import extract_click_position, extract_click_target
+from V3.patterns.commands.text_controls import DOUBLE_TAP_PATTERNS, HOLD_SCREEN_PATTERNS
 from V3.rule_engine.context import RuleContext
+from V3.rule_engine.matching import matches_language_any
 from V3.rule_engine.result import command
 from V3.utils.text import normalized_lower
 
@@ -26,6 +28,9 @@ def click_item_command(context: RuleContext) -> Optional[Dict[str, Any]]:
 
 def _has_click_action(context: RuleContext) -> bool:
     normalized = f" {normalized_lower(context.original)} "
+    if (matches_language_any(context.original, context.language, HOLD_SCREEN_PATTERNS)
+            or matches_language_any(context.original, context.language, DOUBLE_TAP_PATTERNS)):
+        return False
     if _looks_like_english_top_click(context) or _looks_like_turkish_merged_click(context):
         return True
 

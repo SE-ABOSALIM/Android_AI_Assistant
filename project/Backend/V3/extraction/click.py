@@ -2,24 +2,21 @@ import re
 from typing import Optional
 
 from V3.extraction.common import clean_free_text, extract_first_match
-from V3.utils.language import patterns_for_language
+from V3.utils.language import language_key, patterns_for_language
 from V3.utils.text import normalize_text, normalized_lower
 from V3.patterns.extraction.click import (
     CLICK_ORDINAL_ONLY_TARGET_PATTERNS,
     CLICK_POSITION_ALIASES,
     CLICK_TARGET_PATTERNS,
     CLICK_TARGET_TRAILING_NOISE_PATTERNS,
+    GENERIC_GESTURE_TARGETS,
+    TARGET_GESTURE_PATTERNS,
 )
 
 
 def extract_click_target(text: str, language: str) -> Optional[str]:
     normalized = normalized_lower(normalize_text(text))
-
-    target = extract_first_match(
-        normalized,
-        patterns_for_language(CLICK_TARGET_PATTERNS, language)
-    )
-    cleaned_target = clean_free_text(_clean_click_target(target, language))
+    cleaned_target = _extract_target_with_patterns(normalized, language, CLICK_TARGET_PATTERNS)
     if cleaned_target:
         return cleaned_target
 
@@ -27,6 +24,18 @@ def extract_click_target(text: str, language: str) -> Optional[str]:
         return _extract_turkish_merged_click_target(normalized)
 
     return None
+
+
+def extract_gesture_target(text: str, language: str, intent: str) -> Optional[str]:
+    normalized = normalized_lower(normalize_text(text))
+    patterns = TARGET_GESTURE_PATTERNS.get(str(intent or "").upper())
+    if not patterns:
+        return None
+
+    target = _extract_target_with_patterns(normalized, language, patterns)
+    if not target or _is_generic_gesture_target(target, language):
+        return None
+    return target
 
 
 def extract_click_position(text: str, language: str = "") -> Optional[str]:
@@ -41,6 +50,16 @@ def extract_click_position(text: str, language: str = "") -> Optional[str]:
             if f" {normalized_alias} " in padded:
                 return position
     return None
+
+
+def _extract_target_with_patterns(text: str, language: str, patterns) -> Optional[str]:
+    target = extract_first_match(text, patterns_for_language(patterns, language))
+    return clean_free_text(_clean_click_target(target, language))
+
+
+def _is_generic_gesture_target(target: str, language: str) -> bool:
+    normalized_target = normalized_lower(normalize_text(target))
+    return normalized_target in GENERIC_GESTURE_TARGETS.get(language_key(language), set())
 
 
 def _clean_click_target(target: Optional[str], language: str) -> Optional[str]:

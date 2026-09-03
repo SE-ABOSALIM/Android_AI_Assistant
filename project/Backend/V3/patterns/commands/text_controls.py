@@ -166,6 +166,8 @@ DOUBLE_TAP_PATTERNS = {
 
 HOLD_SCREEN_PATTERNS = {
     "EN": [
+        "hold on",
+        "hold the",
         "long press",
         "long press screen",
         "press and hold",

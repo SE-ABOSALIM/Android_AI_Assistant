@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 from V3.extraction.common import clean_free_text, extract_first_match
+from V3.extraction.click import extract_click_position, extract_gesture_target
 from V3.extraction.text import extract_search_query
 from V3.patterns.commands.text_controls import (
     CLEAR_TEXT_PATTERNS,
@@ -14,7 +15,7 @@ from V3.rule_engine.context import RuleContext
 from V3.rule_engine.pattern_rules import PatternRule, match_first_pattern_rule
 from V3.rule_engine.result import command
 from V3.utils.language import patterns_for_language
-from V3.utils.text import normalize_text
+from V3.utils.text import normalize_text, normalized_lower
 
 
 TEXT_CONTROL_RULES = [
@@ -27,6 +28,9 @@ TEXT_CONTROL_RULES = [
 
 
 def text_control_command(context: RuleContext) -> Optional[Dict[str, Any]]:
+    if normalized_lower(context.original) == "hold":
+        return command("HOLD_SCREEN", "hold_screen", {})
+
     search_command = _search_query_command(context)
     if search_command:
         return search_command
@@ -35,7 +39,21 @@ def text_control_command(context: RuleContext) -> Optional[Dict[str, Any]]:
     if write_command:
         return write_command
 
-    return match_first_pattern_rule(context, TEXT_CONTROL_RULES)
+    result = match_first_pattern_rule(context, TEXT_CONTROL_RULES)
+    if result is None or result["intent"] not in {"DOUBLE_TAP", "HOLD_SCREEN"}:
+        return result
+
+    target_text = extract_gesture_target(
+        context.original,
+        context.language,
+        result["intent"],
+    )
+    if target_text:
+        result["parameters"]["target_text"] = target_text
+        position = extract_click_position(context.original, context.language)
+        if position:
+            result["parameters"]["position"] = position
+    return result
 
 
 def _search_query_command(context: RuleContext) -> Optional[Dict[str, Any]]:

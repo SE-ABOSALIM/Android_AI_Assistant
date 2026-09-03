@@ -208,6 +208,53 @@ class RuleServiceTests(unittest.TestCase):
 
         self.assertIsNone(result)
 
+    def test_targeted_hold_rules_keep_target_and_preserve_no_target_hold(self):
+        examples = {
+            "hold": {},
+            "hold on notification": {"target_text": "notification"},
+            "long press notification": {"target_text": "notification"},
+            "press and hold notification": {"target_text": "notification"},
+            "hold the heart icon": {"target_text": "heart icon"},
+        }
+
+        for text, parameters in examples.items():
+            with self.subTest(text=text):
+                result = rule_based_command(text, "EN")
+
+                self.assertEqual(result["intent"], "HOLD_SCREEN")
+                self.assertEqual(result["parameters"], parameters)
+                self.assertEqual(result["rule_matched"], "hold_screen")
+
+    def test_targeted_double_tap_rules_keep_target_and_preserve_no_target_gesture(self):
+        examples = {
+            "double tap": {},
+            "double tap notification": {"target_text": "notification"},
+            "double tap the heart icon": {"target_text": "heart icon"},
+        }
+
+        for text, parameters in examples.items():
+            with self.subTest(text=text):
+                result = rule_based_command(text, "EN")
+
+                self.assertEqual(result["intent"], "DOUBLE_TAP")
+                self.assertEqual(result["parameters"], parameters)
+                self.assertEqual(result["rule_matched"], "double_tap")
+
+    def test_turkish_target_gestures_are_not_stolen_by_click_item(self):
+        examples = (
+            ("bildirime uzun bas", "HOLD_SCREEN", "hold_screen"),
+            ("bildirime basili tut", "HOLD_SCREEN", "hold_screen"),
+            ("bildirime cift tikla", "DOUBLE_TAP", "double_tap"),
+        )
+
+        for text, intent, rule_matched in examples:
+            with self.subTest(text=text):
+                result = rule_based_command(text, "TR")
+
+                self.assertEqual(result["intent"], intent)
+                self.assertEqual(result["parameters"], {"target_text": "bildirim"})
+                self.assertEqual(result["rule_matched"], rule_matched)
+
     def test_timer_rule(self):
         result = rule_based_command("set a timer for 5 minutes", "EN")
 

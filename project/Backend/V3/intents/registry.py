@@ -109,6 +109,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     "DOUBLE_TAP": _contract(
         "DOUBLE_TAP",
         threshold=0.92,
+        optional=("target_text", "position"),
         android_supported=True,
     ),
     "GO_BACK": _contract(
@@ -124,6 +125,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
     "HOLD_SCREEN": _contract(
         "HOLD_SCREEN",
         threshold=0.92,
+        optional=("target_text", "position"),
         android_supported=True,
     ),
     "OPEN_APP": _contract(

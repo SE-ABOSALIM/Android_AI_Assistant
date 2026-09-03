@@ -284,6 +284,70 @@ class IntentContractTests(unittest.TestCase):
             focus["parameters"],
         ))
 
+    def test_hold_screen_enriches_optional_targets_without_breaking_center_gesture(self):
+        no_target = _validate(
+            "HOLD_SCREEN",
+            {},
+            text="long press",
+            language="EN",
+            raw_label="HOLD_SCREEN__none",
+        )
+        hold_on_notification = _validate(
+            "HOLD_SCREEN",
+            {},
+            text="hold on notification",
+            language="EN",
+            raw_label="RULE::hold_screen",
+        )
+        long_press_notification = _validate(
+            "HOLD_SCREEN",
+            {},
+            text="long press notification",
+            language="EN",
+            raw_label="HOLD_SCREEN__none",
+        )
+        icon_target = _validate(
+            "HOLD_SCREEN",
+            {},
+            text="long press the heart icon",
+            language="EN",
+            raw_label="HOLD_SCREEN__none",
+        )
+
+        self.assertTrue(no_target["accepted"])
+        self.assertEqual(no_target["parameters"], {})
+        self.assertEqual(hold_on_notification["parameters"], {"target_text": "notification"})
+        self.assertEqual(long_press_notification["parameters"], {"target_text": "notification"})
+        self.assertEqual(icon_target["parameters"], {"target_text": "heart icon"})
+
+    def test_double_tap_enriches_optional_targets_without_breaking_center_gesture(self):
+        no_target = _validate(
+            "DOUBLE_TAP",
+            {},
+            text="double tap",
+            language="EN",
+            raw_label="DOUBLE_TAP__none",
+        )
+        notification = _validate(
+            "DOUBLE_TAP",
+            {},
+            text="double tap notification",
+            language="EN",
+            raw_label="RULE::double_tap",
+        )
+        icon_target = _validate(
+            "DOUBLE_TAP",
+            {},
+            text="double tap the heart icon",
+            language="EN",
+            raw_label="DOUBLE_TAP__none",
+        )
+
+        self.assertTrue(no_target["accepted"])
+        self.assertEqual(no_target["parameters"], {})
+        self.assertEqual(notification["parameters"], {"target_text": "notification"})
+        self.assertEqual(icon_target["parameters"], {"target_text": "heart icon"})
+
     def test_click_item_extracts_target_and_position(self):
         bottom_plus = _validate("CLICK_ITEM", {}, text="a\u015fa\u011f\u0131daki art\u0131ya bas", language="TR")
         search = _validate("CLICK_ITEM", {}, text="tap the search button", language="EN")

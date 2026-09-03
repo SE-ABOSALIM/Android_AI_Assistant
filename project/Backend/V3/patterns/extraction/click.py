@@ -15,6 +15,40 @@ CLICK_TARGET_PATTERNS = {
     ],
 }
 
+TARGET_GESTURE_PATTERNS = {
+    "HOLD_SCREEN": {
+        "EN": [
+            r"^(?:hold|long\s+press|press\s+and\s+hold)(?:\s+(?:on|down))?\s+(?:the\s+)?(.+)$",
+        ],
+        "TR": [
+            r"^(?:uzun\s+bas|basili\s+tut)\s+(.+)$",
+            r"^(.+?)\s+(?:uzun\s+bas|basili\s+tut)$",
+        ],
+        "AR": [
+            r"^(?:\u0627\u0636\u063a\u0637\s+\u0645\u0637\u0648\u0644\u0627|\u0627\u0636\u063a\u0637\s+\u0628\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u0627\u0636\u063a\u0637\s+\u0645\u0639\s+\u0627\u0644\u0627\u0633\u062a\u0645\u0631\u0627\u0631|\u062b\u0628\u062a\s+\u0627\u0644\u0636\u063a\u0637)\s+(?:\u0639\u0644\u0649\s+)?(.+)$",
+        ],
+    },
+    "DOUBLE_TAP": {
+        "EN": [
+            r"^(?:double\s+(?:tap|click|press)|tap\s+twice|click\s+twice|press\s+twice)(?:\s+on)?\s+(?:the\s+)?(.+)$",
+        ],
+        "TR": [
+            r"^(?:cift\s+(?:tikla|dokun|bas)|iki\s+(?:kere|kez|defa)\s+(?:tikla|dokun|bas))\s+(.+)$",
+            r"^(.+?)\s+(?:cift\s+(?:tikla|dokun|bas)|iki\s+(?:kere|kez|defa)\s+(?:tikla|dokun|bas))$",
+        ],
+        "AR": [
+            r"^(?:\u0627\u0646\u0642\u0631\s+\u0645\u0631\u062a\u064a\u0646|\u0627\u0636\u063a\u0637\s+\u0645\u0631\u062a\u064a\u0646|\u062f\u0628\u0644\s+\u0643\u0644\u064a\u0643)\s+(?:\u0639\u0644\u0649\s+)?(.+)$",
+            r"^\u0627\u0636\u063a\u0637\s+\u0639\u0644\u0649\s+(.+?)\s+\u0645\u0631\u062a\u064a\u0646$",
+        ],
+    },
+}
+
+GENERIC_GESTURE_TARGETS = {
+    "EN": {"screen", "the screen"},
+    "TR": {"ekran", "ekrani", "ekrana", "ekra"},
+    "AR": {"\u0627\u0644\u0634\u0627\u0634\u0629", "\u0634\u0627\u0634\u0629"},
+}
+
 CLICK_TARGET_TRAILING_NOISE_PATTERNS = {
     "EN": (
         r"\s+on\s+the\s+(?:top|bottom|left|right)(?:\s+of\s+the\s+(?:page|screen))?$",
