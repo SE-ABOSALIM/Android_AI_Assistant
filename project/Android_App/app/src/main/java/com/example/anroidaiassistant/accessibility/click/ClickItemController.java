@@ -205,11 +205,11 @@ public final class ClickItemController {
     }
 
     private boolean clickCandidate(ClickCandidate candidate) {
-        if (candidate.preferBoundsTap && gestureController.tapBoundsCenter(candidate.bounds)) {
+        if (candidate.clickNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
             return true;
         }
-
-        return clickNode(candidate.clickNode);
+        Rect fallbackBounds = candidate.preferBoundsTap ? candidate.bounds : candidate.actionBounds;
+        return gestureController.tapBoundsCenter(fallbackBounds);
     }
 
     private boolean performCandidate(ClickCandidate candidate, TargetAction action) {
@@ -324,13 +324,6 @@ public final class ClickItemController {
         int verticalScore = Math.round((1.0f - centerY) * 20);
         int compactScore = Math.round((1.0f - Math.min(1.0f, widthRatio * 3.0f)) * 10);
         return horizontalScore + verticalScore + compactScore;
-    }
-
-    private boolean clickNode(AccessibilityNodeInfo node) {
-        if (node.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-            return true;
-        }
-        return gestureController.tapNodeCenter(node);
     }
 
     private Comparator<ClickCandidate> bestMatchComparator() {

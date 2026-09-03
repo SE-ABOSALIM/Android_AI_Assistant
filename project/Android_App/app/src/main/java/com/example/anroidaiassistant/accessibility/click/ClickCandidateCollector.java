@@ -4,6 +4,8 @@ import android.graphics.Rect;
 import android.os.Build;
 import android.view.accessibility.AccessibilityNodeInfo;
 
+import com.example.anroidaiassistant.accessibility.semantic.AccessibilityNodeAdapter;
+import com.example.anroidaiassistant.accessibility.semantic.SemanticNodeResolver;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.ArrayList;
@@ -18,6 +20,9 @@ public final class ClickCandidateCollector {
 
     private final ClickTextMatcher textMatcher;
     private final ClickPositionFilter positionFilter;
+    private final AccessibilityNodeAdapter nodeAdapter = new AccessibilityNodeAdapter();
+    private final SemanticNodeResolver<AccessibilityNodeInfo> semanticResolver =
+            new SemanticNodeResolver<>(nodeAdapter);
 
     public ClickCandidateCollector(ClickTextMatcher textMatcher, ClickPositionFilter positionFilter) {
         this.textMatcher = textMatcher;
@@ -72,10 +77,12 @@ public final class ClickCandidateCollector {
             int screenWidth,
             int screenHeight
     ) {
-        AccessibilityNodeInfo clickNode = findClickableNode(node);
-        if (clickNode == null) {
+        SemanticNodeResolver.Resolution<AccessibilityNodeInfo> resolution =
+                semanticResolver.resolveActionNode(node);
+        if (resolution == null) {
             return null;
         }
+        AccessibilityNodeInfo clickNode = resolution.getActionNode();
 
         Rect clickBounds = new Rect();
         clickNode.getBoundsInScreen(clickBounds);
@@ -98,7 +105,7 @@ public final class ClickCandidateCollector {
 
         Rect nodeBounds = new Rect();
         node.getBoundsInScreen(nodeBounds);
-        Rect bounds = bestFieldMatch.fromClickableParent
+        Rect bounds = resolution.usesActionBounds() || bestFieldMatch.fromClickableParent
                 ? new Rect(clickBounds)
                 : chooseTapBounds(nodeBounds, clickBounds);
         if (bounds.isEmpty() || !positionFilter.matches(bounds, position, screenWidth, screenHeight)) {
@@ -113,7 +120,8 @@ public final class ClickCandidateCollector {
             score += 1;
         }
 
-        boolean preferBoundsTap = !bestFieldMatch.fromClickableParent
+        boolean preferBoundsTap = !resolution.usesActionBounds()
+                && !bestFieldMatch.fromClickableParent
                 && clickNode != node
                 && !sameBounds(bounds, clickBounds);
         return new ClickCandidate(
@@ -135,6 +143,10 @@ public final class ClickCandidateCollector {
         addDirectNodeFields(fields, node, 0, false);
         if (clickNode != null && clickNode != node) {
             addDirectNodeFields(fields, clickNode, CLICKABLE_PARENT_SOURCE_BONUS, true);
+        }
+        AccessibilityNodeInfo labeledBy = nodeAdapter.labeledBy(clickNode);
+        if (labeledBy != null && labeledBy != node && labeledBy != clickNode) {
+            addDirectNodeFields(fields, labeledBy, CLICKABLE_PARENT_SOURCE_BONUS, true);
         }
         return fields;
     }
@@ -298,18 +310,6 @@ public final class ClickCandidateCollector {
         }
 
         return new Rect(nodeBounds);
-    }
-
-    private AccessibilityNodeInfo findClickableNode(AccessibilityNodeInfo node) {
-        AccessibilityNodeInfo current = node;
-        while (current != null) {
-            if (current.isClickable()
-                    || (current.getActions() & AccessibilityNodeInfo.ACTION_CLICK) != 0) {
-                return current;
-            }
-            current = current.getParent();
-        }
-        return null;
     }
 
     private String displayLabel(List<NodeField> fields, Rect bounds) {
