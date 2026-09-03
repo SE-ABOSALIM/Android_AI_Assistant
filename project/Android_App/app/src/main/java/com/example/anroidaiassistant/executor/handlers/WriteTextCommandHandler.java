@@ -16,7 +16,7 @@ public final class WriteTextCommandHandler implements CommandHandler {
 
     @Override
     public void handle(Map<String, Object> parameters, CommandExecutionContext context) {
-        String text = ParameterReader.getStringParam(parameters, "text");
+        String text = normalizeSpelledSequence(ParameterReader.getStringParam(parameters, "text"));
         if (!TextNormalizer.hasText(text)) {
             context.showMessage("What should I write?");
             return;
@@ -31,5 +31,27 @@ public final class WriteTextCommandHandler implements CommandHandler {
         if (!service.writeTextToFocusedInput(text)) {
             context.showMessage("Text field not found");
         }
+    }
+
+    static String normalizeSpelledSequence(String text) {
+        if (text == null) {
+            return null;
+        }
+
+        String candidate = text.trim();
+        String[] tokens = candidate.split("\\s+");
+        if (tokens.length < 2) {
+            return text;
+        }
+
+        StringBuilder joined = new StringBuilder(candidate.length());
+        for (String token : tokens) {
+            if (token.codePointCount(0, token.length()) != 1
+                    || !Character.isLetter(token.codePointAt(0))) {
+                return text;
+            }
+            joined.append(token);
+        }
+        return joined.toString();
     }
 }
