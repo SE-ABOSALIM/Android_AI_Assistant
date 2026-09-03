@@ -7,10 +7,16 @@ import android.os.Handler;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.example.anroidaiassistant.MyAccessibilityService;
+import com.example.anroidaiassistant.accessibility.click.ClickTextMatcher;
+import com.example.anroidaiassistant.accessibility.click.ClickTextUtils;
+import com.example.anroidaiassistant.accessibility.semantic.AccessibilityNodeAdapter;
+import com.example.anroidaiassistant.accessibility.semantic.InputTargetSelector;
+import com.example.anroidaiassistant.accessibility.semantic.SemanticNodeResolver;
 import com.example.anroidaiassistant.resources.SearchInputAliases;
 import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public final class SearchInputController {
@@ -23,6 +29,10 @@ public final class SearchInputController {
     private final MyAccessibilityService service;
     private final Handler mainHandler;
     private final GestureController gestureController;
+    private final SemanticNodeResolver<AccessibilityNodeInfo> semanticResolver =
+            new SemanticNodeResolver<>(new AccessibilityNodeAdapter());
+    private final InputTargetSelector<AccessibilityNodeInfo> inputTargetSelector =
+            new InputTargetSelector<>(new ClickTextMatcher());
 
     public SearchInputController(
             MyAccessibilityService service,
@@ -106,6 +116,14 @@ public final class SearchInputController {
     }
 
     public boolean focusInput() {
+        return focusInput(null);
+    }
+
+    public boolean focusInput(String targetText) {
+        if (TextNormalizer.hasText(targetText)) {
+            return focusNamedInput(targetText);
+        }
+
         InputSelection selection = findWritableInputSelection();
         if (selection.selectedInput != null) {
             return focusInputNode(selection.selectedInput);
@@ -119,6 +137,35 @@ public final class SearchInputController {
             });
         }
 
+        return false;
+    }
+
+    private boolean focusNamedInput(String targetText) {
+        AccessibilityNodeInfo rootNode = service.getRootInActiveWindow();
+        if (rootNode == null) {
+            return false;
+        }
+
+        List<AccessibilityNodeInfo> inputs = new ArrayList<>();
+        collectTextInputs(rootNode, inputs);
+        List<String> targetVariants = Collections.singletonList(
+                ClickTextUtils.normalize(targetText)
+        );
+        List<AccessibilityNodeInfo> matches = inputTargetSelector.selectMatches(
+                inputs,
+                targetVariants,
+                input -> semanticResolver.semanticValues(rootNode, input)
+        );
+        if (matches.size() == 1) {
+            return focusInputNode(matches.get(0));
+        }
+        if (matches.size() > 1) {
+            return showInputSelection(matches, inputNode -> {
+                if (!focusInputNode(inputNode)) {
+                    service.showFeedback("Text field could not be focused");
+                }
+            });
+        }
         return false;
     }
 
@@ -286,9 +333,7 @@ public final class SearchInputController {
             return;
         }
 
-        if (node.isVisibleToUser()
-                && isTextInput(node)
-                && (node.getActions() & AccessibilityNodeInfo.ACTION_SET_TEXT) != 0) {
+        if (semanticResolver.isEligibleInput(node)) {
             inputs.add(node);
         }
 

@@ -33,6 +33,7 @@ import com.example.anroidaiassistant.accessibility.SearchInputController;
 import com.example.anroidaiassistant.accessibility.ScreenLabelsController;
 import com.example.anroidaiassistant.accessibility.SystemUninstallController;
 import com.example.anroidaiassistant.executor.handlers.CenterGestureCommandHandler;
+import com.example.anroidaiassistant.executor.handlers.InputFocusCommandHandler;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
@@ -65,7 +66,8 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 public class MyAccessibilityService extends AccessibilityService
-        implements CenterGestureCommandHandler.GestureAccess {
+        implements CenterGestureCommandHandler.GestureAccess,
+        InputFocusCommandHandler.InputFocusAccess {
 
     private static final String TAG = "MyAccessibilityService";
     private static MyAccessibilityService instance;
@@ -1860,6 +1862,11 @@ public class MyAccessibilityService extends AccessibilityService
 
     public boolean focusInputField() {
         return searchInputController != null && searchInputController.focusInput();
+    }
+
+    @Override
+    public boolean focusInputField(String targetText) {
+        return searchInputController != null && searchInputController.focusInput(targetText);
     }
 
     public boolean unfocusInputField() {

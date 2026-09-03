@@ -4,11 +4,29 @@ import com.example.anroidaiassistant.MyAccessibilityService;
 import com.example.anroidaiassistant.executor.CommandExecutionContext;
 import com.example.anroidaiassistant.executor.CommandHandler;
 import com.example.anroidaiassistant.util.ParameterReader;
+import com.example.anroidaiassistant.util.TextNormalizer;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public final class InputFocusCommandHandler implements CommandHandler {
+    public interface InputFocusAccess {
+        boolean focusInputField();
+        boolean focusInputField(String targetText);
+        boolean unfocusInputField();
+    }
+
+    private final Supplier<InputFocusAccess> inputFocusAccessProvider;
+
+    public InputFocusCommandHandler() {
+        this(MyAccessibilityService::getInstance);
+    }
+
+    InputFocusCommandHandler(Supplier<InputFocusAccess> inputFocusAccessProvider) {
+        this.inputFocusAccessProvider = inputFocusAccessProvider;
+    }
+
     @Override
     public String getIntent() {
         return "SET_INPUT_FOCUS";
@@ -16,7 +34,7 @@ public final class InputFocusCommandHandler implements CommandHandler {
 
     @Override
     public void handle(Map<String, Object> parameters, CommandExecutionContext context) {
-        MyAccessibilityService service = MyAccessibilityService.getInstance();
+        InputFocusAccess service = inputFocusAccessProvider.get();
         if (service == null) {
             context.showMessage("Accessibility service is not connected");
             return;
@@ -30,7 +48,11 @@ public final class InputFocusCommandHandler implements CommandHandler {
             return;
         }
 
-        if (!service.focusInputField()) {
+        String targetText = ParameterReader.getStringParam(parameters, "target_text");
+        boolean handled = TextNormalizer.hasText(targetText)
+                ? service.focusInputField(targetText)
+                : service.focusInputField();
+        if (!handled) {
             context.showMessage("Text field not found");
         }
     }
