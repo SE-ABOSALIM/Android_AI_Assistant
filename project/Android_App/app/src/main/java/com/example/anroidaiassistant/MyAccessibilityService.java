@@ -54,6 +54,7 @@ import android.view.KeyEvent;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Toast;
 import java.util.ArrayList;
@@ -140,7 +141,8 @@ public class MyAccessibilityService extends AccessibilityService
             this::getActivePackageName,
             this::performBack,
             (runnable, delayMillis) -> mainHandler.postDelayed(runnable, delayMillis),
-            () -> showFeedback(localizedOverlayString(R.string.feedback_close_app_failed))
+            () -> showFeedback(localizedOverlayString(R.string.feedback_close_app_failed)),
+            this::captureCloseAppWindowSnapshot
     );
     private final ListeningRestartScheduler listeningRestartScheduler = new ListeningRestartScheduler(
             this::startListeningSession,
@@ -1877,6 +1879,48 @@ public class MyAccessibilityService extends AccessibilityService
         if (systemUninstallController != null) {
             systemUninstallController.confirmNextSystemUninstallDialog(packageName, label);
         }
+    }
+
+    private CloseAppWindowSnapshot captureCloseAppWindowSnapshot(String expectedPackageName) {
+        AccessibilityNodeInfo activeRoot = null;
+        List<AccessibilityWindowInfo> windows = null;
+        try {
+            activeRoot = getRootInActiveWindow();
+            if (activeRoot == null || activeRoot.getPackageName() == null || expectedPackageName == null
+                    || !expectedPackageName.contentEquals(activeRoot.getPackageName())) {
+                return null;
+            }
+            windows = getWindows();
+            if (windows == null) {
+                return null;
+            }
+            for (AccessibilityWindowInfo window : windows) {
+                if (window == null || window.getType() != AccessibilityWindowInfo.TYPE_APPLICATION
+                        || !window.isActive() || !window.isFocused()
+                        || window.getId() != activeRoot.getWindowId()) {
+                    continue;
+                }
+                Rect bounds = new Rect();
+                window.getBoundsInScreen(bounds);
+                return new CloseAppWindowSnapshot(expectedPackageName, window.getId(),
+                        true, true, true, bounds.left, bounds.top, bounds.right, bounds.bottom);
+            }
+        } catch (RuntimeException exception) {
+            // Window metadata can disappear during navigation. Preserve normal BACK retries.
+            return null;
+        } finally {
+            if (activeRoot != null) {
+                activeRoot.recycle();
+            }
+            if (windows != null) {
+                for (AccessibilityWindowInfo window : windows) {
+                    if (window != null) {
+                        window.recycle();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     private String getActivePackageName() {

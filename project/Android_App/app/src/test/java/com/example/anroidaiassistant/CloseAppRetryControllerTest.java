@@ -80,6 +80,115 @@ public class CloseAppRetryControllerTest {
         assertEquals(0, harness.scheduler.pendingCount());
     }
 
+    @Test
+    public void newSmallApplicationWindow_stopsSilentlyAfterFirstBack() {
+        TestHarness harness = new TestHarness(Collections.singletonList("package.a"),
+                Arrays.asList(fullWindow(10), dialogWindow(11)));
+
+        harness.controller.performCloseApp();
+
+        assertEquals(1, harness.backPerformer.backCount);
+        assertEquals(Collections.singletonList(0), harness.snapshotReader.backCountsAtCapture);
+        harness.scheduler.runNext();
+
+        assertEquals(1, harness.backPerformer.backCount);
+        assertEquals(0, harness.scheduler.pendingCount());
+        assertEquals(0, harness.failureFeedback.failureCount);
+        assertEquals(Collections.singletonList(450L), harness.scheduler.delays);
+        assertEquals(Arrays.asList(0, 1), harness.snapshotReader.backCountsAtCapture);
+    }
+
+    @Test
+    public void differentFullScreenWindow_continuesNormalRetry() {
+        assertRetryContinues(fullWindow(10), fullWindow(11));
+    }
+
+    @Test
+    public void sameWindow_continuesNormalRetry() {
+        assertRetryContinues(fullWindow(10), fullWindow(10));
+    }
+
+    @Test
+    public void changedPackage_stopsWithoutReadingPostSnapshot() {
+        TestHarness harness = new TestHarness(Arrays.asList("package.a", "package.b"),
+                Arrays.asList(fullWindow(10), dialogWindow(11)));
+
+        harness.controller.performCloseApp();
+        harness.scheduler.runNext();
+
+        assertEquals(1, harness.backPerformer.backCount);
+        assertEquals(0, harness.scheduler.pendingCount());
+        assertEquals(0, harness.failureFeedback.failureCount);
+        assertEquals(1, harness.snapshotReader.backCountsAtCapture.size());
+    }
+
+    @Test
+    public void emptyPostBounds_continuesNormalRetry() {
+        assertRetryContinues(fullWindow(10),
+                new CloseAppWindowSnapshot("package.a", 11, true, true, true, 0, 0, 0, 0));
+    }
+
+    @Test
+    public void missingSnapshot_continuesNormalRetry() {
+        assertRetryContinues(null, dialogWindow(11));
+        assertRetryContinues(fullWindow(10), null);
+    }
+
+    @Test
+    public void modalAfterLaterBack_stopsAtThatAttempt() {
+        TestHarness harness = new TestHarness(Collections.singletonList("package.a"),
+                Arrays.asList(fullWindow(10), fullWindow(11), fullWindow(11), dialogWindow(12)));
+
+        harness.controller.performCloseApp();
+        harness.scheduler.runUntilIdle(20);
+
+        assertEquals(2, harness.backPerformer.backCount);
+        assertEquals(2, harness.scheduler.executedCount);
+        assertEquals(Arrays.asList(450L, 450L), harness.scheduler.delays);
+        assertEquals(0, harness.failureFeedback.failureCount);
+        assertEquals(Arrays.asList(0, 1, 1, 2), harness.snapshotReader.backCountsAtCapture);
+    }
+
+    @Test
+    public void newCommandAfterModalStop_startsFreshOperation() {
+        TestHarness harness = new TestHarness(Collections.singletonList("package.a"),
+                Arrays.asList(fullWindow(10), dialogWindow(11), fullWindow(10), dialogWindow(12)));
+
+        harness.controller.performCloseApp();
+        harness.scheduler.runNext();
+        assertEquals(0, harness.scheduler.pendingCount());
+
+        harness.controller.performCloseApp();
+        assertEquals(2, harness.backPerformer.backCount);
+        harness.scheduler.runNext();
+
+        assertEquals(2, harness.backPerformer.backCount);
+        assertEquals(0, harness.scheduler.pendingCount());
+        assertEquals(0, harness.failureFeedback.failureCount);
+    }
+
+    private static void assertRetryContinues(CloseAppWindowSnapshot pre, CloseAppWindowSnapshot post) {
+        TestHarness harness = new TestHarness(Collections.singletonList("package.a"),
+                Arrays.asList(pre, post));
+        harness.controller.performCloseApp();
+        harness.scheduler.runNext();
+
+        assertEquals(2, harness.backPerformer.backCount);
+        assertEquals(1, harness.scheduler.pendingCount());
+        assertEquals(Arrays.asList(450L, 450L), harness.scheduler.delays);
+        harness.scheduler.runUntilIdle(20);
+        assertEquals(15, harness.backPerformer.backCount);
+        assertEquals(1, harness.failureFeedback.failureCount);
+    }
+
+    private static CloseAppWindowSnapshot fullWindow(int id) {
+        return new CloseAppWindowSnapshot("package.a", id, true, true, true, 0, 0, 1080, 2400);
+    }
+
+    private static CloseAppWindowSnapshot dialogWindow(int id) {
+        return new CloseAppWindowSnapshot("package.a", id, true, true, true, 28, 912, 1052, 1425);
+    }
+
     private static boolean allDelaysEqual(List<Long> delays, long expectedDelay) {
         for (long delay : delays) {
             if (delay != expectedDelay) {
@@ -94,16 +203,42 @@ public class CloseAppRetryControllerTest {
         private final FakeBackPerformer backPerformer = new FakeBackPerformer();
         private final FakeDelayScheduler scheduler = new FakeDelayScheduler();
         private final FakeFailureFeedback failureFeedback = new FakeFailureFeedback();
+        private final FakeSnapshotReader snapshotReader;
         private final CloseAppRetryController controller;
 
         private TestHarness(List<String> packageNames) {
+            this(packageNames, Collections.singletonList(null));
+        }
+
+        private TestHarness(List<String> packageNames, List<CloseAppWindowSnapshot> snapshots) {
             packageReader = new FakePackageReader(packageNames);
+            snapshotReader = new FakeSnapshotReader(snapshots, backPerformer);
             controller = new CloseAppRetryController(
                     packageReader,
                     backPerformer,
                     scheduler,
-                    failureFeedback
+                    failureFeedback,
+                    snapshotReader
             );
+        }
+    }
+
+    private static final class FakeSnapshotReader implements CloseAppRetryController.WindowSnapshotReader {
+        private final List<CloseAppWindowSnapshot> snapshots;
+        private final FakeBackPerformer backPerformer;
+        private final List<Integer> backCountsAtCapture = new ArrayList<>();
+        private int nextIndex;
+
+        private FakeSnapshotReader(List<CloseAppWindowSnapshot> snapshots, FakeBackPerformer backPerformer) {
+            this.snapshots = snapshots;
+            this.backPerformer = backPerformer;
+        }
+
+        @Override
+        public CloseAppWindowSnapshot capture(String expectedPackageName) {
+            assertEquals("package.a", expectedPackageName);
+            backCountsAtCapture.add(backPerformer.backCount);
+            return snapshots.get(Math.min(nextIndex++, snapshots.size() - 1));
         }
     }
 
