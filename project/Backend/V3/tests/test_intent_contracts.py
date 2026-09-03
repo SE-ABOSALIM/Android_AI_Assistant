@@ -284,6 +284,52 @@ class IntentContractTests(unittest.TestCase):
             focus["parameters"],
         ))
 
+    def test_set_input_focus_contract_allows_optional_named_target(self):
+        contract = get_intent_contract("SET_INPUT_FOCUS")
+
+        self.assertEqual(contract.required_parameters, ("focus_action",))
+        self.assertIn("target_text", contract.optional_parameters)
+
+    def test_set_input_focus_enriches_named_targets_without_naming_generic_fields(self):
+        examples = (
+            ("focus on input", "EN", {"focus_action": "focus"}),
+            ("focus input", "EN", {"focus_action": "focus"}),
+            ("focus on a field", "EN", {"focus_action": "focus"}),
+            ("focus on text field", "EN", {"focus_action": "focus"}),
+            ("focus on day", "EN", {"focus_action": "focus", "target_text": "day"}),
+            ("focus on input day", "EN", {"focus_action": "focus", "target_text": "day"}),
+            ("focus on day input", "EN", {"focus_action": "focus", "target_text": "day"}),
+            ("focus on name field", "EN", {"focus_action": "focus", "target_text": "name"}),
+            ("gun alanina odaklan", "TR", {"focus_action": "focus", "target_text": "gun"}),
+            ("gun inputuna odaklan", "TR", {"focus_action": "focus", "target_text": "gun"}),
+            ("\u0631\u0643\u0632 \u0639\u0644\u0649 \u062d\u0642\u0644 \u0627\u0644\u0627\u0633\u0645", "AR", {"focus_action": "focus", "target_text": "\u0627\u0644\u0627\u0633\u0645"}),
+        )
+
+        for text, language, parameters in examples:
+            with self.subTest(text=text, language=language):
+                response = _validate(
+                    "SET_INPUT_FOCUS",
+                    {"focus_action": "focus"},
+                    text=text,
+                    language=language,
+                    raw_label="SET_INPUT_FOCUS__focus_action=focus",
+                )
+
+                self.assertTrue(response["accepted"])
+                self.assertEqual(response["parameters"], parameters)
+
+    def test_set_input_focus_does_not_add_target_to_unfocus(self):
+        response = _validate(
+            "SET_INPUT_FOCUS",
+            {"focus_action": "unfocus"},
+            text="unfocus name input",
+            language="EN",
+            raw_label="SET_INPUT_FOCUS__focus_action=unfocus",
+        )
+
+        self.assertTrue(response["accepted"])
+        self.assertEqual(response["parameters"], {"focus_action": "unfocus"})
+
     def test_hold_screen_enriches_optional_targets_without_breaking_center_gesture(self):
         no_target = _validate(
             "HOLD_SCREEN",

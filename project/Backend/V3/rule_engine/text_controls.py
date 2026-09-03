@@ -2,6 +2,7 @@ from typing import Any, Dict, Optional
 
 from V3.extraction.common import clean_free_text, extract_first_match
 from V3.extraction.click import extract_click_position, extract_gesture_target
+from V3.extraction.focus import extract_focus_target
 from V3.extraction.text import extract_search_query
 from V3.patterns.commands.text_controls import (
     CLEAR_TEXT_PATTERNS,
@@ -38,6 +39,14 @@ def text_control_command(context: RuleContext) -> Optional[Dict[str, Any]]:
     write_command = _write_text_command(context)
     if write_command:
         return write_command
+
+    focus_target = extract_focus_target(context.original, context.language)
+    if focus_target:
+        return command(
+            "SET_INPUT_FOCUS",
+            "focus_input",
+            {"focus_action": "focus", "target_text": focus_target},
+        )
 
     result = match_first_pattern_rule(context, TEXT_CONTROL_RULES)
     if result is None or result["intent"] not in {"DOUBLE_TAP", "HOLD_SCREEN"}:

@@ -361,6 +361,28 @@ class RuleServiceTests(unittest.TestCase):
                 self.assertEqual(result["intent"], "SET_INPUT_FOCUS")
                 self.assertEqual(result["parameters"], {"focus_action": action})
 
+    def test_named_focus_input_rules_extract_targets_in_supported_languages(self):
+        examples = (
+            ("focus on day", "EN", "day"),
+            ("focus on input day", "EN", "day"),
+            ("focus on day input", "EN", "day"),
+            ("focus on name field", "EN", "name"),
+            ("gun alanina odaklan", "TR", "gun"),
+            ("gun inputuna odaklan", "TR", "gun"),
+            ("\u0631\u0643\u0632 \u0639\u0644\u0649 \u062d\u0642\u0644 \u0627\u0644\u0627\u0633\u0645", "AR", "\u0627\u0644\u0627\u0633\u0645"),
+        )
+
+        for text, language, target in examples:
+            with self.subTest(text=text, language=language):
+                result = rule_based_command(text, language)
+
+                self.assertEqual(result["intent"], "SET_INPUT_FOCUS")
+                self.assertEqual(result["rule_matched"], "focus_input")
+                self.assertEqual(
+                    result["parameters"],
+                    {"focus_action": "focus", "target_text": target},
+                )
+
     def test_turkish_search_query_rules(self):
         examples = {
             "hava durumu icin ara": "hava durumu",

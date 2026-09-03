@@ -11,6 +11,7 @@ from V3.extraction.click import (
     extract_gesture_target,
 )
 from V3.extraction.contact import extract_contact_name
+from V3.extraction.focus import extract_focus_target
 from V3.extraction.photo import extract_photo_camera
 from V3.extraction.text import (
     extract_alarm_text,
@@ -87,6 +88,17 @@ def enrich_target_gesture(context: ValidationContext) -> None:
             context.parameters["position"] = position
 
 
+def enrich_input_focus(context: ValidationContext) -> None:
+    if normalized_lower(context.parameters.get("focus_action", "")) != "focus":
+        return
+    if context.parameters.get("target_text"):
+        return
+
+    target_text = extract_focus_target(context.original_text, context.language)
+    if target_text:
+        context.parameters["target_text"] = target_text
+
+
 def enrich_alarm(context: ValidationContext) -> None:
     if is_bare_alarm_time_expression(context.original_text):
         context.reject(
@@ -158,6 +170,7 @@ INTENT_ENRICHERS: Dict[str, Callable[[ValidationContext], None]] = {
     "OPEN_APP": enrich_app_command,
     "OPEN_APP_INFO": enrich_app_command,
     "SEARCH_QUERY": enrich_search_query,
+    "SET_INPUT_FOCUS": enrich_input_focus,
     "SET_ALARM": enrich_alarm,
     "SET_TIMER": enrich_timer,
     "STOP_LISTENING": enrich_stop_listening,

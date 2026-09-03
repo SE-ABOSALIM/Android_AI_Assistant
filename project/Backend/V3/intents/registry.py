@@ -219,6 +219,7 @@ INTENT_CONTRACTS: Dict[str, IntentContract] = {
         "SET_INPUT_FOCUS",
         threshold=0.92,
         required=("focus_action",),
+        optional=("target_text",),
         android_supported=True,
     ),
     "SET_MEDIA_PLAYBACK": _contract(
