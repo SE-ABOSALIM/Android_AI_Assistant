@@ -1,6 +1,7 @@
 package com.example.anroidaiassistant.accessibility;
 
 import android.graphics.Rect;
+import android.os.Build;
 import android.util.DisplayMetrics;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -15,7 +16,6 @@ import java.util.Set;
 
 public final class ScreenLabelsController {
     private static final int MAX_LABELS = 100;
-    private static final int MIN_TARGET_SIZE_PX = 12;
     private static final int NEAR_DUPLICATE_CENTER_DISTANCE_DP = 34;
     private static final float STRONG_OVERLAP_RATIO = 0.70f;
     private static final float WEAK_OVERLAP_RATIO = 0.10f;
@@ -123,7 +123,7 @@ public final class ScreenLabelsController {
 
         Rect bounds = new Rect();
         node.getBoundsInScreen(bounds);
-        if (isUsableTarget(node, bounds)) {
+        if (isUsableTarget(node, bounds, screenWidth, screenHeight)) {
             LabelTarget target = buildLabelTarget(node, bounds, screenWidth, screenHeight);
             String boundsKey = target.bounds.flattenToString();
             if (!seenBounds.contains(boundsKey)) {
@@ -230,16 +230,52 @@ public final class ScreenLabelsController {
         return score;
     }
 
-    private boolean isUsableTarget(AccessibilityNodeInfo node, Rect bounds) {
-        if (bounds == null
-                || bounds.isEmpty()
-                || bounds.width() < MIN_TARGET_SIZE_PX
-                || bounds.height() < MIN_TARGET_SIZE_PX
-                || !node.isEnabled()) {
+    private boolean isUsableTarget(
+            AccessibilityNodeInfo node,
+            Rect bounds,
+            int screenWidth,
+            int screenHeight
+    ) {
+        if (node == null || bounds == null) {
             return false;
         }
 
-        return node.isClickable() || supportsAction(node, AccessibilityNodeInfo.ACTION_CLICK);
+        AccessibilityNodeInfo parent = node.getParent();
+        ScreenLabelEligibility.NodeFacts facts = new ScreenLabelEligibility.NodeFacts()
+                .bounds(bounds.left, bounds.top, bounds.right, bounds.bottom)
+                .screen(screenWidth, screenHeight)
+                .children(node.getChildCount())
+                .text(charSequenceToString(node.getText()))
+                .contentDescription(charSequenceToString(node.getContentDescription()))
+                .hint(nodeHint(node))
+                .viewId(node.getViewIdResourceName())
+                .role(className(node));
+
+        if (node.isVisibleToUser()) {
+            facts.visible();
+        }
+        if (node.isEnabled()) {
+            facts.enabled();
+        }
+        if (node.isClickable()) {
+            facts.clickable();
+        }
+        if (supportsAction(node, AccessibilityNodeInfo.ACTION_CLICK)) {
+            facts.supportsClick();
+        }
+        if (node.isEditable()) {
+            facts.editable();
+        }
+        if (node.isCheckable()) {
+            facts.checkable();
+        }
+        if (parent == null) {
+            facts.root();
+        } else {
+            facts.hasParent();
+        }
+
+        return ScreenLabelEligibility.isUsable(facts);
     }
 
     private ActionGroup findActionGroup(
@@ -253,7 +289,7 @@ public final class ScreenLabelsController {
         while (current != null) {
             Rect parentBounds = new Rect();
             current.getBoundsInScreen(parentBounds);
-            if (isUsableTarget(current, parentBounds)
+            if (isUsableTarget(current, parentBounds, screenWidth, screenHeight)
                     && parentBounds.contains(nodeBounds)
                     && isReasonableActionGroup(parentBounds, screenWidth, screenHeight)) {
                 best = new ActionGroup(current, parentBounds);
@@ -393,6 +429,13 @@ public final class ScreenLabelsController {
         }
 
         return "Item";
+    }
+
+    private String nodeHint(AccessibilityNodeInfo node) {
+        if (node == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return "";
+        }
+        return charSequenceToString(node.getHintText());
     }
 
     private String charSequenceToString(CharSequence value) {
