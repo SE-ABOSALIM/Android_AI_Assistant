@@ -31,7 +31,6 @@ the command:
 - the primary recognized command text;
 - recognition alternatives returned by Android;
 - the selected command language;
-- an in-memory session identifier;
 - the stable Android device identifier described below;
 - the current installed-app catalog version; and
 - a yes-or-no signal indicating whether a search input is available on the
