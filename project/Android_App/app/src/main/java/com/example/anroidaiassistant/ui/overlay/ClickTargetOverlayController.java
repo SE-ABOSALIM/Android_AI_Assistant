@@ -21,7 +21,6 @@ import java.util.List;
 public final class ClickTargetOverlayController {
     private static final int MARKER_WIDTH_DP = 28;
     private static final int MARKER_HEIGHT_DP = 34;
-    private static final int MARKER_UPWARD_OFFSET_DP = 45;
     private static final int SCREEN_EDGE_PADDING_DP = 4;
 
     private final Context context;
@@ -85,27 +84,22 @@ public final class ClickTargetOverlayController {
         int targetX = safeBounds.isEmpty() ? safeBounds.left : safeBounds.centerX();
         int targetY = safeBounds.isEmpty() ? safeBounds.top : safeBounds.centerY();
         int tipOffsetY = markerHeight - dp(2);
-        int upwardOffset = dp(MARKER_UPWARD_OFFSET_DP);
-        int left = clamp(
-                targetX - markerWidth / 2,
-                edgePadding,
-                Math.max(edgePadding, screenWidth - markerWidth - edgePadding)
-        );
-        int top = clamp(
-                targetY - tipOffsetY - upwardOffset,
-                edgePadding,
-                Math.max(edgePadding, screenHeight - markerHeight - edgePadding)
+        MarkerPlacement.Position position = MarkerPlacement.calculate(
+                targetX,
+                targetY,
+                markerWidth,
+                markerHeight,
+                tipOffsetY,
+                screenWidth,
+                screenHeight,
+                edgePadding
         );
 
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(markerWidth, markerHeight);
-        params.leftMargin = left;
-        params.topMargin = top;
+        params.leftMargin = position.left;
+        params.topMargin = position.top;
         marker.setLayoutParams(params);
         return marker;
-    }
-
-    private int clamp(int value, int min, int max) {
-        return Math.max(min, Math.min(value, max));
     }
 
     private int dp(int value) {

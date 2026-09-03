@@ -102,6 +102,18 @@ public class PopupOverlayArchitectureTest {
                 .contains("TYPE_ACCESSIBILITY_OVERLAY"));
     }
 
+    @Test
+    public void showLabelsAndClickAmbiguityShareCorrectedPinPlacement() throws Exception {
+        String clickOverlay = productionSource("ui/overlay/ClickTargetOverlayController.java");
+        String screenLabels = productionSource("accessibility/ScreenLabelsController.java");
+        String clickItems = productionSource("accessibility/click/ClickItemController.java");
+
+        assertTrue(clickOverlay.contains("MarkerPlacement.calculate("));
+        assertFalse(clickOverlay.contains("MARKER_UPWARD_OFFSET"));
+        assertTrue(screenLabels.contains("startClickTargetSelection("));
+        assertTrue(clickItems.contains("startClickTargetSelection("));
+    }
+
     private String sourceManifest() throws IOException {
         return readUtf8(appRoot().resolve("src/main/AndroidManifest.xml"));
     }
