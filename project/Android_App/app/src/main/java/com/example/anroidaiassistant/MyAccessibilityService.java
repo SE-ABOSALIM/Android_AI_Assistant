@@ -32,6 +32,7 @@ import com.example.anroidaiassistant.accessibility.QuickSettingsTileController;
 import com.example.anroidaiassistant.accessibility.SearchInputController;
 import com.example.anroidaiassistant.accessibility.ScreenLabelsController;
 import com.example.anroidaiassistant.accessibility.SystemUninstallController;
+import com.example.anroidaiassistant.executor.handlers.CenterGestureCommandHandler;
 
 import android.accessibilityservice.AccessibilityService;
 import android.content.Context;
@@ -63,7 +64,8 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class MyAccessibilityService extends AccessibilityService {
+public class MyAccessibilityService extends AccessibilityService
+        implements CenterGestureCommandHandler.GestureAccess {
 
     private static final String TAG = "MyAccessibilityService";
     private static MyAccessibilityService instance;
@@ -1751,6 +1753,16 @@ public class MyAccessibilityService extends AccessibilityService {
 
     public boolean longPressCenter() {
         return gestureController != null && gestureController.longPressCenter();
+    }
+
+    @Override
+    public boolean longPressTarget(String targetText, String position) {
+        return clickItemController != null && clickItemController.longPressItem(targetText, position);
+    }
+
+    @Override
+    public boolean doubleTapTarget(String targetText, String position) {
+        return clickItemController != null && clickItemController.doubleTapItem(targetText, position);
     }
 
     public boolean clickItem(String targetText, String position) {

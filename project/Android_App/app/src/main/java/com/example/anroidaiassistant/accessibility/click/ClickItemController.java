@@ -29,12 +29,30 @@ public final class ClickItemController {
             positionFilter
     );
 
+    private enum TargetAction {
+        CLICK,
+        LONG_PRESS,
+        DOUBLE_TAP
+    }
+
     public ClickItemController(MyAccessibilityService service, GestureController gestureController) {
         this.service = service;
         this.gestureController = gestureController;
     }
 
     public boolean clickItem(String targetText, String position) {
+        return performOnTarget(targetText, position, TargetAction.CLICK);
+    }
+
+    public boolean longPressItem(String targetText, String position) {
+        return performOnTarget(targetText, position, TargetAction.LONG_PRESS);
+    }
+
+    public boolean doubleTapItem(String targetText, String position) {
+        return performOnTarget(targetText, position, TargetAction.DOUBLE_TAP);
+    }
+
+    private boolean performOnTarget(String targetText, String position, TargetAction action) {
         ClickCommand command = new ClickCommand(
                 targetText,
                 positionFilter.normalizePosition(position)
@@ -43,7 +61,9 @@ public final class ClickItemController {
             return false;
         }
 
-        if (command.hasTargetText() && service.pressKeyboardAction(command.targetText)) {
+        if (action == TargetAction.CLICK
+                && command.hasTargetText()
+                && service.pressKeyboardAction(command.targetText)) {
             return true;
         }
 
@@ -55,14 +75,15 @@ public final class ClickItemController {
         DisplayMetrics displayMetrics = service.getResources().getDisplayMetrics();
         String packageName = rootNode.getPackageName() == null ? "" : rootNode.getPackageName().toString();
 
-        return clickByTargetText(rootNode, command, packageName, displayMetrics);
+        return performByTargetText(rootNode, command, packageName, displayMetrics, action);
     }
 
-    private boolean clickByTargetText(
+    private boolean performByTargetText(
             AccessibilityNodeInfo rootNode,
             ClickCommand command,
             String packageName,
-            DisplayMetrics displayMetrics
+            DisplayMetrics displayMetrics,
+            TargetAction action
     ) {
         List<ClickCandidate> candidates = candidateCollector.collectTextCandidates(
                 rootNode,
@@ -77,23 +98,23 @@ public final class ClickItemController {
         ClickCandidate directCandidate = chooseDirectCandidate(candidates);
         if (directCandidate != null) {
             logCandidate("direct", command, directCandidate);
-            return clickCandidate(directCandidate);
+            return performCandidate(directCandidate, action);
         }
 
-        if (showFallbackIfUseful(candidates)) {
+        if (showFallbackIfUseful(candidates, action)) {
             logCandidates("selection", command, topFallbackCandidates(candidates));
             return true;
         }
 
-        boolean fallbackClicked = clickTopBarIconFallback(rootNode, command, displayMetrics);
-        if (!fallbackClicked) {
+        boolean fallbackHandled = performTopBarIconFallback(rootNode, command, displayMetrics, action);
+        if (!fallbackHandled) {
             SensitiveDebugLog.info(
                     TAG,
                     "no_match | target=\"" + command.targetText
                             + "\" | position=\"" + command.position + "\""
             );
         }
-        return fallbackClicked;
+        return fallbackHandled;
     }
 
     private ClickCandidate chooseDirectCandidate(List<ClickCandidate> candidates) {
@@ -118,7 +139,7 @@ public final class ClickItemController {
         return null;
     }
 
-    private boolean showFallbackIfUseful(List<ClickCandidate> candidates) {
+    private boolean showFallbackIfUseful(List<ClickCandidate> candidates, TargetAction action) {
         List<ClickCandidate> fallbackCandidates = topFallbackCandidates(candidates);
         if (fallbackCandidates.isEmpty()) {
             return false;
@@ -130,8 +151,8 @@ public final class ClickItemController {
                     TAG,
                     "single_fallback_direct | " + formatCandidate(singleCandidate)
             );
-            if (!clickCandidate(singleCandidate)) {
-                service.showFeedback("Item could not be clicked");
+            if (!performCandidate(singleCandidate, action)) {
+                service.showFeedback(actionFailureMessage(action));
             }
             return true;
         }
@@ -154,8 +175,8 @@ public final class ClickItemController {
                             service.showFeedback("Item not found");
                             return;
                         }
-                        if (!clickCandidate(fallbackCandidates.get(selectedIndex))) {
-                            service.showFeedback("Item could not be clicked");
+                        if (!performCandidate(fallbackCandidates.get(selectedIndex), action)) {
+                            service.showFeedback(actionFailureMessage(action));
                         }
                     }
 
@@ -191,10 +212,23 @@ public final class ClickItemController {
         return clickNode(candidate.clickNode);
     }
 
-    private boolean clickTopBarIconFallback(
+    private boolean performCandidate(ClickCandidate candidate, TargetAction action) {
+        switch (action) {
+            case LONG_PRESS:
+                return gestureController.longPressBoundsCenter(candidate.bounds);
+            case DOUBLE_TAP:
+                return gestureController.doubleTapBoundsCenter(candidate.bounds);
+            case CLICK:
+            default:
+                return clickCandidate(candidate);
+        }
+    }
+
+    private boolean performTopBarIconFallback(
             AccessibilityNodeInfo rootNode,
             ClickCommand command,
-            DisplayMetrics displayMetrics
+            DisplayMetrics displayMetrics,
+            TargetAction action
     ) {
         ClickCandidate candidate = null;
         if (aliasMatcher.isDrawerTarget(command.targetText)) {
@@ -205,7 +239,7 @@ public final class ClickItemController {
 
         if (candidate != null) {
             logCandidate("top_bar_fallback", command, candidate);
-            return clickCandidate(candidate);
+            return performCandidate(candidate, action);
         }
         return false;
     }
@@ -316,6 +350,12 @@ public final class ClickItemController {
 
     private String displaySubtitle(ClickCandidate candidate) {
         return "";
+    }
+
+    private String actionFailureMessage(TargetAction action) {
+        return action == TargetAction.CLICK
+                ? "Item could not be clicked"
+                : "Gesture could not be performed";
     }
 
     private void logCandidates(String stage, ClickCommand command, List<ClickCandidate> candidates) {
