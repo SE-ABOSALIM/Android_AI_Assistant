@@ -79,9 +79,9 @@ The multilingual classifier was fine-tuned from `FacebookAI/xlm-roberta-base` us
 
 | Metric          | Validation |   Test |
 | --------------- | ---------: | -----: |
-| Accuracy        |     95.87% | 93.45% |
-| Macro F1        |     95.08% | 90.93% |
-| Intent accuracy |     97.49% | 94.31% |
+| Accuracy        |     95.61% | 93.93% |
+| Macro F1        |     96.14% | 92.70% |
+| Intent accuracy |     97.80% | 94.84% |
 
 ## Technology Stack
 
